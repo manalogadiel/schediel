@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:schediel:contracts:widget-snapshot:1.0",
+  "title": "Schediel native widget snapshot, schema version 1.0",
+  "description": "Written by the Flutter app as one JSON string under the home_widget key 'schediel_widget_snapshot' (Android SharedPreferences 'HomeWidgetPreferences'; iOS App Group UserDefaults). Read by the Android AppWidgetProvider and the iOS WidgetKit timeline provider. Mirrors CONTRACTS.md section 6. The whole snapshot is replaced in one write; readers never merge revisions. Native readers that do not support schemaVersion render the safe open-app state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "dataRevision", "generatedAt", "deviceTimeZone", "coverageEnd", "widgets"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "dataRevision": { "type": "integer", "minimum": 0 },
+    "generatedAt": { "type": "string", "format": "date-time", "description": "UTC RFC 3339 instant of generation" },
+    "deviceTimeZone": { "type": "string", "description": "IANA zone used for labels at generation; readers format times in the current device zone" },
+    "coverageEnd": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC instant after which the snapshot no longer justifies now/next labels; readers show the stale open-app state at or after it"
+    },
+    "widgets": {
+      "type": "object",
+      "description": "Per-widget projections keyed by native widget identity (Android appWidgetId as a decimal string; iOS configuration identity). Key 'default' is used for widgets without their own entry.",
+      "required": ["default"],
+      "additionalProperties": { "$ref": "#/$defs/projection" }
+    }
+  },
+  "x-limits": { "maxOccurrencesPerWidget": 24, "maxCoverageDays": 7 },
+  "x-readerRules": [
+    "R01 Timed occurrences: ongoing when startEpochMs <= now < endEpochMs (label Now). A timed occurrence without an end is a point event and is past once now >= startEpochMs.",
+    "R02 Next is the resolved timed occurrence with the earliest startEpochMs > now; it receives the emphasized holder when configuration.nextEmphasis is true. Later timed occurrences are Upcoming (quieter holders). Ties keep snapshot order.",
+    "R03 Date-only occurrences are shown separately as All day when today's local date is within [startDate, endDateExclusive); they never become Next.",
+    "R04 Occurrences with timeStatus needsTimeReview show 'Time needs review' instead of a time and never become Now or Next.",
+    "R05 An occurrence whose local start date differs from today shows an explicit date label.",
+    "R06 If now >= coverageEnd, show 'Open Schediel to update' instead of claiming nothing is upcoming. If the snapshot is missing, unparsable or has an unsupported schemaVersion, show 'Open Schediel'.",
+    "R07 emptyReason noSchedules shows 'No schedules yet'; noneInFilter shows 'No schedules in this filter'; with entries but none remaining shows 'No upcoming schedules'.",
+    "R08 Tapping an entry opens its deepLink; tapping elsewhere opens the app. A tap never creates a schedule or enables an alert.",
+    "R09 Readers format instants in the current device time zone and locale. zoneLabel, when present, is appended to the time.",
+    "R10 Readers request their next refresh at the earliest of: the next start or end boundary after now, the next local midnight, and coverageEnd, using only platform-supported, budgeted mechanisms. No exact refresh time is promised."
+  ],
+  "$defs": {
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configuration", "occurrences", "emptyReason"],
+      "properties": {
+        "configuration": { "$ref": "#/$defs/configuration" },
+        "occurrences": { "type": "array", "maxItems": 24, "items": { "$ref": "#/$defs/occurrence" } },
+        "emptyReason": { "enum": ["noSchedules", "noneInFilter", null] }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configRevision", "layout", "surface", "textTone", "nextEmphasis", "visibleDetails"],
+      "properties": {
+        "configRevision": { "type": "integer", "minimum": 0 },
+        "layout": { "enum": ["compact", "expanded"] },
+        "surface": {
+          "enum": ["clear", "softTint", "solid"],
+          "description": "clear: no app-painted root background, no blur, subtle holders; softTint: stronger translucent holders; solid: opaque high-contrast holders"
+        },
+        "textTone": { "enum": ["light", "dark"], "description": "Text for light wallpaper (dark text) or dark wallpaper (light text); hosts may override" },
+        "nextEmphasis": { "type": "boolean" },
+        "visibleDetails": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["location", "professor", "subtitle"],
+          "properties": {
+            "location": { "type": "boolean" },
+            "professor": { "type": "boolean" },
+            "subtitle": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "occurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "occurrenceId",
+        "seriesId",
+        "originalKey",
+        "kind",
+        "title",
+        "startEpochMs",
+        "endEpochMs",
+        "startDate",
+        "endDateExclusive",
+        "timeStatus",
+        "zoneLabel",
+        "location",
+        "professor",
+        "subtitle",
+        "deepLink"
+      ],
+      "properties": {
+        "occurrenceId": { "type": "string", "description": "seriesId + '/' + originalKey" },
+        "seriesId": { "type": "string" },
+        "originalKey": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "kind": { "enum": ["timed", "dateOnly"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "startEpochMs": { "type": ["integer", "null"], "description": "Timed and resolved: start instant; otherwise null" },
+        "endEpochMs": { "type": ["integer", "null"], "description": "Timed with an end: end instant; otherwise null" },
+        "startDate": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "description": "Local start date (source zone for timed, calendar date for date-only)" },
+        "endDateExclusive": { "type": ["string", "null"], "description": "Date-only end (exclusive); null for timed" },
+        "timeStatus": { "enum": ["resolved", "needsTimeReview"] },
+        "zoneLabel": { "type": ["string", "null"], "maxLength": 16 },
+        "location": { "type": ["string", "null"], "description": "Present only when allowed by the widget's visible details" },
+        "professor": { "type": ["string", "null"] },
+        "subtitle": { "type": ["string", "null"] },
+        "deepLink": { "type": "string", "pattern": "^schediel://occurrence/" }
+      }
+    }
+  }
+}

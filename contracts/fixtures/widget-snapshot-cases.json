@@ -1,0 +1,462 @@
+{
+  "description": "Reader fixtures for widget snapshot 1.0 (contracts/schemas/widget-snapshot-v1.schema.json, x-readerRules). Times are evaluated with the device zone Asia/Manila. needsTimeReview and all-day entries are shown only for today's local date or later. Fixture text is labelled test data.",
+  "deviceTimeZone": "Asia/Manila",
+  "snapshot": {
+    "schemaVersion": "1.0",
+    "dataRevision": 7,
+    "generatedAt": "2026-11-01T23:00:00.000Z",
+    "deviceTimeZone": "Asia/Manila",
+    "coverageEnd": "2026-11-09T00:00:00.000Z",
+    "widgets": {
+      "default": {
+        "configuration": {
+          "configRevision": 1,
+          "layout": "expanded",
+          "surface": "clear",
+          "textTone": "light",
+          "nextEmphasis": true,
+          "visibleDetails": {
+            "location": true,
+            "professor": true,
+            "subtitle": true
+          }
+        },
+        "occurrences": [
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000001/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000001",
+            "originalKey": "2026-11-02",
+            "kind": "timed",
+            "title": "Fixture class A",
+            "startEpochMs": 1793581200000,
+            "endEpochMs": 1793586600000,
+            "startDate": "2026-11-02",
+            "endDateExclusive": null,
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": "Fixture room",
+            "professor": "Fixture person",
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000001/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000002/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000002",
+            "originalKey": "2026-11-02",
+            "kind": "timed",
+            "title": "Fixture class B",
+            "startEpochMs": 1793588400000,
+            "endEpochMs": 1793592000000,
+            "startDate": "2026-11-02",
+            "endDateExclusive": null,
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": null,
+            "professor": null,
+            "subtitle": "Fixture subtitle",
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000002/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000003/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000003",
+            "originalKey": "2026-11-02",
+            "kind": "timed",
+            "title": "Fixture point event C",
+            "startEpochMs": 1793588400000,
+            "endEpochMs": null,
+            "startDate": "2026-11-02",
+            "endDateExclusive": null,
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": null,
+            "professor": null,
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000003/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000004/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000004",
+            "originalKey": "2026-11-02",
+            "kind": "dateOnly",
+            "title": "Fixture all-day D",
+            "startEpochMs": null,
+            "endEpochMs": null,
+            "startDate": "2026-11-02",
+            "endDateExclusive": "2026-11-03",
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": null,
+            "professor": null,
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000004/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000005/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000005",
+            "originalKey": "2026-11-02",
+            "kind": "timed",
+            "title": "Fixture unresolved E",
+            "startEpochMs": null,
+            "endEpochMs": null,
+            "startDate": "2026-11-02",
+            "endDateExclusive": null,
+            "timeStatus": "needsTimeReview",
+            "zoneLabel": null,
+            "location": null,
+            "professor": null,
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000005/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000001/2026-11-03",
+            "seriesId": "00000000-0000-4000-8000-000000000001",
+            "originalKey": "2026-11-03",
+            "kind": "timed",
+            "title": "Fixture class A",
+            "startEpochMs": 1793667600000,
+            "endEpochMs": 1793673000000,
+            "startDate": "2026-11-03",
+            "endDateExclusive": null,
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": "Fixture room",
+            "professor": null,
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000001/2026-11-03"
+          }
+        ],
+        "emptyReason": null
+      },
+      "12": {
+        "configuration": {
+          "configRevision": 1,
+          "layout": "compact",
+          "surface": "solid",
+          "textTone": "light",
+          "nextEmphasis": true,
+          "visibleDetails": {
+            "location": true,
+            "professor": true,
+            "subtitle": true
+          }
+        },
+        "occurrences": [],
+        "emptyReason": "noneInFilter"
+      },
+      "13": {
+        "configuration": {
+          "configRevision": 1,
+          "layout": "compact",
+          "surface": "clear",
+          "textTone": "light",
+          "nextEmphasis": true,
+          "visibleDetails": {
+            "location": true,
+            "professor": true,
+            "subtitle": true
+          }
+        },
+        "occurrences": [],
+        "emptyReason": "noSchedules"
+      }
+    }
+  },
+  "unsupportedSnapshot": {
+    "schemaVersion": "2.0",
+    "dataRevision": 7,
+    "generatedAt": "2026-11-01T23:00:00.000Z",
+    "deviceTimeZone": "Asia/Manila",
+    "coverageEnd": "2026-11-09T00:00:00.000Z",
+    "widgets": {
+      "default": {
+        "configuration": {
+          "configRevision": 1,
+          "layout": "expanded",
+          "surface": "clear",
+          "textTone": "light",
+          "nextEmphasis": true,
+          "visibleDetails": {
+            "location": true,
+            "professor": true,
+            "subtitle": true
+          }
+        },
+        "occurrences": [
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000001/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000001",
+            "originalKey": "2026-11-02",
+            "kind": "timed",
+            "title": "Fixture class A",
+            "startEpochMs": 1793581200000,
+            "endEpochMs": 1793586600000,
+            "startDate": "2026-11-02",
+            "endDateExclusive": null,
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": "Fixture room",
+            "professor": "Fixture person",
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000001/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000002/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000002",
+            "originalKey": "2026-11-02",
+            "kind": "timed",
+            "title": "Fixture class B",
+            "startEpochMs": 1793588400000,
+            "endEpochMs": 1793592000000,
+            "startDate": "2026-11-02",
+            "endDateExclusive": null,
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": null,
+            "professor": null,
+            "subtitle": "Fixture subtitle",
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000002/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000003/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000003",
+            "originalKey": "2026-11-02",
+            "kind": "timed",
+            "title": "Fixture point event C",
+            "startEpochMs": 1793588400000,
+            "endEpochMs": null,
+            "startDate": "2026-11-02",
+            "endDateExclusive": null,
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": null,
+            "professor": null,
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000003/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000004/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000004",
+            "originalKey": "2026-11-02",
+            "kind": "dateOnly",
+            "title": "Fixture all-day D",
+            "startEpochMs": null,
+            "endEpochMs": null,
+            "startDate": "2026-11-02",
+            "endDateExclusive": "2026-11-03",
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": null,
+            "professor": null,
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000004/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000005/2026-11-02",
+            "seriesId": "00000000-0000-4000-8000-000000000005",
+            "originalKey": "2026-11-02",
+            "kind": "timed",
+            "title": "Fixture unresolved E",
+            "startEpochMs": null,
+            "endEpochMs": null,
+            "startDate": "2026-11-02",
+            "endDateExclusive": null,
+            "timeStatus": "needsTimeReview",
+            "zoneLabel": null,
+            "location": null,
+            "professor": null,
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000005/2026-11-02"
+          },
+          {
+            "occurrenceId": "00000000-0000-4000-8000-000000000001/2026-11-03",
+            "seriesId": "00000000-0000-4000-8000-000000000001",
+            "originalKey": "2026-11-03",
+            "kind": "timed",
+            "title": "Fixture class A",
+            "startEpochMs": 1793667600000,
+            "endEpochMs": 1793673000000,
+            "startDate": "2026-11-03",
+            "endDateExclusive": null,
+            "timeStatus": "resolved",
+            "zoneLabel": null,
+            "location": "Fixture room",
+            "professor": null,
+            "subtitle": null,
+            "deepLink": "schediel://occurrence/00000000-0000-4000-8000-000000000001/2026-11-03"
+          }
+        ],
+        "emptyReason": null
+      },
+      "12": {
+        "configuration": {
+          "configRevision": 1,
+          "layout": "compact",
+          "surface": "solid",
+          "textTone": "light",
+          "nextEmphasis": true,
+          "visibleDetails": {
+            "location": true,
+            "professor": true,
+            "subtitle": true
+          }
+        },
+        "occurrences": [],
+        "emptyReason": "noneInFilter"
+      },
+      "13": {
+        "configuration": {
+          "configRevision": 1,
+          "layout": "compact",
+          "surface": "clear",
+          "textTone": "light",
+          "nextEmphasis": true,
+          "visibleDetails": {
+            "location": true,
+            "professor": true,
+            "subtitle": true
+          }
+        },
+        "occurrences": [],
+        "emptyReason": "noSchedules"
+      }
+    }
+  },
+  "unsupportedExpect": {
+    "state": "unsupported",
+    "message": "Open Schediel"
+  },
+  "checks": [
+    {
+      "name": "before-first-class",
+      "now": "2026-11-02T00:00:00.000Z",
+      "widgetKey": "default",
+      "expect": {
+        "state": "entries",
+        "ongoing": [],
+        "next": "00000000-0000-4000-8000-000000000001/2026-11-02",
+        "upcoming": [
+          "00000000-0000-4000-8000-000000000002/2026-11-02",
+          "00000000-0000-4000-8000-000000000003/2026-11-02",
+          "00000000-0000-4000-8000-000000000001/2026-11-03"
+        ],
+        "allDay": [
+          "00000000-0000-4000-8000-000000000004/2026-11-02"
+        ],
+        "needsReview": [
+          "00000000-0000-4000-8000-000000000005/2026-11-02"
+        ]
+      }
+    },
+    {
+      "name": "during-first-class-tie-keeps-snapshot-order",
+      "now": "2026-11-02T01:30:00.000Z",
+      "widgetKey": "default",
+      "expect": {
+        "state": "entries",
+        "ongoing": [
+          "00000000-0000-4000-8000-000000000001/2026-11-02"
+        ],
+        "next": "00000000-0000-4000-8000-000000000002/2026-11-02",
+        "upcoming": [
+          "00000000-0000-4000-8000-000000000003/2026-11-02",
+          "00000000-0000-4000-8000-000000000001/2026-11-03"
+        ],
+        "allDay": [
+          "00000000-0000-4000-8000-000000000004/2026-11-02"
+        ],
+        "needsReview": [
+          "00000000-0000-4000-8000-000000000005/2026-11-02"
+        ]
+      }
+    },
+    {
+      "name": "point-event-is-past-at-its-start",
+      "now": "2026-11-02T03:00:00.000Z",
+      "widgetKey": "default",
+      "expect": {
+        "state": "entries",
+        "ongoing": [
+          "00000000-0000-4000-8000-000000000002/2026-11-02"
+        ],
+        "next": "00000000-0000-4000-8000-000000000001/2026-11-03",
+        "upcoming": [],
+        "allDay": [
+          "00000000-0000-4000-8000-000000000004/2026-11-02"
+        ],
+        "needsReview": [
+          "00000000-0000-4000-8000-000000000005/2026-11-02"
+        ]
+      }
+    },
+    {
+      "name": "next-day-hides-previous-day-items",
+      "now": "2026-11-03T00:00:00.000Z",
+      "widgetKey": "default",
+      "expect": {
+        "state": "entries",
+        "ongoing": [],
+        "next": "00000000-0000-4000-8000-000000000001/2026-11-03",
+        "upcoming": [],
+        "allDay": [],
+        "needsReview": []
+      }
+    },
+    {
+      "name": "nothing-remaining",
+      "now": "2026-11-03T03:00:00.000Z",
+      "widgetKey": "default",
+      "expect": {
+        "state": "empty",
+        "emptyMessage": "No upcoming schedules"
+      }
+    },
+    {
+      "name": "stale-at-coverage-end",
+      "now": "2026-11-09T00:00:00.000Z",
+      "widgetKey": "default",
+      "expect": {
+        "state": "stale",
+        "message": "Open Schediel to update"
+      }
+    },
+    {
+      "name": "filter-empty",
+      "now": "2026-11-02T00:00:00.000Z",
+      "widgetKey": "12",
+      "expect": {
+        "state": "empty",
+        "emptyMessage": "No schedules in this filter"
+      }
+    },
+    {
+      "name": "no-schedules",
+      "now": "2026-11-02T00:00:00.000Z",
+      "widgetKey": "13",
+      "expect": {
+        "state": "empty",
+        "emptyMessage": "No schedules yet"
+      }
+    },
+    {
+      "name": "unknown-widget-uses-default",
+      "now": "2026-11-02T00:00:00.000Z",
+      "widgetKey": "99",
+      "expect": {
+        "state": "entries",
+        "ongoing": [],
+        "next": "00000000-0000-4000-8000-000000000001/2026-11-02",
+        "upcoming": [
+          "00000000-0000-4000-8000-000000000002/2026-11-02",
+          "00000000-0000-4000-8000-000000000003/2026-11-02",
+          "00000000-0000-4000-8000-000000000001/2026-11-03"
+        ],
+        "allDay": [
+          "00000000-0000-4000-8000-000000000004/2026-11-02"
+        ],
+        "needsReview": [
+          "00000000-0000-4000-8000-000000000005/2026-11-02"
+        ]
+      }
+    }
+  ]
+}

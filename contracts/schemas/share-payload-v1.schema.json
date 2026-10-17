@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:schediel:contracts:share-payload:1.0",
+  "title": "Schediel share payload, schema version 1.0",
+  "description": "Sender-approved snapshot selection (CONTRACTS.md sections 2 and 5). Rules that JSON Schema cannot express are listed in x-semanticRules; every validator (Dart client, backend, web preview) must enforce them and report errors with the codes in x-errorCodes and JSON Pointer paths.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "items", "sharedFieldPolicy"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 250,
+      "items": { "$ref": "#/$defs/item" }
+    },
+    "sharedFieldPolicy": { "$ref": "#/$defs/sharedFieldPolicy" }
+  },
+  "x-limits": {
+    "maxItems": 250,
+    "maxExceptionsTotal": 500,
+    "maxSerializedBytes": 524288,
+    "titleMaxCodePoints": 120,
+    "categoryLabelMaxCodePoints": 60,
+    "locationMaxCodePoints": 240,
+    "professorMaxCodePoints": 160,
+    "subtitleMaxCodePoints": 240,
+    "notesMaxCodePoints": 4000,
+    "dateOnlyMaxSpanDays": 366,
+    "minYear": 1900,
+    "maxYear": 2199
+  },
+  "x-semanticRules": [
+    "S01 Calendar dates are real Gregorian dates written YYYY-MM-DD with a year from 1900 through 2199.",
+    "S02 Text values are non-empty and trimmed (no leading or trailing Unicode whitespace). Absent optional values are null. Lengths count Unicode code points, not UTF-16 code units or bytes.",
+    "S03 timeZone is a valid IANA time-zone identifier known to the validator's time-zone database. Fixed offsets such as +08:00 are rejected.",
+    "S04 TimedSpec: endTime and endDayOffset are both null or both non-null. endDayOffset is 0 or 1. When endDayOffset is 0, endTime is later than startTime.",
+    "S05 DateOnlySpec: endDateExclusive is after startDate. A recurring date-only item spans exactly one day. A one-time span is at most 366 days.",
+    "S06 Recurrence: weekly has a non-empty set of unique ISO weekdays (1 = Monday ... 7 = Sunday); daily has an empty weekdays array; untilDateInclusive is null or not before time.startDate.",
+    "S07 Exceptions exist only on recurring items. originalOccurrenceKey is a date that is an original occurrence of the rule: on or after time.startDate, on or before untilDateInclusive when present, and on a selected weekday for weekly rules. Keys are unique within an item.",
+    "S08 action cancel has replacement null. action override has a replacement whose time kind equals the item's time kind; a replacement never carries recurrence or exceptions.",
+    "S09 sourceItemId values are unique across items. The total number of exceptions across all items is at most 500.",
+    "S10 sharedFieldPolicy: when a detail field's policy is false, that field is null on every item and every replacement.",
+    "S11 The canonical UTF-8 JSON serialization of the payload is at most 524288 bytes."
+  ],
+  "x-errorCodes": {
+    "unsupported_version": "schemaVersion is not a supported version",
+    "unknown_field": "a key that the contract does not define",
+    "missing_field": "a required key is absent",
+    "invalid_type": "a value has the wrong JSON type",
+    "invalid_value": "an enum, constant, identifier or integer constraint is violated, or a required pairing is incomplete",
+    "invalid_text": "a text value is empty or untrimmed",
+    "too_long": "a text value exceeds its code-point limit",
+    "too_many": "an array exceeds its item limit",
+    "invalid_date": "a value is not a real calendar date in the allowed range",
+    "invalid_time": "a value is not a valid 24-hour HH:mm clock time",
+    "invalid_time_zone": "a value is not a known IANA time-zone identifier",
+    "invalid_range": "an end, span or until boundary is inconsistent with its start",
+    "invalid_recurrence": "weekday selection does not satisfy the frequency rules",
+    "invalid_exception": "an exception is not valid for its item or rule",
+    "duplicate": "a value that must be unique is repeated",
+    "policy_violation": "a detail excluded by sharedFieldPolicy is present",
+    "payload_too_large": "the serialized payload exceeds the byte limit"
+  },
+  "$defs": {
+    "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "clock": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "resolution": { "enum": ["earlier", "later", null] },
+    "timed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "startDate",
+        "startTime",
+        "timeZone",
+        "endTime",
+        "endDayOffset",
+        "seedTimeResolution",
+        "endTimeResolution"
+      ],
+      "properties": {
+        "kind": { "const": "timed" },
+        "startDate": { "$ref": "#/$defs/date" },
+        "startTime": { "$ref": "#/$defs/clock" },
+        "timeZone": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "endTime": { "oneOf": [{ "$ref": "#/$defs/clock" }, { "type": "null" }] },
+        "endDayOffset": { "enum": [0, 1, null] },
+        "seedTimeResolution": { "$ref": "#/$defs/resolution" },
+        "endTimeResolution": { "$ref": "#/$defs/resolution" }
+      }
+    },
+    "dateOnly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "startDate", "endDateExclusive"],
+      "properties": {
+        "kind": { "const": "dateOnly" },
+        "startDate": { "$ref": "#/$defs/date" },
+        "endDateExclusive": { "$ref": "#/$defs/date" }
+      }
+    },
+    "time": { "oneOf": [{ "$ref": "#/$defs/timed" }, { "$ref": "#/$defs/dateOnly" }] },
+    "recurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frequency", "interval", "weekdays", "untilDateInclusive"],
+      "properties": {
+        "frequency": { "enum": ["daily", "weekly"] },
+        "interval": { "const": 1 },
+        "weekdays": {
+          "type": "array",
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 1, "maximum": 7 }
+        },
+        "untilDateInclusive": { "oneOf": [{ "$ref": "#/$defs/date" }, { "type": "null" }] }
+      }
+    },
+    "details": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["location", "professor", "subtitle", "notes"],
+      "properties": {
+        "location": { "oneOf": [{ "type": "string", "minLength": 1, "maxLength": 240 }, { "type": "null" }] },
+        "professor": { "oneOf": [{ "type": "string", "minLength": 1, "maxLength": 160 }, { "type": "null" }] },
+        "subtitle": { "oneOf": [{ "type": "string", "minLength": 1, "maxLength": 240 }, { "type": "null" }] },
+        "notes": { "oneOf": [{ "type": "string", "minLength": 1, "maxLength": 4000 }, { "type": "null" }] }
+      }
+    },
+    "replacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "time", "details"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "time": { "$ref": "#/$defs/time" },
+        "details": { "$ref": "#/$defs/details" }
+      }
+    },
+    "exception": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["originalOccurrenceKey", "action", "replacement"],
+      "properties": {
+        "originalOccurrenceKey": { "$ref": "#/$defs/date" },
+        "action": { "enum": ["cancel", "override"] },
+        "replacement": { "oneOf": [{ "$ref": "#/$defs/replacement" }, { "type": "null" }] }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceItemId",
+        "revision",
+        "title",
+        "categoryLabel",
+        "time",
+        "recurrence",
+        "details",
+        "exceptions"
+      ],
+      "properties": {
+        "sourceItemId": { "$ref": "#/$defs/uuid" },
+        "revision": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "categoryLabel": { "oneOf": [{ "type": "string", "minLength": 1, "maxLength": 60 }, { "type": "null" }] },
+        "time": { "$ref": "#/$defs/time" },
+        "recurrence": { "oneOf": [{ "$ref": "#/$defs/recurrence" }, { "type": "null" }] },
+        "details": { "$ref": "#/$defs/details" },
+        "exceptions": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/exception" } }
+      }
+    },
+    "sharedFieldPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["location", "professor", "subtitle", "notes"],
+      "properties": {
+        "location": { "type": "boolean" },
+        "professor": { "type": "boolean" },
+        "subtitle": { "type": "boolean" },
+        "notes": { "type": "boolean" }
+      }
+    }
+  }
+}

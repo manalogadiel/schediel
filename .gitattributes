@@ -1,4 +1,18 @@
+# Normalize text sources in the repository.
+* text=auto
 # Preserve documentation bytes and checksum validity on Windows clones.
 .gitattributes text eol=lf
 *.md text eol=lf
 *.sha256 text eol=lf
+# Shell and Gradle wrapper scripts must keep their native line endings.
+*.sh text eol=lf
+gradlew text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+# Binary assets.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.jar binary
+*.ttf binary

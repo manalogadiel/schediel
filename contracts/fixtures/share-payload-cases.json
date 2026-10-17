@@ -1,0 +1,5980 @@
+{
+  "description": "Cross-language validation cases for share payload 1.0 (contracts/schemas/share-payload-v1.schema.json). Validators must accept every valid case and, for each invalid case, report at least the listed error code at the listed JSON Pointer path. Each invalid case contains exactly one violation. Fixture text is deliberately labelled test data, never product content.",
+  "schemaVersion": "1.0",
+  "cases": [
+    {
+      "name": "valid-mixed-items",
+      "valid": true,
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "valid-title-120-emoji-code-points",
+      "valid": true,
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      },
+      "note": "120 code points but 240 UTF-16 code units; limits count code points"
+    },
+    {
+      "name": "valid-weekly-start-on-unselected-weekday",
+      "valid": true,
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-03",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      },
+      "note": "First occurrence is the next selected weekday after the seed date"
+    },
+    {
+      "name": "valid-single-item-no-optional-details",
+      "valid": true,
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-unsupported-version",
+      "valid": false,
+      "expectError": {
+        "code": "unsupported_version",
+        "path": "/schemaVersion"
+      },
+      "payload": {
+        "schemaVersion": "2.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-unknown-top-level-field",
+      "valid": false,
+      "expectError": {
+        "code": "unknown_field",
+        "path": "/extra"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        },
+        "extra": true
+      }
+    },
+    {
+      "name": "invalid-missing-items",
+      "valid": false,
+      "expectError": {
+        "code": "missing_field",
+        "path": "/items"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-items-not-array",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_type",
+        "path": "/items"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": {},
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-empty-items",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_value",
+        "path": "/items"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-empty-title",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_text",
+        "path": "/items/0/title"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-untrimmed-title",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_text",
+        "path": "/items/0/title"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": " Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-title-121-code-points",
+      "valid": false,
+      "expectError": {
+        "code": "too_long",
+        "path": "/items/0/title"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-empty-location",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_text",
+        "path": "/items/0/details/location"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-unknown-detail-field",
+      "valid": false,
+      "expectError": {
+        "code": "unknown_field",
+        "path": "/items/0/details/room"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null,
+              "room": "Fixture"
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-impossible-date",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_date",
+        "path": "/items/0/time/startDate"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-02-30",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-year-out-of-range",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_date",
+        "path": "/items/1/time/startDate"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2200-01-01",
+              "endDateExclusive": "2200-01-02"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-clock-24-00",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_time",
+        "path": "/items/0/time/startTime"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "24:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-unknown-zone",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_time_zone",
+        "path": "/items/0/time/timeZone"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Mars/Olympus",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-fixed-offset-zone",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_time_zone",
+        "path": "/items/0/time/timeZone"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "+08:00",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-end-time-without-day-offset",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_value",
+        "path": "/items/0/time/endDayOffset"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": null,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-day-offset-without-end-time",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_value",
+        "path": "/items/0/time/endDayOffset"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": null,
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-end-before-start-same-day",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_range",
+        "path": "/items/0/time/endTime"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "08:00",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-end-day-offset-2",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_value",
+        "path": "/items/0/time/endDayOffset"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 2,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-unknown-resolution",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_value",
+        "path": "/items/0/time/seedTimeResolution"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": "middle",
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-date-only-end-not-after-start",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_range",
+        "path": "/items/1/time/endDateExclusive"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-01"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-recurring-date-only-multi-day",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_range",
+        "path": "/items/1/time/endDateExclusive"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-date-only-span-over-366-days",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_range",
+        "path": "/items/1/time/endDateExclusive"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2027-12-03"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-weekly-empty-weekdays",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_recurrence",
+        "path": "/items/0/recurrence/weekdays"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-weekly-duplicate-weekday",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_recurrence",
+        "path": "/items/0/recurrence/weekdays"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-weekday-out-of-range",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_recurrence",
+        "path": "/items/0/recurrence/weekdays"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                0,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-daily-with-weekdays",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_recurrence",
+        "path": "/items/2/recurrence/weekdays"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [
+                1
+              ],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-interval-2",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_value",
+        "path": "/items/0/recurrence/interval"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 2,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-until-before-start",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_range",
+        "path": "/items/0/recurrence/untilDateInclusive"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-11-01"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-exception-on-one-time-item",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_exception",
+        "path": "/items/1/exceptions/0"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-12-01",
+                "action": "cancel",
+                "replacement": null
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-exception-key-wrong-weekday",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_exception",
+        "path": "/items/0/exceptions/0/originalOccurrenceKey"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-05",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-exception-key-after-until",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_exception",
+        "path": "/items/0/exceptions/0/originalOccurrenceKey"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-12-21",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-exception-key-before-start",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_exception",
+        "path": "/items/2/exceptions/0/originalOccurrenceKey"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              }
+            ]
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-duplicate-exception-key",
+      "valid": false,
+      "expectError": {
+        "code": "duplicate",
+        "path": "/items/0/exceptions/1/originalOccurrenceKey"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-cancel-with-replacement",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_exception",
+        "path": "/items/0/exceptions/0/replacement"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-override-without-replacement",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_exception",
+        "path": "/items/0/exceptions/1/replacement"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": null
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-override-kind-mismatch",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_exception",
+        "path": "/items/0/exceptions/1/replacement/time"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "dateOnly",
+                    "startDate": "2026-11-10",
+                    "endDateExclusive": "2026-11-11"
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-replacement-with-recurrence",
+      "valid": false,
+      "expectError": {
+        "code": "unknown_field",
+        "path": "/items/0/exceptions/1/replacement/recurrence"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  },
+                  "recurrence": null
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-duplicate-source-item-id",
+      "valid": false,
+      "expectError": {
+        "code": "duplicate",
+        "path": "/items/1/sourceItemId"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-source-item-id-not-uuid",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_value",
+        "path": "/items/0/sourceItemId"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "item-1",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-revision-zero",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_value",
+        "path": "/items/0/revision"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 0,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-revision-not-integer",
+      "valid": false,
+      "expectError": {
+        "code": "invalid_type",
+        "path": "/items/0/revision"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 1.5,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-notes-present-but-excluded",
+      "valid": false,
+      "expectError": {
+        "code": "policy_violation",
+        "path": "/items/0/details/notes"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": "Fixture notes"
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-replacement-professor-excluded",
+      "valid": false,
+      "expectError": {
+        "code": "policy_violation",
+        "path": "/items/0/exceptions/1/replacement/details/professor"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": "Fixture person",
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": false,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-category-label-too-long",
+      "valid": false,
+      "expectError": {
+        "code": "too_long",
+        "path": "/items/0/categoryLabel"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ],
+        "sharedFieldPolicy": {
+          "location": true,
+          "professor": true,
+          "subtitle": true,
+          "notes": false
+        }
+      }
+    },
+    {
+      "name": "invalid-missing-shared-field-policy",
+      "valid": false,
+      "expectError": {
+        "code": "missing_field",
+        "path": "/sharedFieldPolicy"
+      },
+      "payload": {
+        "schemaVersion": "1.0",
+        "items": [
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "title": "Fixture weekly class",
+            "categoryLabel": "Fixture school",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-02",
+              "startTime": "09:00",
+              "timeZone": "Asia/Manila",
+              "endTime": "10:30",
+              "endDayOffset": 0,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "weekly",
+              "interval": 1,
+              "weekdays": [
+                1,
+                3
+              ],
+              "untilDateInclusive": "2026-12-16"
+            },
+            "details": {
+              "location": "Fixture room",
+              "professor": "Fixture person",
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": [
+              {
+                "originalOccurrenceKey": "2026-11-04",
+                "action": "cancel",
+                "replacement": null
+              },
+              {
+                "originalOccurrenceKey": "2026-11-09",
+                "action": "override",
+                "replacement": {
+                  "title": "Fixture weekly class (moved)",
+                  "time": {
+                    "kind": "timed",
+                    "startDate": "2026-11-10",
+                    "startTime": "13:00",
+                    "timeZone": "Asia/Manila",
+                    "endTime": "14:30",
+                    "endDayOffset": 0,
+                    "seedTimeResolution": null,
+                    "endTimeResolution": null
+                  },
+                  "details": {
+                    "location": "Fixture room",
+                    "professor": null,
+                    "subtitle": null,
+                    "notes": null
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000002",
+            "revision": 1,
+            "title": "Fixture date range",
+            "categoryLabel": null,
+            "time": {
+              "kind": "dateOnly",
+              "startDate": "2026-12-01",
+              "endDateExclusive": "2026-12-04"
+            },
+            "recurrence": null,
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": null,
+              "notes": null
+            },
+            "exceptions": []
+          },
+          {
+            "sourceItemId": "00000000-0000-4000-8000-000000000003",
+            "revision": 1,
+            "title": "Fixture overnight shift",
+            "categoryLabel": "Fixture work",
+            "time": {
+              "kind": "timed",
+              "startDate": "2026-11-05",
+              "startTime": "22:00",
+              "timeZone": "America/New_York",
+              "endTime": "06:00",
+              "endDayOffset": 1,
+              "seedTimeResolution": null,
+              "endTimeResolution": null
+            },
+            "recurrence": {
+              "frequency": "daily",
+              "interval": 1,
+              "weekdays": [],
+              "untilDateInclusive": null
+            },
+            "details": {
+              "location": null,
+              "professor": null,
+              "subtitle": "Fixture subtitle",
+              "notes": null
+            },
+            "exceptions": []
+          }
+        ]
+      }
+    }
+  ]
+}
