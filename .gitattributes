@@ -1,0 +1,4 @@
+# Preserve documentation bytes and checksum validity on Windows clones.
+.gitattributes text eol=lf
+*.md text eol=lf
+*.sha256 text eol=lf
