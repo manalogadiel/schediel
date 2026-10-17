@@ -30,6 +30,13 @@ android {
         manifestPlaceholders["shareHost"] = shareHost
     }
 
+    testOptions {
+        // JVM tests read the shared cross-language fixtures (CONTRACTS.md section 8).
+        unitTests.all {
+            it.systemProperty("schediel.contractsDir", rootProject.file("../contracts").absolutePath)
+        }
+    }
+
     buildTypes {
         release {
             // Release signing is a store-release task; debug keys keep `flutter run --release` usable.
@@ -46,6 +53,9 @@ kotlin {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM tests (android.jar only ships stubs).
+    testImplementation("org.json:json:20240303")
 }
 
 flutter {

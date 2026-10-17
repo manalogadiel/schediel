@@ -125,9 +125,12 @@ class AlertsSettingsScreen extends ConsumerWidget {
                 ListTile(
                   leading: const AppIcon(AppIcons.alarm),
                   title: const Text('Alarms'),
-                  subtitle: Text(c.native.appAlarms == CapabilityStatus.unavailable
-                      ? 'Not available on this device. Notification reminders still work.'
-                      : statusLabel(c.native.appAlarms)),
+                  subtitle: Text(switch (c.native.appAlarms) {
+                    CapabilityStatus.unavailable => 'Not available on this device. Notification reminders still work.',
+                    CapabilityStatus.denied when c.native.platform == 'android' =>
+                      'Alarms need notifications and exact timing to be allowed.',
+                    final status => statusLabel(status),
+                  }),
                   trailing: c.native.appAlarms == CapabilityStatus.notDetermined
                       ? TextButton(
                           onPressed: () async {

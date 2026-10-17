@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/appearance/appearance.dart';
 import '../features/reminders/application/capabilities.dart';
+import '../features/reminders/application/foreground_reminders.dart';
 import '../features/reminders/application/reconciliation_service.dart';
 import '../features/widgets/application/widget_snapshot_service.dart';
 import 'lifecycle.dart';
@@ -22,11 +23,16 @@ class SchedielApp extends ConsumerStatefulWidget {
 }
 
 class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingObserver {
+  final _reminders = ForegroundReminderTracker();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(appLifecycleProvider).onStart());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _reminders.resumed(ref.read(clockProvider)());
+      ref.read(appLifecycleProvider).onStart();
+    });
   }
 
   @override
@@ -37,7 +43,11 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden || state == AppLifecycleState.detached) {
+      _reminders.paused();
+    }
     if (state == AppLifecycleState.resumed) {
+      _reminders.resumed(ref.read(clockProvider)());
       ref.read(nowProvider.notifier).refresh();
       ref.invalidate(deviceCapabilitiesProvider);
       ref.read(appLifecycleProvider).onResume();
@@ -50,6 +60,14 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
     final router = ref.watch(routerProvider);
     ref.listen(deviceZoneProvider, (previous, next) {
       if (previous != null && previous != next) ref.read(reconciliationServiceProvider).run(force: true);
+    });
+    // In-app full-page reminder when one comes due while the app is open.
+    ref.listen(scheduledAlertsProvider, (_, _) {});
+    ref.listen(nowProvider, (previous, next) {
+      final rows = ref.read(scheduledAlertsProvider).value ?? const [];
+      for (final due in _reminders.tick(next, rows)) {
+        router.push(due.location);
+      }
     });
     ref.listen(appearanceProvider, (previous, next) {
       if (previous != null && previous.themeMode != next.themeMode) ref.read(widgetSnapshotServiceProvider).refresh();

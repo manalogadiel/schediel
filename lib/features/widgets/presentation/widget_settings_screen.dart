@@ -12,6 +12,7 @@ import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
+import '../../../core/time/local_date.dart';
 import '../../categories/domain/category.dart';
 import '../application/widget_snapshot_reader.dart';
 import '../application/widget_snapshot_service.dart';
@@ -289,8 +290,9 @@ class _Preview extends ConsumerWidget {
 
     Widget holder(WidgetSnapshotEntry e, {required bool next, String? status}) {
       final start = e.startEpochMs;
+      final reviewDate = LocalDate.tryParse(e.startDate);
       final timeText = start == null
-          ? 'Time needs review'
+          ? '${reviewDate == null || reviewDate == today ? '' : '${f.shortDate(reviewDate)} · '}Time needs review'
           : () {
               final s = zones.toLocal(DateTime.fromMillisecondsSinceEpoch(start, isUtc: true), zone);
               final endMs = e.endEpochMs;
@@ -341,13 +343,15 @@ class _Preview extends ConsumerWidget {
         child: Text(result.message ?? '', style: TextStyle(color: style.primaryText, fontSize: 15)),
       ));
     } else {
+      // Same choices as the native widgets (android/.../widget/WidgetPlanner.kt).
       final limit = config.layout == WidgetLayout.compact ? 2 : 4;
       final ordered = <(WidgetSnapshotEntry, bool, String?)>[
         for (final id in result.ongoing) (result.entries[id]!, false, 'Now'),
         if (result.next != null) (result.entries[result.next]!, true, 'Next'),
         for (final id in result.upcoming) (result.entries[id]!, false, null),
+        for (final id in result.needsReview.take(1)) (result.entries[id]!, false, null),
       ];
-      for (final id in result.allDay) {
+      for (final id in result.allDay.take(2)) {
         final e = result.entries[id]!;
         children.add(Padding(
           padding: const EdgeInsets.only(bottom: 6, left: 4),
@@ -357,9 +361,6 @@ class _Preview extends ConsumerWidget {
       }
       for (final entry in ordered.take(limit)) {
         children.add(holder(entry.$1, next: entry.$2, status: entry.$3));
-      }
-      for (final id in result.needsReview.take(1)) {
-        children.add(holder(result.entries[id]!, next: false));
       }
     }
 

@@ -5,6 +5,7 @@ import '../core/time/local_date.dart';
 import '../features/appearance/appearance_screen.dart';
 import '../features/categories/presentation/categories_screen.dart';
 import '../features/reminders/presentation/alerts_settings_screen.dart';
+import '../features/reminders/presentation/reminder_page.dart';
 import '../features/schedules/presentation/occurrence_sheet.dart';
 import '../features/schedules/presentation/schedule_editor_screen.dart';
 import '../features/schedules/presentation/today_screen.dart';
@@ -80,6 +81,19 @@ GoRouter buildRouter({String initialLocation = '/today', List<RouteBase> extraRo
           path: '/settings/alerts',
           parentNavigatorKey: rootNavigatorKey,
           builder: (_, _) => const AlertsSettingsScreen(),
+        ),
+        GoRoute(
+          path: '/reminder/:id/:key',
+          parentNavigatorKey: rootNavigatorKey,
+          pageBuilder: (_, state) => MaterialPage(
+            fullscreenDialog: true,
+            child: ReminderPage(
+              seriesId: state.pathParameters['id']!,
+              originalKey: LocalDate.tryParse(state.pathParameters['key']!),
+              isAlarm: state.uri.queryParameters['kind'] == 'alarm',
+              requestKey: state.uri.queryParameters['request'] ?? '',
+            ),
+          ),
         ),
         ...extraRoutes,
       ],

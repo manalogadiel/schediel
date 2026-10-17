@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="alarm_canvas">#FF0C0C0E</color>
+    <color name="alarm_ink">#FFFFFFFF</color>
+    <color name="alarm_secondary_ink">#C7FFFFFF</color>
+    <color name="alarm_on_accent">#FF0C0C0E</color>
+    <color name="widget_light_primary">#FFFFFFFF</color>
+    <color name="widget_light_secondary">#C7FFFFFF</color>
+    <color name="widget_dark_primary">#FF1D1D1F</color>
+    <color name="widget_dark_secondary">#FF3A3A3C</color>
+</resources>

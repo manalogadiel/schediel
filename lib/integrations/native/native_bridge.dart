@@ -150,6 +150,11 @@ class NativeBridge {
 
   Future<int> cancelAllAlarms() async => await _call<int>('cancelAllAlarms') ?? 0;
 
+  /// Stops a ringing alarm, or cancels it before it rings. Never changes
+  /// schedule data.
+  Future<bool> stopAlarm(String requestKey) async =>
+      await _call<bool>('stopAlarm', {'requestKey': requestKey}) ?? false;
+
   Future<List<String>> getScheduledAlarms() async =>
       (await _call<List<Object?>>('getScheduledAlarms'))?.cast<String>() ?? const [];
 

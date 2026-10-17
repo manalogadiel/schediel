@@ -18,7 +18,7 @@ Implementation contract between the Flutter app and its Android (Kotlin) and iOS
 | `osVersion` | String | `Build.VERSION.RELEASE` | `UIDevice.current.systemVersion` |
 | `apiLevel` | int or null | `Build.VERSION.SDK_INT` | null |
 | `exactAlarms` | String | `authorized` / `denied` (API 31+ `canScheduleExactAlarms()`), `notRequired` below API 31 | `unavailable` |
-| `appAlarms` | String | `authorized` when exact alarms are authorized or not required, else `denied` | AlarmKit on iOS 26+: `authorized` / `denied` / `notDetermined`; below iOS 26: `unavailable` |
+| `appAlarms` | String | `authorized` when exact alarms are authorized or not required and the alarm can be presented (notifications enabled, alarm channel not blocked), else `denied` | AlarmKit on iOS 26+: `authorized` / `denied` / `notDetermined`; below iOS 26: `unavailable` |
 | `fullScreen` | String | API 34+: `authorized` / `denied` (`canUseFullScreenIntent()`); below 34: `authorized` | `unavailable` (presentation is system-controlled) |
 | `externalClock` | bool | an activity resolves `AlarmClock.ACTION_SET_ALARM` | false |
 
@@ -33,6 +33,7 @@ Notification authorization is read and requested on the Dart side through `flutt
 | `openSystemSettings` | `{target: 'exactAlarms' \| 'fullScreen' \| 'notifications' \| 'app'}` | bool: a settings screen was opened |
 | `scheduleAlarms` | `{alarms: [AlarmRequest], horizonEndEpochMs: int}` | `[AlarmResult]` in request order |
 | `cancelAllAlarms` | none | int: number cancelled |
+| `stopAlarm` | `{requestKey: String}` | bool: an alarm with that key was stopped, or cancelled before ringing. Used by the in-app reminder page; never changes schedule data |
 | `getScheduledAlarms` | none | `[String]` request keys native currently holds |
 | `launchClockAlarm` | `{hour: int, minute: int, message: String, weekdays: [int] or null}` | `launched` / `unavailable` / `failed` |
 

@@ -7,6 +7,8 @@ import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/time/local_time.dart';
 import '../domain/alert_rule.dart';
+import '../../../integrations/native/native_bridge.dart';
+import '../application/capabilities.dart';
 import 'capability_note.dart';
 
 const _presetOffsets = [0, 5, 10, 15, 30, 60];
@@ -33,20 +35,29 @@ class AlertEditor extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final native = ref.watch(deviceCapabilitiesProvider).value?.native;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _AlertBlock(
           preference: notification,
+          prominentAvailable: false,
+          snoozeAvailable: false,
           title: 'Notification',
           dateOnly: dateOnly,
           deviceZone: deviceZone,
           error: errors['alerts/notification'],
           onChanged: (p) => onChanged(p, alarm),
         ),
-        Padding(padding: const EdgeInsets.only(left: Tokens.md), child: Divider(color: context.scheduleColors.divider)),
+        Padding(
+          padding: const EdgeInsets.only(left: Tokens.md),
+          child: Divider(color: context.scheduleColors.divider),
+        ),
         _AlertBlock(
           preference: alarm,
+          // Only offered where the native alarm can honor them (spec 4.7).
+          prominentAvailable: native != null && native.fullScreen != CapabilityStatus.unavailable,
+          snoozeAvailable: native?.platform == 'android',
           title: 'Alarm',
           dateOnly: dateOnly,
           deviceZone: deviceZone,
@@ -62,6 +73,8 @@ class AlertEditor extends ConsumerWidget {
 class _AlertBlock extends StatelessWidget {
   const _AlertBlock({
     required this.preference,
+    required this.prominentAvailable,
+    required this.snoozeAvailable,
     required this.title,
     required this.dateOnly,
     required this.deviceZone,
@@ -70,6 +83,8 @@ class _AlertBlock extends StatelessWidget {
   });
 
   final AlertPreference preference;
+  final bool prominentAvailable;
+  final bool snoozeAvailable;
   final String title;
   final bool dateOnly;
   final String deviceZone;
@@ -122,10 +137,15 @@ class _AlertBlock extends StatelessWidget {
               title: const Text('Reminder time'),
               subtitle: error != null
                   ? Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error))
-                  : Text(p.dateOnlyAnchorTime == null
-                      ? 'All-day schedules need a chosen time'
-                      : '${f.clock(p.dateOnlyAnchorTime!)} · ${p.dateOnlyAnchorZone}'),
-              trailing: Text(p.dateOnlyAnchorTime == null ? 'Choose' : 'Change', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                  : Text(
+                      p.dateOnlyAnchorTime == null
+                          ? 'All-day schedules need a chosen time'
+                          : '${f.clock(p.dateOnlyAnchorTime!)} · ${p.dateOnlyAnchorZone}',
+                    ),
+              trailing: Text(
+                p.dateOnlyAnchorTime == null ? 'Choose' : 'Change',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
               onTap: () async {
                 final initial = p.dateOnlyAnchorTime ?? LocalTime(9, 0);
                 final picked = await showTimePicker(
@@ -133,10 +153,12 @@ class _AlertBlock extends StatelessWidget {
                   initialTime: TimeOfDay(hour: initial.hour, minute: initial.minute),
                 );
                 if (picked != null) {
-                  onChanged(p.copyWith(
-                    dateOnlyAnchorTime: () => LocalTime(picked.hour, picked.minute),
-                    dateOnlyAnchorZone: () => p.dateOnlyAnchorZone ?? deviceZone,
-                  ));
+                  onChanged(
+                    p.copyWith(
+                      dateOnlyAnchorTime: () => LocalTime(picked.hour, picked.minute),
+                      dateOnlyAnchorZone: () => p.dateOnlyAnchorZone ?? deviceZone,
+                    ),
+                  );
                 }
               },
             ),
@@ -149,19 +171,27 @@ class _AlertBlock extends StatelessWidget {
               style: TextStyle(color: secondary),
             ),
             value: p.lockScreenDetails == LockScreenDetails.detailsRequested,
-            onChanged: (v) => onChanged(p.copyWith(
-              lockScreenDetails: v ? LockScreenDetails.detailsRequested : LockScreenDetails.titleOnly,
-            )),
+            onChanged: (v) => onChanged(
+              p.copyWith(lockScreenDetails: v ? LockScreenDetails.detailsRequested : LockScreenDetails.titleOnly),
+            ),
           ),
-          if (isAlarm) ...[
+          if (isAlarm && prominentAvailable)
             SwitchListTile(
               title: const Text('Prominent alarm when allowed'),
-              subtitle: Text('Uses a full-screen alarm only where the device permits it.', style: TextStyle(color: secondary)),
+              subtitle: Text(
+                'Uses a full-screen alarm only where the device permits it.',
+                style: TextStyle(color: secondary),
+              ),
               value: p.presentationPreference == PresentationPreference.prominentIfSupported,
-              onChanged: (v) => onChanged(p.copyWith(
-                presentationPreference: v ? PresentationPreference.prominentIfSupported : PresentationPreference.standard,
-              )),
+              onChanged: (v) => onChanged(
+                p.copyWith(
+                  presentationPreference: v
+                      ? PresentationPreference.prominentIfSupported
+                      : PresentationPreference.standard,
+                ),
+              ),
             ),
+          if (isAlarm && snoozeAvailable)
             Padding(
               padding: const EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.sm),
               child: Row(
@@ -179,7 +209,6 @@ class _AlertBlock extends StatelessWidget {
                 ],
               ),
             ),
-          ],
         ],
       ],
     );

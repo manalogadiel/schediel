@@ -111,6 +111,8 @@ void appTest(
   DateTime? now,
   String zone = 'Asia/Manila',
   List<Override> overrides = const [],
+  NativeBridge? bridge,
+  NotificationGateway? gateway,
   Size size = const Size(400, 860),
 }) {
   testWidgets(description, (tester) async {
@@ -126,8 +128,8 @@ void appTest(
       initialDeviceZoneProvider.overrideWithValue(zone),
       deviceZoneSourceProvider.overrideWithValue(() async => zone),
       appearanceRepositoryProvider.overrideWithValue(AppearanceRepository(db, clock: () => fixed)),
-      notificationGatewayProvider.overrideWithValue(FakeNotificationGateway()),
-      nativeBridgeProvider.overrideWithValue(NativeBridge()),
+      notificationGatewayProvider.overrideWithValue(gateway ?? FakeNotificationGateway()),
+      nativeBridgeProvider.overrideWithValue(bridge ?? NativeBridge()),
       routerProvider.overrideWith((ref) => buildRouter()),
       ...overrides,
     ]);

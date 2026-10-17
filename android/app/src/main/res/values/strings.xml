@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="alarm_channel_name">Alarms</string>
+    <string name="alarm_channel_description">Alarms for your schedules</string>
+    <string name="alarm_stop">Stop</string>
+    <string name="alarm_snooze">Snooze</string>
+    <string name="alarm_snooze_minutes">Snooze %1$d min</string>
+    <string name="alarm_open">Open</string>
+
+    <string name="widget_label">Schedules</string>
+    <string name="widget_description">Your next and upcoming schedules</string>
+    <string name="widget_open_app">Open Schediel</string>
+    <string name="widget_open_app_to_update">Open Schediel to update</string>
+    <string name="widget_no_schedules">No schedules yet</string>
+    <string name="widget_none_in_filter">No schedules in this filter</string>
+    <string name="widget_no_upcoming">No upcoming schedules</string>
+    <string name="widget_now">Now</string>
+    <string name="widget_next">Next</string>
+    <string name="widget_all_day">All day</string>
+    <string name="widget_time_needs_review">Time needs review</string>
+    <string name="widget_time_range">%1$s – %2$s</string>
+    <string name="widget_time_range_spoken">%1$s to %2$s</string>
+</resources>

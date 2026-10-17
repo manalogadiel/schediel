@@ -15,4 +15,10 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+    <!-- Native alarm screen (AlarmActivity): always dark, like the system alarm surfaces. -->
+    <style name="AlarmTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/alarm_canvas</item>
+        <item name="android:statusBarColor">@color/alarm_canvas</item>
+        <item name="android:navigationBarColor">@color/alarm_canvas</item>
+    </style>
 </resources>
