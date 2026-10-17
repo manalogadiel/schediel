@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 import '../core/time/local_date.dart';
 import '../features/appearance/appearance_screen.dart';
 import '../features/categories/presentation/categories_screen.dart';
+import '../features/reminders/presentation/alerts_settings_screen.dart';
 import '../features/schedules/presentation/occurrence_sheet.dart';
 import '../features/schedules/presentation/schedule_editor_screen.dart';
 import '../features/schedules/presentation/today_screen.dart';
 import '../features/schedules/presentation/week_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/widgets/presentation/widget_settings_screen.dart';
 import 'shell.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -63,6 +65,21 @@ GoRouter buildRouter({String initialLocation = '/today', List<RouteBase> extraRo
           path: '/settings/categories',
           parentNavigatorKey: rootNavigatorKey,
           builder: (_, _) => const CategoriesScreen(),
+        ),
+        GoRoute(
+          path: '/settings/widgets',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const WidgetSettingsScreen(),
+        ),
+        GoRoute(
+          path: '/settings/widgets/:key',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, state) => WidgetConfigScreen(widgetKey: state.pathParameters['key']!),
+        ),
+        GoRoute(
+          path: '/settings/alerts',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const AlertsSettingsScreen(),
         ),
         ...extraRoutes,
       ],

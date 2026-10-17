@@ -159,8 +159,11 @@ class ScheduleRepository {
   }
 
   Stream<List<AlertRule>> watchAllAlertRules() => _db.select(_db.alertRules).watch().map(
-        (rows) => [for (final r in rows) _toRule(r)],
+        (rows) => [for (final r in rows) if (r.scopeKey == '*') _toRule(r)],
       );
+
+  Future<List<AlertRule>> loadAllAlertRules() async =>
+      [for (final r in await _db.select(_db.alertRules).get()) if (r.scopeKey == '*') _toRule(r)];
 
   Future<List<AlertRule>> alertRules(String seriesId) async {
     final rows = await (_db.select(_db.alertRules)

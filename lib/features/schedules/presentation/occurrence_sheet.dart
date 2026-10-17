@@ -11,7 +11,10 @@ import '../../../app/widgets/common.dart';
 import '../../../core/schedule/models.dart';
 import '../../../core/schedule/occurrence.dart';
 import '../../../core/time/local_date.dart';
+import '../../reminders/application/clock_handoff.dart';
+import '../../reminders/application/reconciliation_service.dart';
 import '../../reminders/domain/alert_rule.dart';
+import '../../../integrations/native/native_bridge.dart';
 import '../../reminders/presentation/alert_status_line.dart';
 
 /// Compact detail sheet for one occurrence (spec 4.5).
@@ -155,6 +158,7 @@ class _DetailsBody extends ConsumerWidget {
           const SizedBox(height: Tokens.md),
           for (final rule in rules) AlertStatusLine(rule: rule, occurrence: occurrence),
         ],
+        _ClockHandoff(series: series, occurrence: occurrence),
         if (timing is UnresolvedTiming) ...[
           const SizedBox(height: Tokens.md),
           _TimeReviewActions(series: series, occurrence: occurrence, timing: timing),
@@ -284,5 +288,74 @@ Future<void> removeOccurrence(BuildContext context, WidgetRef ref, Occurrence oc
     Navigator.of(context).pop();
   } else if (context.canPop()) {
     context.pop();
+  }
+}
+
+/// Optional Android Clock hand-off with honest, unverified status.
+class _ClockHandoff extends ConsumerWidget {
+  const _ClockHandoff({required this.series, required this.occurrence});
+
+  final ScheduleSeries series;
+  final Occurrence occurrence;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rows = ref.watch(scheduledAlertsProvider).value ?? const [];
+    final record = clockRecordFor(rows, series.id);
+    final available = ref.watch(clockHandoffAvailableProvider);
+    final rules = ref.watch(alertRulesProvider).value ?? const <AlertRule>[];
+    final service = ref.read(clockHandoffProvider);
+    final plan = available ? service.planFor(series, occurrence, clockOffsetFor(rules, series.id)) : null;
+    final f = Formats.of(context);
+    final children = <Widget>[];
+    if (record != null) {
+      children.add(const DetailLine(icon: AppIcons.alarm, text: 'Sent to Clock · not verified'));
+      if (record.sourceRevision != series.revision) {
+        children.add(const DetailLine(
+          icon: AppIcons.warning,
+          text: 'This schedule changed after it was sent to Clock. Update that alarm in the Clock app.',
+        ));
+      }
+    }
+    if (plan != null) {
+      final days = plan.weekdays == null
+          ? 'once'
+          : plan.weekdays!.length == 7
+              ? 'every day'
+              : 'every ${plan.weekdays!.map(f.weekdayShort).join(', ')}';
+      children.add(Padding(
+        padding: const EdgeInsets.only(top: Tokens.sm),
+        child: OutlinedButton.icon(
+          icon: const AppIcon(AppIcons.alarm, size: 18),
+          label: const Text('Add to Clock'),
+          onPressed: () async {
+            final confirmed = await showChoiceDialog<bool>(
+              context,
+              title: 'Add to Clock?',
+              message: 'Sends an alarm for ${f.clock(plan.time)}, $days, to your Clock app. '
+                  'Schediel cannot confirm it was saved and will not update it if this schedule changes. '
+                  'End dates and cancelled occurrences are not included.',
+              choices: const [(true, 'Send to Clock', false)],
+            );
+            if (confirmed != true) return;
+            final result = await service.send(series, occurrence, plan);
+            if (!context.mounted) return;
+            showMessage(
+              context,
+              switch (result) {
+                ClockLaunchResult.launched => 'Opened your Clock app',
+                ClockLaunchResult.unavailable => 'No Clock app can receive this alarm',
+                ClockLaunchResult.failed => 'Could not open the Clock app',
+              },
+            );
+          },
+        ),
+      ));
+    }
+    if (children.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: Tokens.sm),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+    );
   }
 }

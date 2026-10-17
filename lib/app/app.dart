@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../features/appearance/appearance.dart';
 import '../features/reminders/application/capabilities.dart';
+import '../features/reminders/application/reconciliation_service.dart';
+import '../features/widgets/application/widget_snapshot_service.dart';
 import 'lifecycle.dart';
 import 'providers.dart';
 import 'router.dart';
@@ -46,6 +48,12 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
   Widget build(BuildContext context) {
     final appearance = ref.watch(appearanceProvider);
     final router = ref.watch(routerProvider);
+    ref.listen(deviceZoneProvider, (previous, next) {
+      if (previous != null && previous != next) ref.read(reconciliationServiceProvider).run(force: true);
+    });
+    ref.listen(appearanceProvider, (previous, next) {
+      if (previous != null && previous.themeMode != next.themeMode) ref.read(widgetSnapshotServiceProvider).refresh();
+    });
     ThemeData theme(Brightness b) => buildTheme(
           brightness: b,
           accent: appearance.accent,
