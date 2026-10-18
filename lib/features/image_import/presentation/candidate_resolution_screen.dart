@@ -1,0 +1,90 @@
+import 'package:flutter/material.dart';
+
+import '../../../app/theme/tokens.dart';
+import '../../../core/schedule/models.dart';
+import '../application/image_import_controller.dart';
+import '../domain/candidate_resolution.dart';
+import '../domain/image_candidate.dart';
+
+/// Unknown fields stay blank. Only explicit user values resolve a candidate;
+/// this child editor never inserts a schedule.
+class CandidateResolutionScreen extends StatefulWidget {
+  const CandidateResolutionScreen({super.key, required this.controller, required this.candidate});
+  final ImageImportController controller;
+  final ImageCandidate candidate;
+  @override State<CandidateResolutionScreen> createState() => _CandidateResolutionScreenState();
+}
+class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
+  late final CandidateEdits _edits = widget.controller.edits[widget.candidate.candidateId]!;
+  Map<String, String> _errors = {};
+  void _changed() => widget.controller.edited(widget.candidate.candidateId);
+  Widget field(String name, String label, String value, ValueChanged<String> update, {String? hint, Key? key}) => Padding(
+    padding: const EdgeInsets.only(bottom: Tokens.md), child: TextFormField(key: key, initialValue: value,
+      decoration: InputDecoration(labelText: label, helperText: hint, errorText: _errors[name]),
+      onChanged: (v) { update(v); _changed(); }));
+  Future<void> _use() async {
+    final result = widget.controller.resolve(widget.candidate.candidateId);
+    if (result.resolved == null) { setState(() => _errors = result.errors); return; }
+    Navigator.of(context).pop(true);
+  }
+  @override Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Resolve fields'), actions: [TextButton(onPressed: _use, child: const Text('Use draft values'))]),
+    body: ListView(padding: const EdgeInsets.all(Tokens.md), children: [
+      const Text('Check the source. Missing year, date order, time zone and duration are not guessed.'),
+      const SizedBox(height: Tokens.sm),
+      SelectableText(widget.candidate.sourceLine.text),
+      const SizedBox(height: Tokens.md),
+      field('title','Title',_edits.title,(v)=>_edits.title=v),
+      DropdownButtonFormField<CandidateTimeKind>(initialValue:_edits.kind,
+        decoration: InputDecoration(labelText:'Schedule type',errorText:_errors['kind']),
+        items: const [DropdownMenuItem(value:CandidateTimeKind.timed,child:Text('Timed')),
+          DropdownMenuItem(value:CandidateTimeKind.dateOnly,child:Text('All day'))],
+        onChanged:(v)=>setState(() { _edits.kind=v; _changed(); })),
+      const SizedBox(height:Tokens.md),
+      field('date','Start date',_edits.date,(v)=>_edits.date=v,hint:'YYYY-MM-DD · choose the actual year',key:const Key('candidate-date')),
+      if (_edits.kind == CandidateTimeKind.dateOnly)
+        field('lastDate','Last date (optional)',_edits.lastDate,(v)=>_edits.lastDate=v,hint:'YYYY-MM-DD · leave blank for one day'),
+      if (_edits.kind == CandidateTimeKind.timed) ...[
+        field('startTime','Start time',_edits.startTime,(v)=>_edits.startTime=v,hint:'24-hour HH:mm'),
+        field('timeZone','Source time zone',_edits.timeZone,(v)=>_edits.timeZone=v,hint:'IANA name, for example Asia/Manila'),
+        DropdownButtonFormField<CandidateEndChoice>(initialValue:_edits.endChoice,
+          decoration:InputDecoration(labelText:'End time choice',errorText:_errors['endChoice']),
+          items:const [DropdownMenuItem(value:CandidateEndChoice.noEnd,child:Text('No end time')),
+            DropdownMenuItem(value:CandidateEndChoice.sameDay,child:Text('Ends on the same day')),
+            DropdownMenuItem(value:CandidateEndChoice.nextDay,child:Text('Ends the next day'))],
+          onChanged:(v)=>setState(() { _edits.endChoice=v; _changed(); })),
+        const SizedBox(height:Tokens.md),
+        if (_edits.endChoice != CandidateEndChoice.noEnd)
+          field('endTime','End time',_edits.endTime,(v)=>_edits.endTime=v,hint:'24-hour HH:mm'),
+        if (_errors.containsKey('seedResolution') || _edits.seedResolution != null)
+          _fold('seedResolution','Repeated start clock time',_edits.seedResolution,(v)=>_edits.seedResolution=v),
+        if (_errors.containsKey('endResolution') || _edits.endResolution != null)
+          _fold('endResolution','Repeated end clock time',_edits.endResolution,(v)=>_edits.endResolution=v),
+      ],
+      if (widget.candidate.weekdays.value?.isNotEmpty ?? false) ...[
+        const Text('Term context · choose the actual weekdays and final date.'),
+        Wrap(spacing:4,children:[for(var i=1;i<=7;i++) FilterChip(label:Text(const ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i-1]),
+          selected:_edits.weekdays.contains(i),onSelected:(on)=>setState(() {
+            _edits.weekdays=[..._edits.weekdays]; on?_edits.weekdays.add(i):_edits.weekdays.remove(i); _changed();
+          }))]),
+        if (_errors['weekdays'] != null) Text(_errors['weekdays']!),
+        field('termEnd','Term end date',_edits.termEnd,(v)=>_edits.termEnd=v,hint:'YYYY-MM-DD · no semester dates are assumed'),
+      ],
+      field('details/location','Room or location (optional)',_edits.location,(v)=>_edits.location=v),
+      field('details/professor','Professor or person (optional)',_edits.professor,(v)=>_edits.professor=v),
+      CheckboxListTile(key:const Key('confirm-association'),contentPadding:EdgeInsets.zero,
+        title:const Text('I checked which title, date and time belong together against the source.'),
+        subtitle:_errors['association']==null?null:Text(_errors['association']!),
+        value:_edits.associationConfirmed,onChanged:(v)=>setState(() { _edits.associationConfirmed=v==true; _changed(); })),
+      for(final entry in _errors.entries.where((e)=>!{'title','date','kind','lastDate','startTime','endTime','timeZone','endChoice','seedResolution','endResolution','weekdays','termEnd','association','details/location','details/professor'}.contains(e.key)))
+        Text(entry.value),
+      const SizedBox(height:Tokens.md),
+      FilledButton(onPressed:_use,child:const Text('Use draft values')),
+    ]));
+  Widget _fold(String name,String label,TimeResolution? value,ValueChanged<TimeResolution?> update) => Padding(
+    padding:const EdgeInsets.only(bottom:Tokens.md),child:DropdownButtonFormField<TimeResolution>(initialValue:value,
+      decoration:InputDecoration(labelText:label,errorText:_errors[name]),items:const[
+        DropdownMenuItem(value:TimeResolution.earlier,child:Text('Earlier occurrence')),
+        DropdownMenuItem(value:TimeResolution.later,child:Text('Later occurrence'))],
+      onChanged:(v)=>setState(() { update(v); _changed(); })));
+}

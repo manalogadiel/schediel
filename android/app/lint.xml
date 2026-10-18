@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Flutter regenerates this ignored machine-local file during assemble.
+         Its Windows path serializer escapes backslashes but not drive colons;
+         Java Properties loads it and APK builds succeed. Scope this tooling
+         diagnostic to that generated file only; keep source checks enabled. -->
+    <issue id="PropertyEscape">
+        <ignore path="../local.properties" />
+    </issue>
+</lint>

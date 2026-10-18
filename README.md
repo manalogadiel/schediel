@@ -1,34 +1,77 @@
-# Scheduling app specification bundle
+# Schediel
 
-**Status:** pre-implementation draft for approval. No mobile app or backend has been implemented by this task.
+Offline-first Flutter scheduling app for Android and iOS. Repeating schedules, room/professor/subtitle details, Today and Week, categories, native home-screen widgets, optional reminders/alarms, image review and preview-first share links.
 
-## Read in this order
+**Development build, not release-certified.** Android debug compilation and local automated tests are recorded in [VALIDATION.md](VALIDATION.md). No backend or share domain is deployed. iOS code has not been built on a Mac; the WidgetKit target still requires the documented Xcode setup. Real-device checks remain mandatory.
 
-Start with [FULL_SPEC.md](FULL_SPEC.md) for the complete standalone Markdown specification, including all appendices and internal navigation.
+## Run locally
 
-For modular implementation work:
+Use the Flutter/Dart toolchain compatible with the committed `pubspec.lock` (Dart SDK constraint `^3.13.3`), Android SDK and Java 17. Android minimum is API 26; iOS minimum is 17, with app-owned AlarmKit alarms limited to iOS 26+ and the corresponding SDK.
 
-- [SCHEDULER_SPEC.md](SCHEDULER_SPEC.md) — product scope, requirement traceability, UI/UX, Flutter/frontend architecture, native widgets and alerts, local/server data, API behavior, security, test plan, implementation sequence and open decisions.
-- [DESIGN.md](DESIGN.md) — machine-readable design tokens and visual/component rules for the minimal Apple-inspired app and wallpaper-independent native widgets.
-- [CONTRACTS.md](CONTRACTS.md) — typed schedule, import, native snapshot and backend request/response contracts.
-- [SOURCES.md](SOURCES.md) — primary references and limits of what each source supports.
-- [VALIDATION.md](VALIDATION.md) — actual documentation checks and what has not been tested.
+```sh
+flutter pub get
+flutter analyze
+flutter test
+flutter run
+flutter build apk --debug
+```
 
-## Confirmed direction
+Use an Android/iOS device for the app: the mobile plugins and native widgets are not desktop/web implementations. The browser preview in `web-preview/` is a separate read-only site, not a Flutter web build. Test data lives only under test/contract fixtures, never release storage.
 
-Flutter for Android and iOS; repeating schedules; room/professor/subtitle details; next/upcoming transparent widget without replacing wallpaper; minimal customizable app/widget design and consistent SVG icons; optional reminders/alarms with honest full-screen/Clock limitations; image extraction with editable confirmation; categories and filtered/all-schedule sharing by preview-first editable links.
+Android JVM tests and lint (from `android/`; Windows uses `cmd.exe /c "gradlew.bat ..."`):
 
-## Decisions are not silently invented
+```sh
+./gradlew :app:testDebugUnitTest :app:lintDebug
+```
 
-Architecture choices, backend provider, anonymous identity, independent snapshot imports, defaults, limits and retention are labelled **proposed**. Audience/minor eligibility, AI provider/privacy, device baseline, native capability compromises, recovery/backups and Mac/Xcode access remain explicit decisions.
+The pinned `home_widget` plugin currently emits a Kotlin Gradle Plugin deprecation warning. The debug APK is for testing and uses debug signing; production signing, permissions/store eligibility and dependency updates must be reviewed before release. Do not distribute it as a signed production release.
 
-## Important constraints
+## Link sharing — optional deployment
 
-- A clear widget does not mean identical transparent rendering on both OSes.
-- App-owned alarms are not two-way synchronization with every default Clock app.
-- A normal reminder cannot be promised to force a custom full-screen takeover everywhere.
-- Source images and shared links do not activate schedules or alerts before confirmation.
-- No fabricated schedule names, rooms, professors, statistics or confidence scores belong in release UI.
-- Schedules do not become wallpaper images; users keep their chosen wallpaper.
+Keep these build-time defines absent for offline development; the app then explains that sharing is not configured. When the approved Supabase backend and owned domain are ready:
 
-Start implementation only after reviewing and approving the applicable decisions and future proof tasks in the main specification.
+- `SCHEDIEL_SUPABASE_URL`: actual HTTPS Supabase project origin.
+- `SCHEDIEL_SUPABASE_KEY`: public project publishable key, never a service/provider secret.
+- `SCHEDIEL_SHARE_HOST`: hostname only, without `https://` or a path.
+- `SCHEDIEL_APP_LINK_HOST` (optional): a second owned hostname, different from the share host, that the browser preview's **Open in Schediel** button hands off to. Set the Gradle property `schediel.appLinkHost` to the same value.
+
+Pass them using Flutter's `--dart-define=NAME=value` options. Configure the Android Gradle property `schediel.shareHost` to the same hostname (for example in local `android/gradle.properties`); its default is deliberately `schediel.invalid`. Configure real signing associations and iOS Associated Domains on the owned host before claiming verified links.
+
+The backend stores only the selected snapshot and the secret's digest; it is not a sync database for all local schedules. The device retains the random bearer secret in platform-protected storage. An anonymous online identity is created only for explicit share creation; ordinary local use and public link resolution do not create an identity. Anyone with a link can view it until expiry/revocation. Recipient imports are independent copies; revocation cannot recall downloaded copies. Losing the online identity/session can lose management of old links.
+
+- [Backend setup, tests and deployment gates](backend/README.md)
+- [Static browser-preview setup and hosting](web-preview/README.md)
+- [Frozen API transport](contracts/openapi.yaml)
+
+No real project, domain, certificate fingerprint, Apple team ID, region, credentials or recovery promise is fabricated in this repository. A local test pass is not production security approval.
+
+## Image import
+
+Gallery/camera selection is explicit. JPEG/PNG admission, metadata removal, crop/rotation and bounded normalization precede on-device OCR. Extracted fields remain inactive drafts; unknown year, date order, AM/PM, time zone, semester bounds and row associations must be resolved, not guessed. Selected entries remain editable before one explicit local import transaction. Notifications and alarms start off.
+
+This conservative parser does not claim to understand every timetable or every script. Dense/unsupported content must be cropped or entered manually. Camera/gallery/OCR behavior, memory and accuracy need mobile-device testing. **Cloud AI scanning is disabled**; there is no upload fallback or provider key in the app.
+
+## Native limits and privacy
+
+- Widgets read committed snapshots; no wallpaper replacement, wallpaper access or screenshot transparency tricks. Clear rendering/readability and refresh opportunities differ by OS/launcher. Solid/stronger alternatives exist, but arbitrary wallpaper contrast is not certified.
+- Reminders, app-owned alarms and Android Clock hand-off are distinct. Native acceptance is not a delivery guarantee. Permission denial, capacity/horizon, reboot, force-stop and locked-screen behavior need device verification.
+- [iOS WidgetKit/AlarmKit setup](ios/ScheduleWidget/README.md) requires Mac/Xcode, App Groups, signing and an actual widget extension target. iOS is source-only here, not a verified build.
+- SQLite schedule data is local but **not encrypted by Schediel** and not backed by a recovery account. Platform/device backup behavior is not a tested recovery policy. Share secrets/session storage use the protected storage adapter; reinstall/session loss remains a limitation.
+- Delete local schedules, remove an image source, revoke a link and delete backend snapshots are separate actions with different scopes. Backend deletion reads an actual job state and preserves local schedules.
+
+## Specifications
+
+- [SCHEDULER_SPEC.md](SCHEDULER_SPEC.md): scope, behavior, traceability and release gates.
+- [DESIGN.md](DESIGN.md): minimal Apple-inspired tokens, accessibility and motion requirements.
+- [CONTRACTS.md](CONTRACTS.md): domain and integration contracts; machine artifacts in `contracts/` are authoritative.
+- [SOURCES.md](SOURCES.md): primary-source register and limits of its claims.
+- [VALIDATION.md](VALIDATION.md): executed checks and unverified behavior.
+- [FULL_SPEC.md](FULL_SPEC.md): generated readable edition of those documents.
+
+```sh
+python3 tools/spec_bundle.py
+python3 tools/spec_bundle.py --check
+npx -y -p @google/design.md@0.4.0 designmd lint DESIGN.md
+```
+
+Documentation hashes in `CHECKSUMS.sha256` use LF-canonical UTF-8 bytes. The script verifies the 24 requirement IDs, 48 acceptance IDs, 35-source registry, links and main anchors, then rebuilds the readable edition and hashes. These structural checks do not certify native behavior or AI interpretation.

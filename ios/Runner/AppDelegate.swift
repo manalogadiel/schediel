@@ -65,7 +65,19 @@ final class NativeBridge {
       let key = (call.arguments as? [String: Any])?["requestKey"] as? String ?? ""
       result(stopAlarm(requestKey: key))
     case "getScheduledAlarms":
-      result(Array(storedKeys().values))
+      #if canImport(AlarmKit)
+      if #available(iOS 26.0, *) {
+        do {
+          let active = try AlarmManager.shared.alarms
+          let held = storedKeys()
+          result(active.compactMap { held[$0.id.uuidString] })
+        } catch {
+          result(FlutterError(code: "alarm_query_failed", message: "Unable to read native alarm status.", details: nil))
+        }
+        return
+      }
+      #endif
+      result([String]())
     case "launchClockAlarm":
       // The Clock hand-off exists only on Android.
       result("unavailable")
@@ -158,8 +170,12 @@ final class NativeBridge {
     }
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
-      try? AlarmManager.shared.stop(id: id)
-      try? AlarmManager.shared.cancel(id: id)
+      do {
+        let active = try AlarmManager.shared.alarms
+        if active.contains(where: { $0.id == id }) {
+          try AlarmManager.shared.cancel(id: id)
+        }
+      } catch { return false }
     }
     #endif
     held.removeValue(forKey: entry.key)
@@ -169,15 +185,26 @@ final class NativeBridge {
 
   private func cancelAllAlarms() -> Int {
     let held = storedKeys()
+    var remaining = held
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
-      for id in held.keys.compactMap(UUID.init(uuidString:)) {
-        try? AlarmManager.shared.cancel(id: id)
-      }
-    }
+      do {
+        let activeIDs = Set(try AlarmManager.shared.alarms.map { $0.id.uuidString })
+        for (key, _) in held {
+          if !activeIDs.contains(key) { remaining.removeValue(forKey: key); continue }
+          guard let id = UUID(uuidString: key) else { continue }
+          do {
+            try AlarmManager.shared.cancel(id: id)
+            remaining.removeValue(forKey: key)
+          } catch { /* Retain the request for a later cancellation retry. */ }
+        }
+      } catch { return 0 }
+    } else { remaining = [:] }
+    #else
+    remaining = [:]
     #endif
-    saveKeys([:])
-    return held.count
+    saveKeys(remaining)
+    return held.count - remaining.count
   }
 
   private func scheduleAlarms(_ raw: [[String: Any]], _ result: @escaping FlutterResult) {
@@ -203,6 +230,9 @@ final class NativeBridge {
   private func replaceAll(_ raw: [[String: Any]]) async -> [[String: Any]] {
     let manager = AlarmManager.shared
     _ = cancelAllAlarms()
+    if !storedKeys().isEmpty {
+      return raw.map { ["requestKey": $0["requestKey"] as? String ?? "", "status": "failed", "errorCode": "cancelFailed"] }
+    }
     var kept: [String: String] = [:]
     var results: [[String: Any]] = []
     let now = Date()

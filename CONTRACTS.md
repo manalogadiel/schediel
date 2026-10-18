@@ -1,8 +1,8 @@
 # Scheduling app: typed data and integration contracts
 
-**Status:** proposed version 1.0 contracts for approval before code. These tables define payloads and behavior; they are not live API responses, generated data, database migrations or claims that endpoints exist.
+**Status:** human-readable version 1.0 behavior and review requirements alongside frozen machine contracts. These tables are not live API responses, database migrations, deployment evidence or evidence that approval/release gates have passed.
 
-Read [SCHEDULER_SPEC.md](SCHEDULER_SPEC.md) for scope, platform limits, privacy and acceptance tests, and [DESIGN.md](DESIGN.md) for visual rules. If a table here conflicts with the main specification, resolve the inconsistency before implementation rather than silently choosing one.
+Read [SCHEDULER_SPEC.md](SCHEDULER_SPEC.md) for scope, platform limits, privacy and acceptance tests, and [DESIGN.md](DESIGN.md) for visual rules. For exact serialized fields, semantic rules and limits, the frozen [share schema](contracts/schemas/share-payload-v1.schema.json), [widget schema](contracts/schemas/widget-snapshot-v1.schema.json), [OpenAPI](contracts/openapi.yaml) and [native bridge](contracts/native-bridge-v1.md) take precedence over prose illustrations. Resolve inconsistencies explicitly; do not silently add fields, relax limits or reinterpret a frozen contract. Future cloud-scan intent below does not override its closed OpenAPI gate.
 
 ## 1. Common conventions
 
@@ -42,10 +42,11 @@ This shape is shared conceptually across manual events, validated imports and sh
 | `startTime` | Clock time | Explicitly resolved; not inferred from an unspecified date |
 | `timeZone` | IANA zone string | Supported by the pinned zone database |
 | `endTime` | Clock time or null | Null means explicitly no end time; do not invent a duration |
-| `endDayOffset` | Nonnegative integer or null | Required with end time; null without it; recurring v1 supports same-day or next-day ending only |
+| `endDayOffset` | `0`, `1` or null | Required with end time; null without it; frozen v1 supports same-day or next-day ending only |
 | `seedTimeResolution` | `earlier`, `later` or null | Explicit resolution for an ambiguous seed instant; normal unambiguous times use null |
+| `endTimeResolution` | `earlier`, `later` or null | Explicit resolution for an ambiguous end instant; normal unambiguous or absent end uses null |
 
-For a one-time multi-day timed event, any broader end-day range must be explicitly approved and bounded in implementation. Do not pretend the recurring subset already supports arbitrary multi-day recurrence.
+Broader timed end-day ranges are outside the frozen v1 contract; do not reinterpret this table as support for arbitrary multi-day timed events.
 
 Each recurrence uses local clock semantics in the source zone. A future ambiguous/nonexistent instance is unresolved unless an explicit valid occurrence override resolves it. Never silently use the device zone or carry forward a fixed UTC offset.
 
@@ -174,6 +175,10 @@ An inferred suggestion must be labelled. The model cannot mark its own output as
 
 Input is a draft ID, selected candidate IDs, final validated items, category mappings and explicit local alert choices. Confirmed data is written once with provenance and reconciliation work. The transaction must reject duplicate submission or recover by looking up provenance after uncertain completion.
 
+Selection, field edits, category mapping and a child editor's **Use changes** remain inactive draft state. `ready` means locally valid for review, not user-confirmed or saved. Revalidate the selected entries at final confirmation; unresolved required values block those entries, while warnings and exact-source duplicate choices remain visible. Do not add UI-state fields to a frozen wire payload.
+
+Admit one commit command per draft at a time and keep its identity stable for an identical retry. A busy button alone is not a duplicate-write defense. Check the committed receipt/provenance after an uncertain outcome; a revised selection is not an identical retry. Cancelling/replacing a pending scan or resolve invalidates its UI request revision so a late response cannot overwrite edits, reopen review or submit. Dismissal before commit has no active side effects; dismissal after dispatch must not claim a rollback. SCHEDULER_SPEC.md section 4.9 defines the shared flow/recovery requirements.
+
 A failed alert API call after commit does not roll back already saved schedules without telling the user. It changes alert status and offers a targeted retry.
 
 ## 5. Share snapshot contract
@@ -217,22 +222,20 @@ Exact source-identity duplicates default to skip, with an explicit keep-copy cho
 
 ## 6. Native widget snapshot contract
 
+The table lists the frozen root envelope, not extra conceptual fields. Each native-widget identity is a key under `widgets`, including the required `default` projection; exact occurrence/configuration fields and reader rules live in the widget schema.
+
 | Field | Type | Meaning |
 |---|---|---|
-| `schemaVersion` | Version string | Native reader compatibility gate |
-| `dataRevision` | Monotonic local revision | Prevents mixed old/new snapshots |
+| `schemaVersion` | Literal `1.0` | Native reader compatibility gate |
+| `dataRevision` | Nonnegative integer | Local snapshot revision; prevents mixed old/new snapshots |
 | `generatedAt` | UTC timestamp | Actual generation time |
-| `widgetInstanceId` | Native opaque ID | Per-widget isolation |
-| `timeZoneContext` | Validated zone/display context | Needed for actual date/time labels |
-| `configuration` | Supported configuration values | Layout/filter/detail/appearance/privacy choices |
-| `occurrences` | Bounded resolved list | Actual IDs, start/end/date-only values, selected visible details and status |
-| `futureStates` | Bounded native timeline/update description | Only strategies the platform can honor |
-| `coverageEnd` | Timestamp/date bound or null | Known data coverage, not a promise of continuous execution |
-| `warnings` | Bounded typed list | Unresolved time, stale coverage or safe open-app state |
+| `deviceTimeZone` | IANA zone string | Device zone at generation; readers format instants in the current device zone |
+| `coverageEnd` | UTC timestamp | At or after this instant, render the stale open-app state rather than claiming Now/Next or an empty future |
+| `widgets` | Map of native widget identity to projection | Each projection has `configuration`, bounded `occurrences` and `emptyReason`; per-widget settings remain isolated |
 
-A snapshot has no provider key, backend bearer URL, full image or active editor draft. Native writers/readers use an atomic/versioned hand-off. An unsupported version yields a safe open-app state.
+A snapshot contains committed schedule projections only: no provider key, backend bearer URL, full image or active editor/review draft. Native writers/readers use an atomic/versioned hand-off. Missing, invalid or unsupported snapshots use the safe open-app state; expiry of `coverageEnd` is not evidence of no upcoming schedules. Unresolved occurrence times never become Now or Next.
 
-Widget configuration is scoped per native widget ID. Rendering respects current native appearance; requested alpha, colors or glass style are not a platform guarantee. Never repaint wallpaper from an image into a widget.
+Rendering respects current native appearance; requested alpha, colors or glass style are not a platform guarantee. Never repaint wallpaper from an image into a widget. Clear/Soft tint cannot guarantee contrast over arbitrary wallpaper: keep the existing solid accessible treatment available, with actual date/time/status and permitted details in the reading order. Motion or holder brightness must not be the only indication of Next or a review/staleness problem.
 
 ## 7. Backend request and response envelopes
 
@@ -253,7 +256,7 @@ Do not include a fake response body or pretend the provider was called when a jo
 
 Input: supported payload, expiry choice, client-generated token digest and an idempotency key. The client has already persisted the cryptographically random secret in protected storage. Server verifies identity, digest format, schema, limits and quota; computes actual counts/payload hash; commits the snapshot/link/idempotency outcome atomically or with a recoverable documented equivalent. It never receives the raw secret during creation.
 
-Proposed create body fields: `schemaVersion`, `payload`, `tokenDigest`, `expiresAt`; `Idempotency-Key` is a header. `expiresAt` is validated against server policy/time, not trusted device time. The response contains `shareId`, `snapshotVersion`, `routePath`, `createdAt`, `expiresAt` and server-computed `itemCount`, never the raw token.
+Frozen create body fields: `schemaVersion`, `payload`, `tokenDigest`, `expiresAt`; `Idempotency-Key` is a header. `expiresAt` is validated against server policy/time, not trusted device time. Response fields include `shareId`, `snapshotVersion`, `routePath`, `createdAt`, `expiresAt` and server-computed `itemCount`, never the raw token; OpenAPI defines the complete envelope.
 
 Token encoding is canonical unpadded base64url of exactly 32 random bytes. `tokenDigest` is the lowercase hexadecimal SHA-256 digest of those raw bytes, not of an arbitrarily normalized text representation. At redemption, enforce a small encoded-length/character bound, decode exactly 32 bytes, verify canonical re-encoding, then hash/compare. Reject malformed tokens before lookup; never silently repair a received link or token.
 
@@ -273,6 +276,8 @@ The fragment keeps the secret out of the ordinary HTTP route but not browser his
 
 ### 7.4 Cloud scan job
 
+This subsection records future scan behavior, not an active request/result schema. The frozen OpenAPI scan routes under `/functions/v1/scan` return `503 scan_unavailable` while the gate is closed; do not display queued/running progress for that rejection or imply provider approval. Product-spec `/v1/scan-assets` and `/v1/scan-jobs` illustrations are not callable paths. Share resolution likewise uses `/functions/v1/share-resolve`, not the illustrative `/v1/share-previews/resolve`.
+
 Input: an owned validated asset ID, consent context, requested interpretation mode, supported candidate schema and optional bounded OCR evidence. No arbitrary provider URL, executable instruction, model credential or trusted owner ID is accepted from the client.
 
 States:
@@ -291,7 +296,7 @@ Input: authenticated identity and explicit confirmation scope. Output: deletion 
 
 ## 8. Validation and contract tests
 
-Before implementation contracts are frozen:
+The machine contracts in `contracts/` are frozen. The following checks remain required evidence, not passing results asserted by this document:
 
 - Test strict field/type/enum/date/zone and size validation on client and server.
 - Test null/unresolved versus known optional values distinctly.
@@ -304,5 +309,7 @@ Before implementation contracts are frozen:
 - Test source-image instructions as untrusted data, not executable authorization.
 - Test widget schema changes and interrupted writes on native readers.
 - Test alert desired/actual state divergence and honest UI after API/permission failure.
+- Test cancellation/late responses, draft-only child edits, unresolved selected fields, repeated confirmation and uncertain-commit recovery across manual/image/shared review; no active schedule write, alert scheduling or native widget snapshot update may precede its explicit commit boundary.
+- Test the flow states in SCHEDULER_SPEC.md section 4.9 and motion/accessibility requirements in DESIGN.md, including persistent recovery, large text, labelled targets/focus and reduced-motion equivalents.
 
-Implementation should generate or share schema definitions from these approved contracts and run cross-language fixtures. No production API, payload or test result is fabricated by this document.
+Implementations must consume or share definitions and semantic rules from the frozen machine contracts and run cross-language fixtures. Contract freeze does not certify deployment, accessibility, native behavior or unresolved product decisions. No production API response, payload or test result is fabricated by this document.

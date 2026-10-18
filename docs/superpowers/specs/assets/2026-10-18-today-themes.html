@@ -1,0 +1,223 @@
+<!-- Schediel Today screen — theme exploration mockup (throwaway, not app code).
+     Schedule rows are SAMPLE content for the mockup only. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Caveat:wght@500;700&display=swap">
+<style>
+  .wrap { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; padding: 4px 0 8px; }
+  .panel { width: 250px; color: var(--foreground, #1d1d1f); }
+  .panel h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  .panel p { margin: 0 0 14px; font-size: 13px; line-height: 1.45; color: var(--muted-foreground, #666); }
+  .themes { display: grid; gap: 6px; }
+  .tbtn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border-radius: 12px;
+          border: 1px solid var(--border, #d0d0d8); background: transparent; color: var(--foreground, #1d1d1f); font: inherit;
+          font-size: 14px; cursor: pointer; text-align: left; }
+  .tbtn[aria-pressed="true"] { border-color: var(--accent, #6A5AE0); box-shadow: inset 0 0 0 1px var(--accent, #6A5AE0); }
+  .tbtn:focus-visible, .pick:focus-visible, input:focus-visible { outline: 2px solid var(--accent, #6A5AE0); outline-offset: 2px; }
+  .sw { display: flex; } .sw i { width: 14px; height: 14px; border-radius: 50%; margin-right: -4px; border: 1.5px solid rgba(0,0,0,.12); }
+  .hue { margin: 10px 0 4px; width: 100%; accent-color: var(--accent, #6A5AE0); }
+  .huelab { font-size: 12px; color: var(--muted-foreground, #666); }
+  .pick { margin-top: 16px; width: 100%; padding: 10px 12px; border-radius: 12px; border: 0; cursor: pointer;
+          background: var(--accent, #6A5AE0); color: #fff; font: inherit; font-weight: 600; font-size: 14px; }
+  .note { margin-top: 12px; font-size: 12px; color: var(--muted-foreground, #666); line-height: 1.4; }
+
+  /* ---------- phone ---------- */
+  .phone { --bw: 0px; width: 340px; height: 724px; border: 9px solid #111; border-radius: 44px; overflow: hidden;
+           position: relative; background: var(--canvas); color: var(--ink);
+           font-family: "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif; transition: background .25s; }
+  .phone * { box-sizing: border-box; }
+  .status { display: flex; justify-content: space-between; padding: 10px 22px 0; font-size: 12px; font-weight: 600; }
+  .scroll { padding: 10px 16px 120px; height: 100%; overflow: hidden; }
+  .top { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-weight: 700;
+            background: var(--c2); color: var(--cInk); border: var(--bw) solid var(--line); flex: none; }
+  .hello { flex: 1; font-size: 13px; color: var(--muted); line-height: 1.3; }
+  .hello b { display: block; color: var(--ink); font-size: 15px; font-weight: 600; }
+  .round { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--surface);
+           border: var(--bw) solid var(--line); box-shadow: var(--shadow); }
+  .round svg { width: 19px; height: 19px; }
+  h1.date { margin: 18px 0 14px; font-size: 30px; line-height: 1.08; letter-spacing: -.02em; font-weight: var(--wt); }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px; }
+  .day { text-align: center; padding: 7px 0 8px; border-radius: 16px; font-size: 11px; color: var(--muted); }
+  .day b { display: block; font-size: 16px; color: var(--ink); margin-top: 2px; font-weight: 600; }
+  .day i { display: block; width: 4px; height: 4px; border-radius: 50%; margin: 4px auto 0; background: var(--muted); opacity: .5; }
+  .day.sel { background: var(--accent, #6A5AE0); color: var(--onAccent); border: var(--bw) solid var(--line); box-shadow: var(--shadow); }
+  .day.sel b { color: var(--onAccent); } .day.sel i { background: var(--onAccent); opacity: .9; }
+  .hero { border-radius: var(--r); padding: 16px; background: var(--accent, #6A5AE0); color: var(--onAccent);
+          border: var(--bw) solid var(--line); box-shadow: var(--shadow); margin-bottom: 18px; }
+  .hero .k { font-size: 12px; font-weight: 600; opacity: .85; }
+  .hero h2 { margin: 4px 0 8px; font-size: 22px; letter-spacing: -.01em; font-weight: var(--wt); }
+  .hero .m { display: flex; gap: 14px; font-size: 13px; opacity: .92; flex-wrap: wrap; }
+  .m span { display: inline-flex; align-items: center; gap: 5px; } .m svg { width: 14px; height: 14px; }
+  .sec { display: flex; justify-content: space-between; align-items: baseline; margin: 0 2px 10px; }
+  .sec h4 { margin: 0; font-size: 15px; font-weight: 600; } .sec span { font-size: 12px; color: var(--muted); }
+  .row { display: grid; grid-template-columns: 42px 1fr; gap: 8px; margin-bottom: 9px; }
+  .t { font-size: 12px; font-weight: 600; padding-top: 12px; font-variant-numeric: tabular-nums; }
+  .t small { display: block; font-weight: 400; color: var(--muted); }
+  .card { border-radius: calc(var(--r) - 4px); padding: 11px 12px; color: var(--cInk); border: var(--bw) solid var(--line); box-shadow: var(--shadow); }
+  .card .h { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .card b { font-size: 15px; font-weight: 600; }
+  .chip { font-size: 11px; padding: 3px 8px; border-radius: 99px; background: rgba(255,255,255,.6); border: var(--bw) solid var(--line); white-space: nowrap; }
+  .card .m { margin-top: 5px; font-size: 12px; opacity: .85; display: flex; gap: 12px; flex-wrap: wrap; }
+  .now { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; background: var(--cInk); color: var(--nowInk); margin-right: 6px; vertical-align: 2px; }
+  .bar { height: 4px; border-radius: 4px; background: rgba(0,0,0,.1); margin-top: 9px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 55%; background: var(--cInk); border-radius: 4px; }
+  .past { opacity: .5; }
+  .nav { position: absolute; left: 14px; right: 14px; bottom: 16px; display: flex; gap: 8px; align-items: center; }
+  .pill { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 6px; border-radius: 99px;
+          background: var(--navBg); border: var(--bw) solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+  .ni { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 99px; color: var(--navInk); }
+  .ni svg { width: 21px; height: 21px; }
+  .ni.on { width: auto; padding: 0 16px; gap: 7px; display: flex; background: var(--navOn); color: var(--navOnInk); font-size: 13px; font-weight: 600; }
+  .fab { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: var(--accent, #6A5AE0);
+         color: var(--onAccent); border: var(--bw) solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,.16); flex: none; }
+  .fab svg { width: 24px; height: 24px; }
+  .sample { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--muted); }
+
+  /* ---------- shape/type overrides per style ---------- */
+  .phone { font-family: var(--font); }
+  h1.date, .hero h2 { font-family: var(--dfont, var(--font)); }
+  .avatar, .round, .fab { border-radius: var(--round, 50%); }
+  /* Pixel: notched corners drawn with stepped shadows, square everything */
+  .phone[data-style="pixel"] .card, .phone[data-style="pixel"] .hero, .phone[data-style="pixel"] .day.sel,
+  .phone[data-style="pixel"] .pill, .phone[data-style="pixel"] .fab, .phone[data-style="pixel"] .round,
+  .phone[data-style="pixel"] .avatar, .phone[data-style="pixel"] .chip, .phone[data-style="pixel"] .ni.on, .phone[data-style="pixel"] .now {
+    border-radius: 0; box-shadow: 0 -3px 0 0 var(--line), 0 3px 0 0 var(--line), -3px 0 0 0 var(--line), 3px 0 0 0 var(--line); }
+  .phone[data-style="pixel"] .chip, .phone[data-style="pixel"] .now { box-shadow: 0 -2px 0 0 var(--line), 0 2px 0 0 var(--line), -2px 0 0 0 var(--line), 2px 0 0 0 var(--line); border: 0; }
+  .phone[data-style="pixel"] .card b, .phone[data-style="pixel"] .day b, .phone[data-style="pixel"] .t,
+  .phone[data-style="pixel"] .sec h4, .phone[data-style="pixel"] .hello b, .phone[data-style="pixel"] .hero .k, .phone[data-style="pixel"] .now { font-family: var(--dfont); }
+  .phone[data-style="pixel"] .bar, .phone[data-style="pixel"] .bar i { border-radius: 0; }
+  .phone[data-style="pixel"] .bar i { background: repeating-linear-gradient(90deg, var(--cInk) 0 6px, transparent 6px 8px); }
+  .phone[data-style="pixel"] h1.date { font-size: 21px; line-height: 1.35; letter-spacing: 0; }
+  .phone[data-style="pixel"] .hero h2 { font-size: 16px; letter-spacing: 0; }
+  .phone[data-style="pixel"] .card b { font-size: 13px; } .phone[data-style="pixel"] .day b { font-size: 13px; }
+  /* Sketch: hand-drawn wobbly outlines + highlighter fills */
+  .phone[data-style="sketch"] { background-image: repeating-linear-gradient(transparent 0 27px, #E3E8F2 27px 28px); }
+  .phone[data-style="sketch"] .card, .phone[data-style="sketch"] .hero, .phone[data-style="sketch"] .pill {
+    border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px; }
+  .phone[data-style="sketch"] .day.sel, .phone[data-style="sketch"] .chip, .phone[data-style="sketch"] .ni.on {
+    border-radius: 40px 12px 36px 14px / 14px 36px 12px 40px; }
+  .phone[data-style="sketch"] .avatar, .phone[data-style="sketch"] .round, .phone[data-style="sketch"] .fab {
+    border-radius: 58% 42% 55% 45% / 45% 55% 42% 58%; }
+  .phone[data-style="sketch"] .card:nth-child(odd) { transform: rotate(-.6deg); }
+  .phone[data-style="sketch"] .row:nth-child(even) .card { transform: rotate(.5deg); }
+  .phone[data-style="sketch"] .hero { transform: rotate(-.8deg); }
+  .phone[data-style="sketch"] .card b, .phone[data-style="sketch"] .day b, .phone[data-style="sketch"] .sec h4,
+  .phone[data-style="sketch"] .hello b, .phone[data-style="sketch"] .ni.on { font-family: var(--dfont); }
+  .phone[data-style="sketch"] .day b, .phone[data-style="sketch"] .sec h4, .phone[data-style="sketch"] .hello b { font-size: 20px; }
+  .phone[data-style="sketch"] h1.date { font-size: 34px; font-weight: 700; letter-spacing: 0; }
+  .phone[data-style="sketch"] .hero h2 { font-size: 27px; }
+  .phone[data-style="sketch"] .card b { font-size: 17px; }
+  @media (prefers-reduced-motion: reduce) { .phone { transition: none; } }
+</style>
+
+<div class="wrap">
+  <div class="phone" id="phone" role="img" aria-label="Today screen mockup">
+    <div class="status"><span>10:20</span><span>5G ▮▮▮ 82%</span></div>
+    <div class="scroll">
+      <div class="top">
+        <div class="avatar" title="Your photo">D</div>
+        <div class="hello">Good morning<b>Diel</b></div>
+        <div class="round" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></div>
+      </div>
+      <h1 class="date">Monday,<br>19 October</h1>
+      <div class="days">
+        <div class="day sel">Mon<b>19</b><i></i></div><div class="day">Tue<b>20</b><i></i></div>
+        <div class="day">Wed<b>21</b><i></i></div><div class="day">Thu<b>22</b><i></i></div>
+        <div class="day">Fri<b>23</b><i></i></div><div class="day">Sat<b>24</b></div><div class="day">Sun<b>25</b></div>
+      </div>
+      <div class="hero">
+        <div class="k">Next · in 40 min</div>
+        <h2>Physics 2</h2>
+        <div class="m">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>11:00 – 12:30</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Room 118</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Prof. Santos</span>
+        </div>
+      </div>
+      <div class="sec"><h4>Today</h4><span>5 schedules</span></div>
+      <div class="row past"><div class="t">7:30<small>9:00</small></div>
+        <div class="card" style="background:var(--c1)"><div class="h"><b>Calculus II</b><span class="chip">Class</span></div><div class="m"><span>Room 304</span><span>Prof. Reyes</span></div></div></div>
+      <div class="row"><div class="t">9:30<small>11:00</small></div>
+        <div class="card" style="background:var(--c2)"><div class="h"><b><span class="now">NOW</span>Data Structures</b><span class="chip">Lab</span></div><div class="m"><span>Lab 2B</span><span>Prof. Tan</span></div><div class="bar"><i></i></div></div></div>
+      <div class="row"><div class="t">16:00<small>20:00</small></div>
+        <div class="card" style="background:var(--c3)"><div class="h"><b>Café shift</b><span class="chip">Work</span></div><div class="m"><span>Main St. branch</span></div></div></div>
+      <div class="row"><div class="t">20:30</div>
+        <div class="card" style="background:var(--c4)"><div class="h"><b>Gym</b><span class="chip">Personal</span></div></div></div>
+    </div>
+    <div class="nav">
+      <div class="pill">
+        <div class="ni on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Today</div>
+        <div class="ni" aria-label="Week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+        <div class="ni" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></div>
+      </div>
+      <div class="fab" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Theme</h3>
+    <p>Each theme changes the background, the Next card, the category colors and the nav bar. The schedules shown are sample content.</p>
+    <div class="themes" id="themes"></div>
+    <div id="customBox" hidden>
+      <input class="hue" id="hue" type="range" min="0" max="359" value="290" aria-label="Custom hue">
+      <div class="huelab">Drag to choose any color. The rest of the palette follows it.</div>
+    </div>
+    <button class="pick" id="pick">I like this theme</button>
+    <div class="note">Your photo replaces the “D”. It stays on your phone.</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const base = { style: 'soft', font: '"Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif', dfont: '', round: '50%', bw: '0px', line: 'transparent', shadow: '0 1px 2px rgba(20,20,40,.06)', r: '22px', wt: 700, cInk: '#1E1B2E', nowInk: '#fff' };
+  const T = {
+    Lilac:   { canvas:'#F4F2FC', surface:'#FFFFFF', ink:'#1E1B2E', muted:'#625E78', accent:'#6A5AE0', onAccent:'#FFFFFF',
+               c:['#DDEBFF','#E7E1FF','#FFE1EC','#FFF1C7'], navBg:'#1E1B2E', navInk:'#B9B4D6', navOn:'#FFFFFF', navOnInk:'#1E1B2E' },
+    Clay:    { canvas:'#F3ECE4', surface:'#FBF7F2', ink:'#2A1F1A', muted:'#6E5D53', accent:'#A9502C', onAccent:'#FFFFFF', cInk:'#2A1F1A', r:'26px',
+               c:['#F0D3C2','#D9E2CC','#EBDDBF','#E6CFD0'], navBg:'#FBF7F2', navInk:'#6E5D53', navOn:'#2A1F1A', navOnInk:'#F3ECE4' },
+    Pop:     { canvas:'#FFF4D6', surface:'#FFFFFF', ink:'#111111', muted:'#3A3A3A', accent:'#FFD400', onAccent:'#111111', cInk:'#111111', r:'18px', wt:900,
+               bw:'2px', line:'#111111', shadow:'3px 3px 0 #111111',
+               c:['#6FD3FF','#FF9EC4','#B6F36A','#FFB547'], navBg:'#111111', navInk:'#FFF4D6', navOn:'#FF4B3E', navOnInk:'#111111' },
+    Mint:    { canvas:'#EDF5F0', surface:'#FFFFFF', ink:'#14231B', muted:'#4F6358', accent:'#17805A', onAccent:'#FFFFFF', cInk:'#14231B', r:'20px',
+               c:['#D3EFDF','#D8E8F6','#F6E4D1','#E9E1F6'], navBg:'#FFFFFF', navInk:'#4F6358', navOn:'#17805A', navOnInk:'#FFFFFF' },
+    Midnight:{ canvas:'#0F1117', surface:'#1A1E28', ink:'#EEF0F6', muted:'#9AA1B3', accent:'#9DB8FF', onAccent:'#0F1117', cInk:'#EEF0F6', nowInk:'#0F1117',
+               shadow:'none', c:['#23304A','#2E2742','#3A2632','#24382F'], navBg:'#1A1E28', navInk:'#9AA1B3', navOn:'#9DB8FF', navOnInk:'#0F1117' },
+    Pixel:   { style:'pixel', dfont:'Silkscreen, "Courier New", monospace', canvas:'#EDEBDD', surface:'#FFFFFF', ink:'#1B1B2F', muted:'#4A4A63', accent:'#3D5AFE', onAccent:'#FFFFFF', cInk:'#1B1B2F', r:'0px', wt:700, round:'0',
+               line:'#1B1B2F', shadow:'none', c:['#9BE7C4','#FFD166','#FF8FA3','#A0C4FF'], navBg:'#1B1B2F', navInk:'#EDEBDD', navOn:'#FFD166', navOnInk:'#1B1B2F' },
+    Sketch:  { style:'sketch', dfont:'Caveat, "Segoe Print", "Comic Sans MS", cursive', canvas:'#FBFAF5', surface:'#FFFFFF', ink:'#2B2B2B', muted:'#5C5C5C', accent:'#FFE066', onAccent:'#2B2B2B', cInk:'#2B2B2B', wt:700,
+               bw:'2px', line:'#2B2B2B', shadow:'none', c:['#B3E5FC','#F8BBD0','#C8E6C9','#FFE0B2'], navBg:'#FFFFFF', navInk:'#2B2B2B', navOn:'#2B2B2B', navOnInk:'#FBFAF5' },
+    Custom:  null,
+  };
+  const custom = h => ({ canvas:`oklch(97% 0.014 ${h})`, surface:'#FFFFFF', ink:`oklch(24% 0.03 ${h})`, muted:`oklch(48% 0.03 ${h})`,
+    accent:`oklch(52% 0.17 ${h})`, onAccent:'#FFFFFF', cInk:`oklch(24% 0.03 ${h})`,
+    c:[`oklch(92% 0.05 ${h})`,`oklch(92% 0.05 ${(+h+70)%360})`,`oklch(93% 0.05 ${(+h+150)%360})`,`oklch(94% 0.06 ${(+h+230)%360})`],
+    navBg:`oklch(24% 0.03 ${h})`, navInk:`oklch(80% 0.03 ${h})`, navOn:'#FFFFFF', navOnInk:`oklch(24% 0.03 ${h})` });
+
+  const phone = document.getElementById('phone'), list = document.getElementById('themes');
+  const hue = document.getElementById('hue'), box = document.getElementById('customBox');
+  let current = 'Lilac';
+  function apply(name) {
+    current = name;
+    const t = { ...base, ...(name === 'Custom' ? custom(hue.value) : T[name]) };
+    phone.dataset.style = t.style;
+    for (const [k, v] of Object.entries(t)) if (k !== 'c' && k !== 'style') phone.style.setProperty('--' + k, v);
+    t.c.forEach((v, i) => phone.style.setProperty('--c' + (i + 1), v));
+    box.hidden = name !== 'Custom';
+    for (const b of list.children) b.setAttribute('aria-pressed', String(b.dataset.name === name));
+  }
+  for (const name of Object.keys(T)) {
+    const b = document.createElement('button');
+    b.className = 'tbtn'; b.dataset.name = name; b.type = 'button';
+    const cols = name === 'Custom' ? custom(hue.value) : T[name];
+    b.innerHTML = `<span class="sw">${[cols.accent, ...cols.c.slice(0, 3)].map(c => `<i style="background:${c}"></i>`).join('')}</span>`;
+    b.append(document.createTextNode(name === 'Custom' ? 'Custom color' : name));
+    b.onclick = () => apply(name);
+    list.append(b);
+  }
+  hue.oninput = () => apply('Custom');
+  document.getElementById('pick').onclick = () => {
+    const msg = current === 'Custom' ? `I like the Custom color theme (hue ${hue.value}).` : `I like the ${current} theme.`;
+    if (window.hermes && window.hermes.send) window.hermes.send(msg);
+  };
+  apply('Lilac');
+})();
+</script>

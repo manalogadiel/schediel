@@ -7,6 +7,11 @@ plugins {
 // Host used for verified share links (Android App Links). Sharing stays off until a real
 // owned domain is deployed and configured; ".invalid" is reserved and never resolves.
 val shareHost: String = (project.findProperty("schediel.shareHost") as String?) ?: "schediel.invalid"
+// Optional second owned host the browser preview hands off to. Browsers keep same-host
+// navigation in the browser, so it must differ from shareHost. When unset it repeats
+// shareHost: on Android 11 and lower every autoVerify host must verify, so an
+// unresolvable placeholder would stop the real share host from opening the app.
+val appLinkHost: String = (project.findProperty("schediel.appLinkHost") as String?) ?: shareHost
 
 android {
     namespace = "com.manalogadiel.schediel"
@@ -28,6 +33,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["shareHost"] = shareHost
+        manifestPlaceholders["appLinkHost"] = appLinkHost
     }
 
     testOptions {

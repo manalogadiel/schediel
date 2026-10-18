@@ -1,0 +1,28 @@
+project_id = "schediel-local"
+
+[api]
+enabled = true
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+
+[db]
+major_version = 17
+
+# All management authorization is performed inside the function by Supabase
+# Auth GET /user, never by decoding an unverified JWT. This deliberate custom
+# verification path also gives the frozen safe 401 envelope. Do not remove it.
+# Public resolve/health MUST not require a JWT: publishable keys are not JWTs.
+[functions.share-links]
+verify_jwt = false
+
+[functions.share-resolve]
+verify_jwt = false
+
+[functions.scan]
+verify_jwt = false
+
+[functions.privacy]
+verify_jwt = false
+
+[functions.health]
+verify_jwt = false

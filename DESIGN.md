@@ -119,7 +119,7 @@ components:
 
 ## Overview
 
-**Status:** proposed design system for approval before app implementation. The product name is not a chosen brand. This document contains design instructions, not a claim that the app or native widgets have been built.
+**Status:** proposed design requirements and review criteria, not an implementation report or evidence of user approval. The product name is not a chosen brand. Existing Flutter code must be checked against these requirements; this document does not certify app or native-widget behavior.
 
 The primary surface is **Monitor**: people glance at a timeline to find the current or next schedule. A schedule editor is a secondary **Configure** surface. Composition follows the task: date and filter controls, an ordered timeline, then contextual actions. There is no marketing hero, decorative statistics, motivational slogan, or equal-weight feature-card grid.
 
@@ -189,9 +189,9 @@ Do not reduce all upcoming-entry text opacity until it becomes unreadable. The n
 - Timeline rows are content-sized. A row can show time, title, selected details and status, but is not a fixed-height decorative card.
 - Use a three-destination app shell: **Today**, **Week**, **Settings**. Keep Add, Import and Share contextual; do not add one tab per action.
 - A compact preview uses a bottom sheet. A long import or shared timetable uses a full review page with a persistent confirmation action.
-- Mobile actions have at least a 48-logical-unit target, with platform-specific validation. Small SVG artwork may sit inside that larger target.
+- Mobile actions have at least a 48-logical-unit target, with platform-specific validation. Small SVG artwork may sit inside that larger target; adjacent hit regions must not overlap. Compact density does not shrink targets. Nominal control heights are minimums: grow or stack labels and actions at large text sizes.
 - The week grid must have an equivalent chronological agenda view for narrow screens, screen readers and large text.
-- Sheets respect safe areas, keyboard insets and dismissal behavior. Unsaved edits require a clear discard decision.
+- Sheets respect safe areas, keyboard insets and dismissal behavior. Keep confirmation and error recovery reachable with the keyboard open. Unsaved edits require a clear discard decision; an unchanged read-only preview closes without a needless prompt. Provide a labelled Close/Cancel action rather than requiring a swipe.
 
 ### Widget composition
 
@@ -202,6 +202,8 @@ Do not reduce all upcoming-entry text opacity until it becomes unreadable. The n
 5. No artificial glowing frame, thick stroke, shimmer or perpetual animation.
 6. Date-only entries use an explicit date/all-day label rather than an invented time.
 7. A widget tap opens existing schedule details; it never creates a schedule or enables an alert.
+
+Widget reading order must expose the actual date/time, Now/Next or review status, title and permitted visible details without depending on holder brightness. In a constrained family, remove optional details or show fewer entries before clipping essential content; the app remains the accessible route to full details. Appearance previews use actual saved data or an honest empty state over a labelled neutral preview backdrop, not invented schedules or a copy of the user's wallpaper. A readable preview does not certify Clear mode over arbitrary wallpaper.
 
 The alpha values in the implementation-specific table are a starting hypothesis for a dark-wallpaper preview, not an implemented result. Test light, dark and busy wallpaper fixtures before choosing release values. On iOS, the native Clear/tinted rendering mode controls the material and can replace the requested background. Do not expose a cross-platform opacity slider that the platform cannot actually honor.
 
@@ -234,13 +236,19 @@ If multiple entries overlap, show the simultaneous entries and an overlap indica
 
 Progressively disclose **Details**, **Repeats** and **Reminders and alarms**. The title and date/time status are clear. Optional fields remain genuinely optional. Notification and alarm controls have independent desired settings and visible actual permission/scheduling states.
 
+Use a single reading column, persistent field labels and explicit optional-field labels; placeholders are hints, not labels or stored values. Collapsed groups summarize actual choices and retain warnings. Reveal an invalid group and bring its labelled error into view on submission. Preserve entered values on failure; a transient message alone is not sufficient recovery. Visible manual-entry defaults are editable choices, never evidence for filling an unresolved import.
+
 ### Image import review
 
 Keep the source image available. Each proposed entry can be selected, edited or removed. Unreadable or missing values say **Needs review** or remain blank. Do not use a fabricated confidence percentage. An explicit confirmation is required before events, notifications or alarms are created.
 
+Edits and **Use changes** update only the review draft. **Add selected schedules** is the activation boundary, with a count from the current validated selection. Source evidence and unresolved-field warnings remain discoverable without relying on the image alone; do not invent a transcription when OCR is unavailable. Cancellation, pending work and recovery follow SCHEDULER_SPEC.md section 4.9.
+
 ### Shared-link preview
 
 Use **Preview**, **Edit before adding** and **Add selected schedules**. A long selection moves into a full-page review. The preview is read-only until the recipient edits their own draft. Never automatically save after opening a link.
+
+Keep the sender snapshot separate from recipient edits. Show one primary action for the current step, with Edit and Cancel as supporting actions. Pending link resolution is not an empty timetable, and an unavailable link has no fabricated preview. Sharing and cloud scanning disclose their network/privacy boundary at the action, not through a new onboarding flow.
 
 ### Appearance controls
 
@@ -251,6 +259,21 @@ Start with a small set of tested presets. App and each widget can share appearan
 Use one curated icon family. Proposed family: Lucide, rendered from bundled SVG assets in Flutter. Preserve its upstream notices. Do not mix unrelated outline and filled sets by default. Native widgets receive equivalent approved native vector assets or build-time conversions, not an assumption that WidgetKit or Glance can run Flutter's SVG renderer.
 
 Allowed core meanings: Today/calendar, week, add, image import, share, filter, room/location, person/professor, repeat, notification, alarm, appearance, edit, remove, confirm and close. Pair unfamiliar actions with text. Decorative SVGs are hidden from accessibility; actionable icon buttons have unique spoken labels.
+
+### Motion and feedback requirements
+
+These are interaction criteria, not measured timings or verified rendering. Use the existing 160 ms control and 220 ms screen motion values for app-controlled transitions; native presentations retain supported platform behavior. Motion explains state, never grants permission or delays a commit. No new gesture, animation library, sound or haptic feature is required.
+
+| Trigger | Rules and feedback | Motion / repetition | Reduced motion and accessibility |
+|---|---|---|---|
+| Press, focus or semantic activation | Show pressed/focus feedback immediately; activate only on a completed tap or equivalent action, not pointer-down. A cancelled press has no side effect. | State feedback settles within control motion; no decorative bounce or forced delay. | Keep visible focus and pressed state without movement; preserve the full target and spoken action. |
+| Expand/collapse Details, Repeats or alerts | Reveal the existing group in place; expose expanded state and preserve values. Do not hide focused invalid input. | Control motion, ease-out without overshoot; repeated toggles retarget from the current presentation. | Immediate layout change or non-spatial fade; reading and focus order still match the form. |
+| Open/close details or review | Keep entry/exit paths spatially consistent and restore focus to the initiating control on return. Dismissal still obeys the draft/discard rule. | Screen motion; interrupt/reverse supported transitions without jumping or waiting for completion. | Remove slides, scale and spring motion; use an immediate change or brief fade with the same dismissal controls. |
+| Start scan, resolve, save or create link | Name the actual stage and keep context visible. Only verified stages/counts may be shown; use indeterminate progress when completion is unknown. | Animate progress only while work is active; no fake percentage, perpetual shimmer or delayed success reveal. | A static working label and state-change announcement must convey progress without a looping animation. |
+| Confirm save/import or receive its result | Guard repeated/conflicting submission for that operation. Show saved/added only after the local commit; expose alert failure separately. | Feedback follows the actual outcome once, not an animation timer; transitions do not unlock duplicate work. | Same textual outcome and enabled/disabled semantics; no dependence on motion, sound or color. |
+| Validation or recoverable failure | Show what failed beside the affected field/action, retain edits and expose the specific correction or safe retry. | Immediate, persistent feedback until resolved or dismissed deliberately; no shake or flashing error loop. | Announce the failure once per attempt; on submit, reveal/focus the error summary or first invalid field, not every keystroke. |
+
+All manual, image-review and shared-review actions must remain operable through screen-reader and keyboard/switch activation, not just touch. Expose selection, expansion, busy state and the reason a confirmation is unavailable. State announcements occur on meaningful changes, not every poll or rebuilt frame. Reduced motion changes presentation only, not validation, cancellation or outcome semantics.
 
 ### Content and empty states
 

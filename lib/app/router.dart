@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../core/time/local_date.dart';
 import '../features/appearance/appearance_screen.dart';
+import '../features/image_import/presentation/image_import_screen.dart';
+import '../features/privacy/presentation/privacy_screen.dart';
 import '../features/categories/presentation/categories_screen.dart';
 import '../features/reminders/presentation/alerts_settings_screen.dart';
 import '../features/reminders/presentation/reminder_page.dart';
@@ -11,6 +13,9 @@ import '../features/schedules/presentation/schedule_editor_screen.dart';
 import '../features/schedules/presentation/today_screen.dart';
 import '../features/schedules/presentation/week_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/sharing/presentation/sharing_screens.dart';
+import '../features/sharing/domain/share_link.dart';
+import '../features/sharing/presentation/shared_links_screen.dart';
 import '../features/widgets/presentation/widget_settings_screen.dart';
 import 'shell.dart';
 
@@ -95,6 +100,16 @@ GoRouter buildRouter({String initialLocation = '/today', List<RouteBase> extraRo
             ),
           ),
         ),
+        GoRoute(path: '/share/open', parentNavigatorKey: rootNavigatorKey,
+          builder: (_, state) => ShareOpenScreen(initialLink: state.extra is ShareLink ? state.extra as ShareLink : null)),
+        GoRoute(path: '/share/create', parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const CreateShareScreen()),
+        GoRoute(path: '/settings/shared-links', parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const SharedLinksScreen()),
+        GoRoute(path: '/settings/privacy', parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const PrivacyScreen()),
+        GoRoute(path: '/import/image', parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const ImageImportScreen()),
         ...extraRoutes,
       ],
     );

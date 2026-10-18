@@ -1,0 +1,17 @@
+{
+  "name": "schediel-web-preview",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Static, read-only browser preview for Schediel share links.",
+  "type": "module",
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "configure": "node scripts/configure.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.3"
+  }
+}

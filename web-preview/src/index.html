@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="A read-only preview of schedules shared with Schediel.">
+  <meta property="og:title" content="Schediel shared schedules">
+  <meta property="og:description" content="A read-only preview of schedules shared with Schediel.">
+  <title>Shared schedules — Schediel</title>
+  <link rel="stylesheet" href="/assets/style.css">
+  <script type="module" src="/assets/main.js"></script>
+</head>
+<body>
+  <header class="brand">Schediel</header>
+  <main aria-labelledby="page-title" data-state="loading">
+    <h1 id="page-title">Shared schedules</h1>
+    <p id="status" role="status" aria-live="polite" aria-atomic="true">Loading preview…</p>
+    <button id="retry" type="button" hidden>Try again</button>
+    <section id="preview" aria-label="Schedule preview" hidden>
+      <div class="summary">
+        <p id="item-count"></p>
+        <p id="expires"></p>
+      </div>
+      <p class="explanation">Read-only preview. Times use each schedule’s time zone.</p>
+      <ol id="items" class="agenda"></ol>
+    </section>
+    <section id="app-action" aria-label="Open the app" hidden>
+      <p id="app-help">The Schediel app is required to review and add schedules. Nothing is added here.</p>
+      <button id="open-app" type="button" aria-describedby="app-help" hidden>Open in Schediel</button>
+      <p class="caption">If the app does not open, reopen the original link on a device with Schediel installed.</p>
+    </section>
+    <noscript>JavaScript is needed to read the link and load this preview. You can also reopen the original link in the Schediel app.</noscript>
+  </main>
+  <footer>Anyone with the original link can view its shared schedules while the link is available.</footer>
+</body>
+</html>

@@ -1,10 +1,11 @@
-# Scheduling app: pre-implementation specification
-**Standalone edition:** This file includes the complete product/frontend/backend specification plus the design tokens, typed contracts, primary sources and documentation-validation record. Its document links point to appendices inside this file. The modular originals remain in the downloadable bundle.
+# Schediel: product and engineering specification
 
-**Document version:** 0.1 — for product approval, not an implementation claim  
+**Generated readable edition.** Rebuild with `python3 tools/spec_bundle.py`. Product requirements and validation are combined here; authoritative serialized schemas, fixtures, OpenAPI and native calls remain in `contracts/`. No deployment or real-device certification is implied.
+
+**Document version:** 0.2 — requirements baseline; implementation evidence is in VALIDATION.md
 **Prepared:** October 18, 2026, using the current conversation and primary documentation  
 **Platforms requested:** Android and iOS, built with Flutter  
-**Implementation status:** documentation only; no Flutter app, backend deployment, device alarm, widget, or AI extraction has been implemented or certified by this document.
+**Implementation status:** requirements baseline, not an implementation report. Existing Flutter code and frozen machine contracts must be evaluated separately; this document certifies no build, deployment, native behavior or AI accuracy.
 
 ## Contents
 
@@ -30,21 +31,13 @@
 20. [Approval and implementation handoff](#20-approval-and-implementation-handoff)
 21. [Sources](#21-sources)
 
-
-### Standalone appendices
-
-- [Appendix A: Visual system and design tokens](#appendix-a-visual-system-and-design-tokens)
-- [Appendix B: Typed integration contracts](#appendix-b-typed-integration-contracts)
-- [Appendix C: Primary-source register](#appendix-c-primary-source-register)
-- [Appendix D: Documentation validation](#appendix-d-documentation-validation)
-
 ## 1. Document rules and decision status
 
 ### 1.1 What this document is
 
 This is a buildable product and engineering brief. It records the requested behavior, recommended architecture, UI states, data contracts, platform compromises, and tests that must exist before release. It is not a visual prototype, production migration, API response dump, delivery estimate, or claim of successful device testing.
 
-The app's name, logo, final accent color, supported device baseline, deployment region, AI provider, and commercial model have not been selected by the user. **Scheduling app** is a descriptive document title, not an invented brand.
+The user selected **Schediel**, app identity `com.manalogadiel.schediel`, and preview-first link sharing with independent recipient copies. The approved development direction is an offline-first Flutter app plus a locally tested Supabase sharing backend and static browser preview; sharing stays disabled until a real project and owned domain are configured. iOS sources may be written on Windows, but Mac/Xcode and device verification remain gates. No logo, production region, AI provider or commercial model is invented. Final visual presets, production policy, backup/recovery and audience/privacy decisions retain the labels below.
 
 ### 1.2 Decision labels
 
@@ -55,6 +48,8 @@ The app's name, logo, final accent color, supported device baseline, deployment 
 - **Future scope:** deliberately excluded from the first version unless the user changes priorities.
 
 Normative words such as **must** define the proposed implementation contract, not something already built.
+
+The frozen schemas, OpenAPI and native bridge in `contracts/` are authoritative for exact serialized fields, limits, routes and native calls. The prose below supplies product intent and review criteria; it does not override those artifacts or imply that unresolved approval/release gates have passed.
 
 ### 1.3 Non-negotiable boundaries
 
@@ -218,6 +213,8 @@ For a recurring entry, editing asks **This occurrence** or **Entire series**. Th
 
 Save errors preserve entered values. Dismissing unsaved edits requires a discard decision. Destructive actions identify whether they affect one occurrence, the series, or only an external share link.
 
+Keep persistent labels and optional-field guidance visible. Validate on field exit and submission without announcing errors on every keystroke. On submit, reveal collapsed groups containing errors and focus an error summary or the first invalid field; associate each error with its input and explain the correction. Do not silently truncate input at a contract limit. Manual-entry defaults are visible editable choices, not permission to fill unresolved source fields.
+
 ### 4.6 Import review screen
 
 Use a bottom sheet for the first compact preview and a full review page for long timetables. Keep a visible confirmation action and selection count derived from actual parsed candidates.
@@ -242,6 +239,23 @@ Controls are capability-driven. An unavailable native feature is either absent o
 The UI may contain only actual user data, reviewable source-supported candidates and approved interface labels. Development fixtures are explicitly labelled and must not populate release storage.
 
 Examples of genuine state copy: **No schedules yet**, **No schedules in this filter**, **Nothing else today**, **Needs review**, **Notifications are off**, **Alarm permission needed**, **Unable to scan this image**, **Shared link expired**, **Shared link unavailable**. Do not display a state merely to fill space.
+
+### 4.9 Interaction state and recovery requirements
+
+Apply the same confirmation boundary to manual entry, image review and shared-link review. Draft fields, selection and **Use changes** in a child editor do not publish to Today, native snapshots or alert scheduling. In these editor/import flows, the final **Save** or **Add selected schedules** is the commit boundary; other existing management actions retain their own explicit scope. Optional groups may collapse, but their active settings, unresolved blockers and actual alert status must remain discoverable. Show one primary action per step rather than simultaneous competing commit actions.
+
+| State / boundary | Available action and truthful feedback | Failure / cancellation and recovery |
+|---|---|---|
+| Loading local data or resolving a link | Identify the work in progress; retain safe last-known content without claiming it is refreshed. | Do not turn loading/error into an empty schedule. Offer Retry or Back for the failed read; local schedules remain usable when an online action fails. |
+| Manual editor or edited review draft | Edit, return to review, Save or Add as appropriate. Child-editor **Use changes** changes only the draft. | Back, Close and swipe dismissal share the same discard decision for changed drafts; keep editing is the safe alternative. An unchanged preview may close directly. No unfinished edit becomes active. |
+| Candidate review / required information unresolved | Select, edit or exclude candidates; show source evidence, field-level uncertainty and the actual selected count. | Explain which selected entries block confirmation and let the user resolve or exclude them. Never repair a malformed shared payload by silently dropping rows or invent missing values. |
+| Scan or preview request in progress | Show only the known stage, with Cancel/Back where the operation can be abandoned; never fabricate a percentage. | Ignore late results for a cancelled/replaced request so they cannot reopen review or overwrite newer edits. Preserve the source/edits where safe. Cancelling external work does not promise its usage or retention is undone. |
+| Ready to commit / local commit pending | On explicit confirmation, validate the current selection and admit one operation for that draft. Disable repeated confirmation and conflicting edits while its transaction is in flight. | Cancel before dispatch has no effect on schedules. After dispatch, do not label navigation as a rollback; resolve the transaction outcome before claiming saved or discarded. On an uncertain result, inspect the saved state/commit provenance before offering retry. |
+| Local commit succeeded, alert/widget work pending or failed | Report the actual saved count separately from native alert acceptance and widget refresh. | Keep saved schedules. Retry only the failed reconciliation/refresh work; never invite another import to repair an alert or widget failure. |
+| Share creation or revocation pending / outcome uncertain | Keep the approved scope visible and admit one mutation at a time for that operation. Reuse the retained request identity/secret for a safe identical create retry. | Closing a screen does not revoke a dispatched share. Preserve an uncertain outcome; check owner metadata rather than create another link blindly. Verify the exact owner status before saying revoked; recipient copies are unaffected. |
+| Cloud scan unavailable, failed or outcome unknown | Explain the actual capability/error and offer the existing local/manual path. Keep **Needs review** distinct from scan success or failure. | A closed cloud gate is not a running scan. An unknown possibly billed outcome must not auto-retry. Offer retry only when permitted by the typed error and the idempotency/budget rules in sections 14–16. |
+
+Confirmation authorizes only the selected local change and explicit personal alert choices; it cannot override invalid schemas, contract limits, OS permissions, ownership checks or a disabled cloud gate. Explain the boundary and offer the existing edit/local path rather than a bypass. Errors stay near the affected field/action with a specific recovery route; a disappearing toast is not the only record of a blocking problem. Busy guards protect a transaction, not a decorative transition: motion must not lock ordinary navigation or disable unrelated local work. These are required behaviors, not evidence that current screens satisfy them.
 
 ## 5. Visual system and widget design
 
@@ -283,6 +297,8 @@ Provide only options the host can honor. System accessibility/material settings 
 - Use generous platform-appropriate hit targets, clear focus states and spoken labels.
 - Preserve meaning without relying only on color, translucency or animation.
 - At large type sizes, hide optional widget details before essential title/time; if necessary show fewer entries and open the app for details.
+
+Apply DESIGN.md's minimum targets even in compact density. Reflow long labels and stacked actions without clipping confirmation, Cancel or error recovery behind the keyboard. Screen-reader/keyboard users must be able to review source evidence, identify each candidate's selection and warnings, edit, confirm and cancel in a logical focus order. Label actions from actual content or a neutral candidate ordinal, never an invented title. Restore focus after sheets; announce meaningful loading/error/result changes once rather than on every poll. Reduced motion must retain equivalent static status and confirmation feedback.
 
 ## 6. Schedule and recurrence behavior
 
@@ -470,6 +486,8 @@ Strict schema validation checks format, allowed keys, ranges and payload limits;
 7. Only after commit does the alert outbox schedule authorized requests and the widget snapshot refresh.
 
 Closing review or cancelling a scan creates no schedules, reminders or alarms. A native scheduling failure after a successful import leaves the schedules saved and visibly marks the affected alerts; do not pretend the entire import failed and invite duplicate retries.
+
+Cancellation invalidates the pending review request/revision: a late scan or resolve response cannot replace newer edits, reopen dismissed review or commit anything. Stopping observation is not proof that an in-flight provider request stopped or was unbilled. Preserve recoverable source/draft data only within the existing privacy/cleanup policy; no automatic upload, rescan or durable recovery guarantee is implied.
 
 ### 8.6 Cloud failure states
 
@@ -798,7 +816,7 @@ There is intentionally no backend endpoint that automatically adds a shared/AI-d
 
 ## 14. Backend API contracts
 
-These are proposed endpoint contracts, not implemented endpoints or sample responses. All bodies are typed/versioned JSON unless an upload protocol says otherwise. Request/response values shown as field names are schema definitions, not fabricated live records.
+The frozen transport contract is [contracts/openapi.yaml](contracts/openapi.yaml), including its server base `/functions/v1`, exact paths, envelopes, status codes and feature gates. The `/v1/...` inventory below preserves earlier illustrative product-operation names, not callable URLs or a second transport contract. In particular, resolve is `/functions/v1/share-resolve`, scan routes use `/functions/v1/scan/assets` and `/functions/v1/scan/jobs`, and share management uses `/functions/v1/share-links`. OpenAPI wins over these illustrations; scan request/result descriptions below are future intent, not accepted schemas while the gate returns `503 scan_unavailable`. No endpoint availability or deployment is certified here.
 
 ### 14.1 Common behavior
 
@@ -811,7 +829,7 @@ These are proposed endpoint contracts, not implemented endpoints or sample respo
 
 ### 14.2 Endpoint inventory
 
-| Endpoint | Authorization | Request / response contract |
+| Illustrative operation (not a callable path) | Authorization | Product intent; exact transport is in OpenAPI |
 |---|---|---|
 | `POST /v1/share-links` | Owner session | Input: schema version, selected validated payload, token digest, expiry choice. Output: share ID, non-secret route metadata, expiry, actual item count and snapshot version; client composes URL from its retained secret. Idempotent create. |
 | `GET /v1/share-links` | Owner session | Paginated owner metadata: IDs, creation/expiry/revocation state, scope summary and counts; no complete local database or raw tokens. |
@@ -842,7 +860,7 @@ Use the auth provider's documented anonymous-session API rather than inventing a
 - `429`: rate/quota/concurrency limit; safe retry guidance where applicable.
 - `5xx`: internal/provider unavailable/timeout category; no personal content in errors.
 
-A successful create is `201`; an existing idempotent create replay returns the documented same resource outcome without repeating work. Accepted asynchronous jobs/deletions may use `202`. Revoke/delete uses a documented idempotent response. Exact transport details are to be frozen with an OpenAPI contract before implementation.
+A successful share create and its identical idempotent replay use `201`; backend deletion is accepted with `202` and has a progress read endpoint. Share revocation returns owner metadata with `200`; verify it through the exact owner status read. Exact response schemas and route-specific status codes are already frozen in `contracts/openapi.yaml`; the gated scan operations return the documented unavailable response, not simulated job progress.
 
 ### 14.4 Idempotency and local imports
 
@@ -1004,8 +1022,8 @@ Mocks cannot substitute for proving OS presentation, server access control or da
 | AT21 | Year, date order, AM/PM, term dates or table association is unclear | Field-level review required; no guessed fact presented as certain |
 | AT22 | Image text attempts to instruct the model/backend | Treated as data; no arbitrary tool/network/action execution |
 | AT23 | Extraction result is partial or uncertain | Source evidence and actual candidates shown; no fake confidence percentage/completeness |
-| AT24 | Image/link review is closed without confirmation | No schedules, notifications or alarms are created |
-| AT25 | Selected validated entries are confirmed, then native scheduling fails | Entries commit once; alert failure is shown without inviting duplicate imports |
+| AT24 | Image/link review is cancelled via Close, Back or swipe; a response arrives late or a child editor uses changes | No active writes before final confirmation; changed drafts have a discard decision; late results cannot reopen review or overwrite newer edits |
+| AT25 | Confirmation is repeated rapidly, completion is uncertain, or native scheduling fails after commit | One local commit; inspect saved state/provenance before retry; preserve edits on failure and report saved schedules separately from targeted alert/widget recovery |
 | AT26 | Exact repeated import or similar/overlapping entry is detected | Explicit skip/keep-copy choice and warning; no silent destructive merge |
 | AT27 | Sender shares current filter, all, or edited selection | Serialized scope/count exactly matches preview; limits never silently omit entries |
 | AT28 | Snapshot is inspected | Only approved fields; no source images, auth/device data or sender alert IDs/settings |
@@ -1019,7 +1037,7 @@ Mocks cannot substitute for proving OS presentation, server access control or da
 | AT36 | New/unknown snapshot or candidate schema version arrives | Safe rejection/update path; no crash or partial activation |
 | AT37 | Long timetable and configured upper-bound fixtures are used | Responsive scrolling and bounded expansion; measurements recorded on named devices |
 | AT38 | Database schema migration or reconciliation crashes mid-operation | Tested migration/transaction behavior; recoverable outbox without duplicate requests |
-| AT39 | Screen reader, large text, focus, keyboard and empty states are exercised | Accessible equivalent flows and truthful minimal copy; fixtures absent from release |
+| AT39 | Screen reader, large text, minimum targets, keyboard, reduced motion and form errors are exercised | Equivalent manual/image/share review and cancellation; reachable actions, revealed/associated errors, logical/restored focus and non-looping status announcements; truthful empty states and no release fixtures |
 | AT40 | User deletes backend data but keeps local schedules | Server deletion/revocation progresses truthfully; local schedule database is preserved |
 | AT41 | Anonymous session is lost | Recovery limitation is explicit; management rights are not granted to a new unrelated identity |
 | AT42 | First launch and ordinary local use | No signup wall, unsolicited uploads or bulk permission prompts |
@@ -1036,7 +1054,7 @@ The documentation tooling may validate Markdown, token references and opaque con
 
 ## 18. Implementation sequence
 
-All phases below are future work, not tasks already performed.
+This sequence defines required work and proof, not a phase-completion record. Existing code or frozen contracts do not establish that a phase's acceptance and native release gates have passed.
 
 ### Phase 0 — Approve the contract and prove native risks
 
@@ -1080,7 +1098,7 @@ Complete accessibility, performance, privacy disclosures, cleanup, backup/recove
 
 | ID | Decision | Recommended starting position | Blocks |
 |---|---|---|---|
-| D01 | Product name/logo | Leave unbranded until chosen | Branding, not domain work |
+| D01 | Product name/logo | Name selected: Schediel; app ID `com.manalogadiel.schediel`; no invented logo | Logo remains separate from domain work |
 | D02 | Supported OS/device baseline | Propose Android API 26+ and iOS 17+, subject to dependency/device-audience audit; AlarmKit gated separately | Native setup and release support |
 | D03 | Target audience: adults only or also minors | Do not assume; confirm before selecting AI/backend terms | Production cloud scanning |
 | D04 | Deployment region, provider and privacy arrangement | Select based on audience/jurisdiction and verified terms | Production backend/AI |
@@ -1093,7 +1111,7 @@ Complete accessibility, performance, privacy disclosures, cleanup, backup/recove
 | D11 | Accent presets and density defaults | Restrained blue, system theme, comfortable density | Final visual polish |
 | D12 | Local encryption/OS backup/recovery | Decide explicitly; do not imply Drift/SQLite automatically encrypts or synchronizes | Release privacy and data-loss expectations |
 | D13 | Proposed limits/expiry/retention | Validate against devices, backend policy and budget | Public rollout |
-| D14 | Access to Mac/Xcode and real target devices | Confirm availability; no Windows-only iOS certification | iOS implementation and QA |
+| D14 | Access to Mac/Xcode and real target devices | iOS source-only work accepted on Windows; Mac build/signing, widget target setup and device tests remain required | iOS QA and release |
 
 ### 19.2 Risk treatment
 
@@ -1117,7 +1135,7 @@ Before production app work begins, confirm:
 - [ ] The visual direction in DESIGN.md is accepted or edited.
 - [ ] Audience, backend identity/recovery, link semantics and cloud-scan privacy are decided sufficiently for the affected phase.
 - [ ] Native proof tasks and real-device access are available.
-- [ ] Dependency versions, schema/OpenAPI contracts and capability flags will be frozen at scaffold time, not guessed now.
+- [ ] The frozen schemas/OpenAPI/native bridge in `contracts/` are respected; dependency resolutions and capability flags are reviewed separately, without guessing or treating contract freeze as release approval.
 - [ ] No feature will be advertised as working until its acceptance tests and native checks actually run.
 
 A later implementation agent should read this file, DESIGN.md, CONTRACTS.md, SOURCES.md and VALIDATION.md before writing production code. Open decisions are intentional unresolved choices, not permission to invent missing product facts.
@@ -1127,11 +1145,17 @@ A later implementation agent should read this file, DESIGN.md, CONTRACTS.md, SOU
 Primary references and their scope are recorded in [SOURCES.md](#appendix-c-primary-source-register). Bracketed numbers in this specification refer to that source register. Product requirements come from the conversation; proposed defaults are engineering recommendations, not research findings or confirmed user decisions.
 
 
+## Standalone appendices
+
+- [Appendix A: Visual system and design tokens](#appendix-a-visual-system-and-design-tokens)
+- [Appendix B: Typed integration contracts](#appendix-b-typed-integration-contracts)
+- [Appendix C: Primary-source register](#appendix-c-primary-source-register)
+- [Appendix D: Implementation validation](#appendix-d-implementation-validation)
+
+
 ---
 
-## Appendix A: Visual system and design tokens
-
-The following YAML is the supported token front matter from the modular DESIGN.md; native-specific material values remain explicit prose below.
+# Appendix A: Visual system and design tokens
 
 ```yaml
 version: alpha
@@ -1252,17 +1276,17 @@ components:
     height: 1px
 ```
 
-### Overview
+## Overview
 
-**Status:** proposed design system for approval before app implementation. The product name is not a chosen brand. This document contains design instructions, not a claim that the app or native widgets have been built.
+**Status:** proposed design requirements and review criteria, not an implementation report or evidence of user approval. The product name is not a chosen brand. Existing Flutter code must be checked against these requirements; this document does not certify app or native-widget behavior.
 
 The primary surface is **Monitor**: people glance at a timeline to find the current or next schedule. A schedule editor is a secondary **Configure** surface. Composition follows the task: date and filter controls, an ordered timeline, then contextual actions. There is no marketing hero, decorative statistics, motivational slogan, or equal-weight feature-card grid.
 
 The direction is minimal and Apple-inspired without cloning a branded screen. Hierarchy comes from type, spacing, alignment and restrained emphasis. Glass is limited to supported navigation/material treatments and widget holders. Important schedule text is not buried under blur.
 
-Normative product behavior, security rules and platform limits live in [SCHEDULER_SPEC.md](#scheduling-app-pre-implementation-specification). External references are in [SOURCES.md](#appendix-c-primary-source-register).
+Normative product behavior, security rules and platform limits live in [SCHEDULER_SPEC.md](SCHEDULER_SPEC.md). External references are in [SOURCES.md](#appendix-c-primary-source-register).
 
-#### Implementation-specific values
+### Implementation-specific values
 
 The interchange format exports only its supported token maps. The values below are normative prose for Flutter/native implementation; do not assume a generic token export includes them.
 
@@ -1281,9 +1305,9 @@ The interchange format exports only its supported token maps. The values below a
 | Clear-mode contrast | No guarantee over arbitrary wallpaper; offer a solid accessible preset |
 | iOS widget material | System rendering mode may replace the background and tint content |
 
-### Colors
+## Colors
 
-#### Light appearance
+### Light appearance
 
 - `primary`: primary text, titles and schedule names.
 - `secondary`: room, professor, date labels and supporting text; not disabled text.
@@ -1293,19 +1317,19 @@ The interchange format exports only its supported token maps. The values below a
 - `input-boundary`: interactive field boundaries where a visible boundary is necessary.
 - `divider`: decorative separation only; never the sole outline identifying an essential control.
 
-#### Dark appearance
+### Dark appearance
 
 Use `dark-canvas`, `dark-surface`, `dark-ink`, `dark-secondary`, `dark-accent` and `dark-on-accent` as a coherent set. Do not simply invert each light color. The bright blue dark-mode action has dark text; do not replace that text with white without another contrast check.
 
 Category colors are optional accents, never the only way to identify School, Work, Personal or a custom category. Every category has a visible name and accessible label. Additional accent choices must ship as tested foreground/background pairs, not as an unrestricted color picker that can silently make text unreadable.
 
-#### Contrast policy
+### Contrast policy
 
 Opaque text/background pairings must meet the text-contrast targets in the product specification. Transparent widgets are an explicit exception in capability, not an accessibility claim: arbitrary wallpaper is unknown, so a fixed translucent fill cannot guarantee contrast.
 
 Provide **Clear**, **Soft tint** and **Solid accessible** widget treatments where supported. Offer light/dark text and stronger next-entry emphasis only when the platform can honor them. Respect the operating system's accessibility and rendering settings. When Reduce Transparency or an equivalent accessible treatment is requested, prefer the solid preset instead of preserving decoration.
 
-### Typography
+## Typography
 
 Use the native system font deliberately. In Flutter, inherit the platform theme rather than shipping SF Pro font files. Use tabular figures for schedule times where the platform supports them. Avoid all-caps body copy and very light text weights.
 
@@ -1317,18 +1341,18 @@ Use the native system font deliberately. In Flutter, inherit the platform theme 
 
 Do not reduce all upcoming-entry text opacity until it becomes unreadable. The next entry should be stronger; upcoming entries must still be legible.
 
-### Layout
+## Layout
 
 - Default page gutters: `md`; use `lg` when screen width permits.
 - Group related fields using `sm` or `md`; separate sections with `lg`.
 - Timeline rows are content-sized. A row can show time, title, selected details and status, but is not a fixed-height decorative card.
 - Use a three-destination app shell: **Today**, **Week**, **Settings**. Keep Add, Import and Share contextual; do not add one tab per action.
 - A compact preview uses a bottom sheet. A long import or shared timetable uses a full review page with a persistent confirmation action.
-- Mobile actions have at least a 48-logical-unit target, with platform-specific validation. Small SVG artwork may sit inside that larger target.
+- Mobile actions have at least a 48-logical-unit target, with platform-specific validation. Small SVG artwork may sit inside that larger target; adjacent hit regions must not overlap. Compact density does not shrink targets. Nominal control heights are minimums: grow or stack labels and actions at large text sizes.
 - The week grid must have an equivalent chronological agenda view for narrow screens, screen readers and large text.
-- Sheets respect safe areas, keyboard insets and dismissal behavior. Unsaved edits require a clear discard decision.
+- Sheets respect safe areas, keyboard insets and dismissal behavior. Keep confirmation and error recovery reachable with the keyboard open. Unsaved edits require a clear discard decision; an unchanged read-only preview closes without a needless prompt. Provide a labelled Close/Cancel action rather than requiring a swipe.
 
-#### Widget composition
+### Widget composition
 
 1. No app-painted outer background in the requested Clear layout, where the native host permits it.
 2. The next timed entry receives a brighter holder, stronger type and a more visible outline.
@@ -1338,9 +1362,11 @@ Do not reduce all upcoming-entry text opacity until it becomes unreadable. The n
 6. Date-only entries use an explicit date/all-day label rather than an invented time.
 7. A widget tap opens existing schedule details; it never creates a schedule or enables an alert.
 
+Widget reading order must expose the actual date/time, Now/Next or review status, title and permitted visible details without depending on holder brightness. In a constrained family, remove optional details or show fewer entries before clipping essential content; the app remains the accessible route to full details. Appearance previews use actual saved data or an honest empty state over a labelled neutral preview backdrop, not invented schedules or a copy of the user's wallpaper. A readable preview does not certify Clear mode over arbitrary wallpaper.
+
 The alpha values in the implementation-specific table are a starting hypothesis for a dark-wallpaper preview, not an implemented result. Test light, dark and busy wallpaper fixtures before choosing release values. On iOS, the native Clear/tinted rendering mode controls the material and can replace the requested background. Do not expose a cross-platform opacity slider that the platform cannot actually honor.
 
-### Elevation & Depth
+## Elevation & Depth
 
 The default app surface is flat. Prefer background separation and spacing over shadows. Navigation may use a native translucent material if supported; content remains on a readable surface.
 
@@ -1348,7 +1374,7 @@ Widget **Clear** means no requested blur. **Soft tint** adds a translucent fill,
 
 Use a thin outline or a subtle text shadow only when it improves separation. Do not add multiple heavy shadows to imitate expensive glass. The solid accessible treatment is a first-class option, not an error state.
 
-### Shapes
+## Shapes
 
 - Controls: `rounded.control`.
 - App cards: `rounded.card`, used only for meaningful grouping.
@@ -1357,43 +1383,64 @@ Use a thin outline or a subtle text shadow only when it improves separation. Do 
 - Native widget outer shape: obey the host's clipping and corner behavior rather than assuming an arbitrary app radius.
 - Widget holder radius: proposed 16 logical units, subject to native sizing and clipping tests.
 
-### Components
+## Components
 
-#### Timeline row
+### Timeline row
 
 Time and title are primary. Room, professor and subtitle are optional and hidden when absent. An ongoing entry may say **Now**; the next future timed entry may say **Next**. These labels must derive from actual occurrence times, never a seeded demonstration schedule.
 
 If multiple entries overlap, show the simultaneous entries and an overlap indicator. Never silently pick one and hide the others.
 
-#### Schedule editor
+### Schedule editor
 
 Progressively disclose **Details**, **Repeats** and **Reminders and alarms**. The title and date/time status are clear. Optional fields remain genuinely optional. Notification and alarm controls have independent desired settings and visible actual permission/scheduling states.
 
-#### Image import review
+Use a single reading column, persistent field labels and explicit optional-field labels; placeholders are hints, not labels or stored values. Collapsed groups summarize actual choices and retain warnings. Reveal an invalid group and bring its labelled error into view on submission. Preserve entered values on failure; a transient message alone is not sufficient recovery. Visible manual-entry defaults are editable choices, never evidence for filling an unresolved import.
+
+### Image import review
 
 Keep the source image available. Each proposed entry can be selected, edited or removed. Unreadable or missing values say **Needs review** or remain blank. Do not use a fabricated confidence percentage. An explicit confirmation is required before events, notifications or alarms are created.
 
-#### Shared-link preview
+Edits and **Use changes** update only the review draft. **Add selected schedules** is the activation boundary, with a count from the current validated selection. Source evidence and unresolved-field warnings remain discoverable without relying on the image alone; do not invent a transcription when OCR is unavailable. Cancellation, pending work and recovery follow SCHEDULER_SPEC.md section 4.9.
+
+### Shared-link preview
 
 Use **Preview**, **Edit before adding** and **Add selected schedules**. A long selection moves into a full-page review. The preview is read-only until the recipient edits their own draft. Never automatically save after opening a link.
 
-#### Appearance controls
+Keep the sender snapshot separate from recipient edits. Show one primary action for the current step, with Edit and Cancel as supporting actions. Pending link resolution is not an empty timetable, and an unavailable link has no fabricated preview. Sharing and cloud scanning disclose their network/privacy boundary at the action, not through a new onboarding flow.
+
+### Appearance controls
 
 Start with a small set of tested presets. App and each widget can share appearance settings or be configured independently. Hide or explain unavailable native options. Separate app colors from the system's control of native widget glass/tint.
 
-#### SVG assets
+### SVG assets
 
 Use one curated icon family. Proposed family: Lucide, rendered from bundled SVG assets in Flutter. Preserve its upstream notices. Do not mix unrelated outline and filled sets by default. Native widgets receive equivalent approved native vector assets or build-time conversions, not an assumption that WidgetKit or Glance can run Flutter's SVG renderer.
 
 Allowed core meanings: Today/calendar, week, add, image import, share, filter, room/location, person/professor, repeat, notification, alarm, appearance, edit, remove, confirm and close. Pair unfamiliar actions with text. Decorative SVGs are hidden from accessibility; actionable icon buttons have unique spoken labels.
 
-#### Content and empty states
+### Motion and feedback requirements
+
+These are interaction criteria, not measured timings or verified rendering. Use the existing 160 ms control and 220 ms screen motion values for app-controlled transitions; native presentations retain supported platform behavior. Motion explains state, never grants permission or delays a commit. No new gesture, animation library, sound or haptic feature is required.
+
+| Trigger | Rules and feedback | Motion / repetition | Reduced motion and accessibility |
+|---|---|---|---|
+| Press, focus or semantic activation | Show pressed/focus feedback immediately; activate only on a completed tap or equivalent action, not pointer-down. A cancelled press has no side effect. | State feedback settles within control motion; no decorative bounce or forced delay. | Keep visible focus and pressed state without movement; preserve the full target and spoken action. |
+| Expand/collapse Details, Repeats or alerts | Reveal the existing group in place; expose expanded state and preserve values. Do not hide focused invalid input. | Control motion, ease-out without overshoot; repeated toggles retarget from the current presentation. | Immediate layout change or non-spatial fade; reading and focus order still match the form. |
+| Open/close details or review | Keep entry/exit paths spatially consistent and restore focus to the initiating control on return. Dismissal still obeys the draft/discard rule. | Screen motion; interrupt/reverse supported transitions without jumping or waiting for completion. | Remove slides, scale and spring motion; use an immediate change or brief fade with the same dismissal controls. |
+| Start scan, resolve, save or create link | Name the actual stage and keep context visible. Only verified stages/counts may be shown; use indeterminate progress when completion is unknown. | Animate progress only while work is active; no fake percentage, perpetual shimmer or delayed success reveal. | A static working label and state-change announcement must convey progress without a looping animation. |
+| Confirm save/import or receive its result | Guard repeated/conflicting submission for that operation. Show saved/added only after the local commit; expose alert failure separately. | Feedback follows the actual outcome once, not an animation timer; transitions do not unlock duplicate work. | Same textual outcome and enabled/disabled semantics; no dependence on motion, sound or color. |
+| Validation or recoverable failure | Show what failed beside the affected field/action, retain edits and expose the specific correction or safe retry. | Immediate, persistent feedback until resolved or dismissed deliberately; no shake or flashing error loop. | Announce the failure once per attempt; on submit, reveal/focus the error summary or first invalid field, not every keystroke. |
+
+All manual, image-review and shared-review actions must remain operable through screen-reader and keyboard/switch activation, not just touch. Expose selection, expansion, busy state and the reason a confirmation is unavailable. State announcements occur on meaningful changes, not every poll or rebuilt frame. Reduced motion changes presentation only, not validation, cancellation or outcome semantics.
+
+### Content and empty states
 
 Only user-entered data, source-supported extracted candidates and approved interface copy belong in the product. No invented names, rooms, professors, schedules, metrics, testimonials or slogans. Test fixtures stay out of release storage.
 
 Approved concise state labels include **No schedules yet**, **No schedules in this filter**, **Nothing else today**, **Needs review**, **Notifications are off**, **Alarm permission needed**, **Shared link expired**, and **Shared link unavailable**. Show only the state that is actually true.
 
-### Do's and Don'ts
+## Do's and Don'ts
 
 **Do**
 
@@ -1413,15 +1460,16 @@ Approved concise state labels include **No schedules yet**, **No schedules in th
 - Add missing dates, room numbers or professors to make an imported card look complete.
 - Ship unsupported controls, unlimited styling options or a misleadingly universal glass slider.
 
+
 ---
 
-## Appendix B: Typed integration contracts
+# Appendix B: Typed integration contracts
 
-**Status:** proposed version 1.0 contracts for approval before code. These tables define payloads and behavior; they are not live API responses, generated data, database migrations or claims that endpoints exist.
+**Status:** human-readable version 1.0 behavior and review requirements alongside frozen machine contracts. These tables are not live API responses, database migrations, deployment evidence or evidence that approval/release gates have passed.
 
-Read [SCHEDULER_SPEC.md](#scheduling-app-pre-implementation-specification) for scope, platform limits, privacy and acceptance tests, and [DESIGN.md](#appendix-a-visual-system-and-design-tokens) for visual rules. If a table here conflicts with the main specification, resolve the inconsistency before implementation rather than silently choosing one.
+Read [SCHEDULER_SPEC.md](SCHEDULER_SPEC.md) for scope, platform limits, privacy and acceptance tests, and [DESIGN.md](#appendix-a-visual-system-and-design-tokens) for visual rules. For exact serialized fields, semantic rules and limits, the frozen [share schema](contracts/schemas/share-payload-v1.schema.json), [widget schema](contracts/schemas/widget-snapshot-v1.schema.json), [OpenAPI](contracts/openapi.yaml) and [native bridge](contracts/native-bridge-v1.md) take precedence over prose illustrations. Resolve inconsistencies explicitly; do not silently add fields, relax limits or reinterpret a frozen contract. Future cloud-scan intent below does not override its closed OpenAPI gate.
 
-### 1. Common conventions
+## 1. Common conventions
 
 - Wire field names use `camelCase`; local SQL names may use `snake_case` with explicit mapping.
 - Contract version is a required string, initially `1.0`. Unknown major versions are rejected; optional-field compatibility must be explicitly tested.
@@ -1435,7 +1483,7 @@ Read [SCHEDULER_SPEC.md](#scheduling-app-pre-implementation-specification) for s
 - Descriptions are plain text. No untrusted HTML, executable theme data or arbitrary remote SVG is accepted.
 - Every list has an enforced maximum. Every recurrence query has a finite window and expansion cap.
 
-### 2. Canonical schedule item
+## 2. Canonical schedule item
 
 This shape is shared conceptually across manual events, validated imports and share snapshots. A local record adds local IDs/timestamps/alert rules; it must not accidentally serialize those private fields into a share.
 
@@ -1450,7 +1498,7 @@ This shape is shared conceptually across manual events, validated imports and sh
 | `details` | `DetailsSpec` | Yes | Nullable detail values; no filler text |
 | `exceptions` | Array of `ExceptionSpec` | Yes | Empty is allowed; enforce configured count and uniqueness |
 
-#### 2.1 TimedSpec
+### 2.1 TimedSpec
 
 | Field | Type | Validation |
 |---|---|---|
@@ -1459,14 +1507,15 @@ This shape is shared conceptually across manual events, validated imports and sh
 | `startTime` | Clock time | Explicitly resolved; not inferred from an unspecified date |
 | `timeZone` | IANA zone string | Supported by the pinned zone database |
 | `endTime` | Clock time or null | Null means explicitly no end time; do not invent a duration |
-| `endDayOffset` | Nonnegative integer or null | Required with end time; null without it; recurring v1 supports same-day or next-day ending only |
+| `endDayOffset` | `0`, `1` or null | Required with end time; null without it; frozen v1 supports same-day or next-day ending only |
 | `seedTimeResolution` | `earlier`, `later` or null | Explicit resolution for an ambiguous seed instant; normal unambiguous times use null |
+| `endTimeResolution` | `earlier`, `later` or null | Explicit resolution for an ambiguous end instant; normal unambiguous or absent end uses null |
 
-For a one-time multi-day timed event, any broader end-day range must be explicitly approved and bounded in implementation. Do not pretend the recurring subset already supports arbitrary multi-day recurrence.
+Broader timed end-day ranges are outside the frozen v1 contract; do not reinterpret this table as support for arbitrary multi-day timed events.
 
 Each recurrence uses local clock semantics in the source zone. A future ambiguous/nonexistent instance is unresolved unless an explicit valid occurrence override resolves it. Never silently use the device zone or carry forward a fixed UTC offset.
 
-#### 2.2 DateOnlySpec
+### 2.2 DateOnlySpec
 
 | Field | Type | Validation |
 |---|---|---|
@@ -1476,7 +1525,7 @@ Each recurrence uses local clock semantics in the source zone. A future ambiguou
 
 No start time, UTC midnight, fixed offset or duration is inserted into date-only data. A reminder anchor time/zone belongs to the recipient's local alert rule, not the shared date-only item.
 
-#### 2.3 RecurrenceSpec
+### 2.3 RecurrenceSpec
 
 | Field | Type | Validation |
 |---|---|---|
@@ -1487,7 +1536,7 @@ No start time, UTC midnight, fixed offset or duration is inserted into date-only
 
 The seed date limits the first occurrence. Weekly selection can begin on a later selected day. Display-week start is a preference, not a reason to reinterpret stored weekday identities. Unsupported count/month/year/complex recurrence fields are rejected with an editable explanation rather than dropped.
 
-#### 2.4 DetailsSpec
+### 2.4 DetailsSpec
 
 | Field | Type | Bound / behavior |
 |---|---|---|
@@ -1498,7 +1547,7 @@ The seed date limits the first occurrence. Weekly selection can begin on a later
 
 Absence removes the corresponding display line. Empty optional input may be stored as null by an explicit schema rule; do not replace it with an invented room, instructor or subtitle.
 
-#### 2.5 ExceptionSpec
+### 2.5 ExceptionSpec
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -1510,11 +1559,11 @@ The original key is scoped to the source series. On recipient import, remap it t
 
 An override must remain within supported time-kind behavior. Do not silently convert an entire weekly series when the user edits one instance. A whole-series change that invalidates exception keys requires a review/reconciliation step.
 
-### 3. Local alert rule and native status
+## 3. Local alert rule and native status
 
 Alert preferences are local-only. They are not inherited from a shared snapshot unless the recipient explicitly creates their own rule during import.
 
-#### 3.1 Desired rule
+### 3.1 Desired rule
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -1531,7 +1580,7 @@ Alert preferences are local-only. They are not inherited from a shared snapshot 
 
 Alarm lead times are calculated from actual occurrence instants using the selected zone. If the resulting trigger is already past, ask or leave it unscheduled; do not automatically ring on import.
 
-#### 3.2 Actual scheduled request
+### 3.2 Actual scheduled request
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -1547,7 +1596,7 @@ States: `off`, `needsPermission`, `pendingSchedule`, `scheduled`, `blocked`, `fa
 
 Mapping between camelCase contract state and local enum/storage names must be explicit. A Clock hand-off stays `externalUnverified`; it is not automatically promoted to `scheduled`. Native acceptance does not prove eventual ringing or override device settings.
 
-#### 3.3 Reconciliation invariants
+### 3.3 Reconciliation invariants
 
 - Domain save + outbox insertion is one transaction.
 - A retry uses the same request identity; it does not append a duplicate alarm.
@@ -1556,7 +1605,7 @@ Mapping between camelCase contract state and local enum/storage names must be ex
 - Snooze changes only the supported alert's next action, never the schedule's start date/time.
 - Capacity/horizon exhaustion is visible and tested, not hidden behind an enabled toggle.
 
-### 4. Import candidate contract
+## 4. Import candidate contract
 
 Import candidates deliberately allow unresolved fields that the canonical active-schedule contract does not.
 
@@ -1574,7 +1623,7 @@ Import candidates deliberately allow unresolved fields that the canonical active
 
 An inferred suggestion must be labelled. The model cannot mark its own output as user-confirmed. Do not expose model self-confidence as a calibrated percentage.
 
-#### 4.1 Required unknown-field behavior
+### 4.1 Required unknown-field behavior
 
 | Source condition | Contract result |
 |---|---|
@@ -1587,15 +1636,19 @@ An inferred suggestion must be labelled. The model cannot mark its own output as
 | No relevant schedule found | Honest empty result; not a fabricated candidate |
 | Candidate count beyond configured limit | Explicit density/truncation problem and smaller-crop action |
 
-#### 4.2 Import transaction
+### 4.2 Import transaction
 
 Input is a draft ID, selected candidate IDs, final validated items, category mappings and explicit local alert choices. Confirmed data is written once with provenance and reconciliation work. The transaction must reject duplicate submission or recover by looking up provenance after uncertain completion.
 
+Selection, field edits, category mapping and a child editor's **Use changes** remain inactive draft state. `ready` means locally valid for review, not user-confirmed or saved. Revalidate the selected entries at final confirmation; unresolved required values block those entries, while warnings and exact-source duplicate choices remain visible. Do not add UI-state fields to a frozen wire payload.
+
+Admit one commit command per draft at a time and keep its identity stable for an identical retry. A busy button alone is not a duplicate-write defense. Check the committed receipt/provenance after an uncertain outcome; a revised selection is not an identical retry. Cancelling/replacing a pending scan or resolve invalidates its UI request revision so a late response cannot overwrite edits, reopen review or submit. Dismissal before commit has no active side effects; dismissal after dispatch must not claim a rollback. SCHEDULER_SPEC.md section 4.9 defines the shared flow/recovery requirements.
+
 A failed alert API call after commit does not roll back already saved schedules without telling the user. It changes alert status and offers a targeted retry.
 
-### 5. Share snapshot contract
+## 5. Share snapshot contract
 
-#### 5.1 Shareable payload
+### 5.1 Shareable payload
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -1607,7 +1660,7 @@ Server envelope adds snapshot ID/version, actual serialized item count, server c
 
 Excluded by contract: source images, local file paths, owner/auth IDs, device IDs, native request IDs, active sender alert settings, hidden local schedules and unpublished drafts.
 
-#### 5.2 Scope semantics
+### 5.2 Scope semantics
 
 - `Current filter` uses selected categories; it does not secretly mean only the rows currently visible on today's screen.
 - If a date-range scope is offered, it is a separate explicit choice with a clear preview.
@@ -1615,13 +1668,13 @@ Excluded by contract: source images, local file paths, owner/auth IDs, device ID
 - A series is serialized as a rule plus exceptions, not expanded indefinitely.
 - The preview's count is computed from the actual validated payload. Never reuse a client/model-declared total without checking.
 
-#### 5.3 Import semantics
+### 5.3 Import semantics
 
 Recipients create new local series IDs. Retain source snapshot/item/version provenance for repeated-import detection. Map category labels by choice. Preserve the time kind, source zone, recurrence and exceptions. Sender and recipient do not share editable database rows.
 
 Exact source-identity duplicates default to skip, with an explicit keep-copy choice. Similar content/overlaps are warnings, not destructive automatic merges.
 
-#### 5.4 Availability and token semantics
+### 5.4 Availability and token semantics
 
 - A valid bearer token grants only the intended read-only preview.
 - It is not a session credential, owner ID or permission to mutate the source.
@@ -1632,28 +1685,26 @@ Exact source-identity duplicates default to skip, with an explicit keep-copy cho
 - The client creates and protects at least 32 random secret bytes before creation, sends only the digest, and composes an HTTPS `/s/{shareId}#token={secret}` link from returned non-secret metadata. Fragment preservation is a native/web proof gate.
 - The backend, management responses and idempotency records contain no raw secret or complete bearer URL. Replay returns the existing metadata, not a new capability. Expired replays fail safely instead of creating another resource under the old key.
 
-### 6. Native widget snapshot contract
+## 6. Native widget snapshot contract
+
+The table lists the frozen root envelope, not extra conceptual fields. Each native-widget identity is a key under `widgets`, including the required `default` projection; exact occurrence/configuration fields and reader rules live in the widget schema.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `schemaVersion` | Version string | Native reader compatibility gate |
-| `dataRevision` | Monotonic local revision | Prevents mixed old/new snapshots |
+| `schemaVersion` | Literal `1.0` | Native reader compatibility gate |
+| `dataRevision` | Nonnegative integer | Local snapshot revision; prevents mixed old/new snapshots |
 | `generatedAt` | UTC timestamp | Actual generation time |
-| `widgetInstanceId` | Native opaque ID | Per-widget isolation |
-| `timeZoneContext` | Validated zone/display context | Needed for actual date/time labels |
-| `configuration` | Supported configuration values | Layout/filter/detail/appearance/privacy choices |
-| `occurrences` | Bounded resolved list | Actual IDs, start/end/date-only values, selected visible details and status |
-| `futureStates` | Bounded native timeline/update description | Only strategies the platform can honor |
-| `coverageEnd` | Timestamp/date bound or null | Known data coverage, not a promise of continuous execution |
-| `warnings` | Bounded typed list | Unresolved time, stale coverage or safe open-app state |
+| `deviceTimeZone` | IANA zone string | Device zone at generation; readers format instants in the current device zone |
+| `coverageEnd` | UTC timestamp | At or after this instant, render the stale open-app state rather than claiming Now/Next or an empty future |
+| `widgets` | Map of native widget identity to projection | Each projection has `configuration`, bounded `occurrences` and `emptyReason`; per-widget settings remain isolated |
 
-A snapshot has no provider key, backend bearer URL, full image or active editor draft. Native writers/readers use an atomic/versioned hand-off. An unsupported version yields a safe open-app state.
+A snapshot contains committed schedule projections only: no provider key, backend bearer URL, full image or active editor/review draft. Native writers/readers use an atomic/versioned hand-off. Missing, invalid or unsupported snapshots use the safe open-app state; expiry of `coverageEnd` is not evidence of no upcoming schedules. Unresolved occurrence times never become Now or Next.
 
-Widget configuration is scoped per native widget ID. Rendering respects current native appearance; requested alpha, colors or glass style are not a platform guarantee. Never repaint wallpaper from an image into a widget.
+Rendering respects current native appearance; requested alpha, colors or glass style are not a platform guarantee. Never repaint wallpaper from an image into a widget. Clear/Soft tint cannot guarantee contrast over arbitrary wallpaper: keep the existing solid accessible treatment available, with actual date/time/status and permitted details in the reading order. Motion or holder brightness must not be the only indication of Next or a review/staleness problem.
 
-### 7. Backend request and response envelopes
+## 7. Backend request and response envelopes
 
-#### 7.1 Safe error envelope
+### 7.1 Safe error envelope
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -1666,11 +1717,11 @@ Widget configuration is scoped per native widget ID. Rendering respects current 
 
 Do not include a fake response body or pretend the provider was called when a job was rejected before execution.
 
-#### 7.2 Share creation
+### 7.2 Share creation
 
 Input: supported payload, expiry choice, client-generated token digest and an idempotency key. The client has already persisted the cryptographically random secret in protected storage. Server verifies identity, digest format, schema, limits and quota; computes actual counts/payload hash; commits the snapshot/link/idempotency outcome atomically or with a recoverable documented equivalent. It never receives the raw secret during creation.
 
-Proposed create body fields: `schemaVersion`, `payload`, `tokenDigest`, `expiresAt`; `Idempotency-Key` is a header. `expiresAt` is validated against server policy/time, not trusted device time. The response contains `shareId`, `snapshotVersion`, `routePath`, `createdAt`, `expiresAt` and server-computed `itemCount`, never the raw token.
+Frozen create body fields: `schemaVersion`, `payload`, `tokenDigest`, `expiresAt`; `Idempotency-Key` is a header. `expiresAt` is validated against server policy/time, not trusted device time. Response fields include `shareId`, `snapshotVersion`, `routePath`, `createdAt`, `expiresAt` and server-computed `itemCount`, never the raw token; OpenAPI defines the complete envelope.
 
 Token encoding is canonical unpadded base64url of exactly 32 random bytes. `tokenDigest` is the lowercase hexadecimal SHA-256 digest of those raw bytes, not of an arbitrarily normalized text representation. At redemption, enforce a small encoded-length/character bound, decode exactly 32 bytes, verify canonical re-encoding, then hash/compare. Reject malformed tokens before lookup; never silently repair a received link or token.
 
@@ -1680,7 +1731,7 @@ Owner list output contains paginated metadata and a cursor. Do not claim `total`
 
 An exact owner status endpoint supports revoke read-back before the app claims the link is revoked. Losing the local secret does not make a hash recoverable; offer an explicit replacement-link action when ownership still exists.
 
-#### 7.3 Public resolve
+### 7.3 Public resolve
 
 Input: share ID, fragment-derived bearer token and supported schema versions, submitted in a redacted POST body. Output: only the permitted versioned snapshot and safe availability metadata. The resolver is read-only and rate-limited. It does not create an anonymous user, an import, a notification or a scan job.
 
@@ -1688,7 +1739,9 @@ Resolve body fields: `shareId`, `token`, `supportedSchemaVersions`. Only a match
 
 The fragment keeps the secret out of the ordinary HTTP route but not browser history, page scripts or application state. Do not log full incoming deep-link URIs. Demonstrate fragment preservation, no third-party scripts, no-store behavior and redaction before launch. Do not use a storage signed-download URL as a supposedly immediately revocable share capability.
 
-#### 7.4 Cloud scan job
+### 7.4 Cloud scan job
+
+This subsection records future scan behavior, not an active request/result schema. The frozen OpenAPI scan routes under `/functions/v1/scan` return `503 scan_unavailable` while the gate is closed; do not display queued/running progress for that rejection or imply provider approval. Product-spec `/v1/scan-assets` and `/v1/scan-jobs` illustrations are not callable paths. Share resolution likewise uses `/functions/v1/share-resolve`, not the illustrative `/v1/share-previews/resolve`.
 
 Input: an owned validated asset ID, consent context, requested interpretation mode, supported candidate schema and optional bounded OCR evidence. No arbitrary provider URL, executable instruction, model credential or trusted owner ID is accepted from the client.
 
@@ -1702,13 +1755,13 @@ Cloud images must meet the main specification's normalized JPEG/PNG byte, pixel 
 
 Asset cleanup is scoped to app-controlled storage. Privacy copy must not turn an app-side deletion into a promise that third-party operational logs instantly disappear.
 
-#### 7.5 Backend deletion
+### 7.5 Backend deletion
 
 Input: authenticated identity and explicit confirmation scope. Output: deletion job/progress state. Revoke owned links, cancel owned pending jobs and clean private objects/results according to policy. Preserve local schedules unless a separate local deletion action was selected.
 
-### 8. Validation and contract tests
+## 8. Validation and contract tests
 
-Before implementation contracts are frozen:
+The machine contracts in `contracts/` are frozen. The following checks remain required evidence, not passing results asserted by this document:
 
 - Test strict field/type/enum/date/zone and size validation on client and server.
 - Test null/unresolved versus known optional values distinctly.
@@ -1721,16 +1774,19 @@ Before implementation contracts are frozen:
 - Test source-image instructions as untrusted data, not executable authorization.
 - Test widget schema changes and interrupted writes on native readers.
 - Test alert desired/actual state divergence and honest UI after API/permission failure.
+- Test cancellation/late responses, draft-only child edits, unresolved selected fields, repeated confirmation and uncertain-commit recovery across manual/image/shared review; no active schedule write, alert scheduling or native widget snapshot update may precede its explicit commit boundary.
+- Test the flow states in SCHEDULER_SPEC.md section 4.9 and motion/accessibility requirements in DESIGN.md, including persistent recovery, large text, labelled targets/focus and reduced-motion equivalents.
 
-Implementation should generate or share schema definitions from these approved contracts and run cross-language fixtures. No production API, payload or test result is fabricated by this document.
+Implementations must consume or share definitions and semantic rules from the frozen machine contracts and run cross-language fixtures. Contract freeze does not certify deployment, accessibility, native behavior or unresolved product decisions. No production API response, payload or test result is fabricated by this document.
+
 
 ---
 
-## Appendix C: Primary-source register
+# Appendix C: Primary-source register
 
 **Checked during specification preparation:** October 18, 2026. Numbers below are assigned by the citation ledger, not invented from memory. Sources document capabilities and limits; they do not prove this app works on a device. Product requirements come from the conversation.
 
-### Sources
+## Sources
 
 [1] https://docs.flutter.dev/app-architecture/guide — Flutter: Guide to app architecture
 [2] https://riverpod.dev/docs/concepts2/providers — Riverpod: Providers
@@ -1768,7 +1824,7 @@ Implementation should generate or share schema definitions from these approved c
 [34] https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html — OWASP: File Upload Cheat Sheet
 [35] https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html — OWASP: LLM Prompt Injection Prevention Cheat Sheet
 
-### Interpretation boundaries
+## Interpretation boundaries
 
 - [1] supplies architectural separation, not a mandate to use the proposed state-management package.
 - [2]–[6] are primary maintainer/package references. Compatibility, versions, licenses and native requirements still need a dependency freeze before scaffold work.
@@ -1785,7 +1841,7 @@ Implementation should generate or share schema definitions from these approved c
 
 No forum-user bug report, marketing claim, archived snapshot or made-up benchmark is used as proof of platform behavior. All latency, limits, visual alpha values, retention settings and architecture choices labelled proposed remain proposed until validated/approved.
 
-### Additional reviewed constraints
+## Additional reviewed constraints
 
 - [21]–[23] establish anonymous-role, ownership, RLS/grants and function-auth distinctions. A privileged server client needs explicit owner/capability checks; enabling RLS alone is not proof of safe service-role code.
 - [24] distinguishes storage signed URLs from an application-revocable share capability. [25] establishes runtime limits that require image-decoder benchmarking or an isolated worker.
@@ -1797,34 +1853,90 @@ No forum-user bug report, marketing claim, archived snapshot or made-up benchmar
 
 Two independent planning reviews were integrated. The parent also retrieved the relevant primary documents. Their recommendations are design review, not deployed access-control, decoder, device or provider test results.
 
+
 ---
 
-## Appendix D: Documentation validation
+# Appendix D: Implementation validation
 
-**Prepared:** October 18, 2026.  
-**Scope:** specification files only. No app implementation, deployment or real-device test is implied.
+**Recorded:** October 18, 2026 (Windows 11, UTC+08:00).
 
-### Current status
+## Status and boundaries
 
-The specification, typed contracts and design system are written. Independent native-platform and backend/security planning reviews have been integrated, and the parent retrieved the relevant primary references. Design lint, structural checks and citation-register verification have passed. The product remains a draft for user approval, not an implemented or certified app.
+Schediel now has a Flutter implementation, Android native code, iOS source, a locally tested optional sharing backend and a static browser preview. **This is a development build, not a production or real-device certification.** Supabase/domain deployment has not occurred. Cloud scanning stays off. No schedule data, credentials or signing identities were invented to make a test look deployed.
 
-### Checks actually run
+Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
 
-#### Design-system linter
+## Independent review findings and fixes
 
-Executed the published `@google/design.md` CLI at pinned version `0.4.0` using its Windows-safe `designmd` alias.
+Independent source reviews found five issues that the passing suites had not caught. Each now has a regression test that failed before its fix:
 
-The latest completed lint returned:
+1. **Deletion cleanup scope (R1).** The first successful completion readback of a backend-deletion job cleared *all* local link records and secrets, including links created later. A deletion command now records the links owned when it was created; completion cleans only those, and never pending creations (which may commit after the deletion).
+2. **Identity-bound retries (R2).** Retrying an uncertain share creation could sign in a new anonymous identity and create a duplicate link. The submitting identity is now stored before the request; a retry never signs in and refuses (keeping the attempt) when the identity is missing or different.
+3. **Expired deletion replay (R3).** A lost deletion response could leave an expired idempotency key that failed forever. The app now reports this and offers **Request deletion again**, which needs a new confirmation and uses a new key and scope.
+4. **Browser hand-off (R4).** The preview's **Open in Schediel** navigated the same page to the token fragment, which stays in the browser. The button now appears only when a separate owned app-link origin is configured, and the app and Android manifest accept that host explicitly.
+5. **Backend driver packaging.** The PostgreSQL driver was imported through a variable, invisible to deployment bundling. It is now a literal import; `deno info` lists `npm:postgres@3.4.9` in the function graph.
 
-- Errors: **0**.
-- Warnings: **0**.
-- Informational token summary: **16 colors, 6 typography scales, 4 rounding levels, 6 spacing tokens, 13 components**.
+A second independent review of those fixes found three more gaps, also fixed with failing-first tests:
 
-An earlier pass identified unused decorative tokens and a custom extension map ignored by the exporter. The document was corrected: decorative tokens are referenced, and platform-specific widget/motion values are explicitly normative prose rather than falsely assumed to be exported.
+6. **Deletion scope per identity.** The server deletes only the calling identity's links, but the local scope included links made under an earlier anonymous identity, so their still-live secrets were erased. Each owned link now records its identity (on creation and on refresh); a deletion command covers only links of the identity sending it, never signs in, and is not replayed under a different identity.
+7. **Fresh request after a lost response.** After **Request deletion again** lost its response, the next tap minted another key. The new command is saved before sending, so the screen now replays it.
+8. **Unset hand-off host.** The Android build used an unresolvable placeholder for the optional hand-off host. On Android 11 and lower every verified host must verify, so this would have stopped the real share host from opening the app. When unset, it now repeats the share host.
 
-#### Opaque contrast calculations
+Also tightened: the deletion request is sent only as the identity its scope was computed for (pinned authorization); a share attempt kept after an auth or rate-limit rejection now blocks creating a second link until it is retried or discarded; an expired session is refreshed (same identity) before a retry; the web preview rejects an app-link origin with a non-default port, matching the app.
 
-Calculated with the sRGB relative-luminance formula in Python, not estimated visually. These are known opaque foreground/background pairs only:
+## Checks actually executed
+
+Toolchain: Flutter 3.47.4, Dart 3.13.3, Android SDK/Java 17; Node 24 and pinned npm dependencies; Deno 2.5.4 for runtime type checking. The committed lockfiles record dependency resolutions.
+
+| Check | Actual local result | Evidence scope |
+|---|---|---|
+| `flutter analyze` | No issues found | Dart static analysis |
+| `flutter test` | **205 passed** | Domain, Drift repositories, widget/UI flows, mocked native/plugin seams and static native-source checks |
+| `flutter build apk --debug` | Exit 0; `build/app/outputs/flutter-apk/app-debug.apk` produced | Android debug compilation/packaging, not release signing or device execution |
+| Android `:app:testDebugUnitTest` | **21 tests, 0 failures, 0 errors** | Kotlin planner/reader/contract JVM tests |
+| Android `:app:lintDebug` | Build successful; **0 errors, 16 warnings** | Android static lint, with a narrowly scoped generated-file exception described below |
+| Backend `npm test` | **79 passed, 0 failed, 0 skipped** | Actual migration/functions in local PGlite, Fetch handlers, auth boundaries, limits, replay and deletion tests |
+| Backend `npm audit --omit=dev --audit-level=high` | 0 vulnerabilities reported | Registry audit for production npm dependency graph at execution time, not a security guarantee |
+| Deno `check --node-modules-dir=none` | Exit 0 for all five entrypoints | `share-links`, `share-resolve`, `privacy`, `scan`, `health`; no deployment |
+| Browser preview `npm test` | **136 passed, 0 failed, 0 skipped** | JS contract/controller/jsdom/configuration/static checks, not real mobile browser hand-off |
+| DESIGN linter 0.4.0 | **0 errors, 0 warnings**, 1 token-summary info | Token/reference/opaque contrast and document structure, not visual/device accessibility certification |
+
+The Android debug build emits a `home_widget` Kotlin Gradle Plugin deprecation warning. Android lint warnings are six `UnusedAttribute`, one `GradleDependency`, one `NewerVersionAvailable`, one `ObsoleteSdkInt` and seven `UseKtx` findings. They have not been silently represented as zero warnings. Gradle also reports deprecated features requiring review before Gradle 10.
+
+### Generated Windows-path lint exception
+
+Flutter rewrites ignored `android/local.properties` during its assemble task. This SDK serializer escapes Windows backslashes but leaves drive colons unescaped. Java Properties accepts the values and compilation succeeds, while Android lint reports `PropertyEscape` for that generated file. Manual rewrites are overwritten again by Flutter.
+
+`android/app/lint.xml` ignores **only `PropertyEscape` in `../local.properties`**. No source rule or other file is excluded. The complete JVM-test/lint command was rerun successfully with the exception in place. A Flutter SDK upgrade should recheck whether this workaround is still necessary.
+
+### Representative regression coverage
+
+- Strict share-host/UUID/token parsing; bearer material passed ephemerally rather than persisted in router paths.
+- Ordinary local use and public resolving do not initialize an anonymous owner identity. Share creation persists its command/secret before network use; uncertain creation cannot start a fresh second link and exposes saved-attempt recovery.
+- Import selection, editable inactive review, local category mapping, explicit confirmation, transaction rollback/idempotency and duplicate/independent-copy decisions.
+- Editing a title preserves an explicit next-day end relationship. A pending schedule save disables close/discard/form edits until completion.
+- Reopening a completed backend-deletion job does not repeatedly erase newer local share metadata. Local schedule deletion and online snapshot deletion remain different operations.
+- Image signature/byte/pixel limits, metadata-free normalization, local OCR mapping, conservative parser boundaries, explicit resolution, cancellation/stale-result rejection and crop/rotation source-revision invalidation.
+- One labelled Today share action; a 320px-wide Today screen at text scale 2 has no captured layout exception and passes Flutter's labelled-target guideline. This single-screen check is **not** an app-wide WCAG/VoiceOver/TalkBack audit.
+- iOS static-source assertions require querying actual AlarmKit records and preserving failed cancellations. Swift/AlarmKit behavior itself remains unbuilt and untested here.
+
+Tests use isolated fixtures and mocked platform boundaries where Windows cannot exercise mobile plugins. Mock success is not evidence of actual camera, OCR, notifications or alarm delivery.
+
+## Documentation validation
+
+`python3 tools/spec_bundle.py` regenerates the readable edition and LF-canonical SHA-256 manifest. `python3 tools/spec_bundle.py --check` checks saved outputs rather than rewriting them. Its structural checks enforce:
+
+- 24 sequential requirement IDs, R01–R24.
+- 48 sequential acceptance IDs, AT01–AT48.
+- A 35-entry primary-source register and no undefined numeric citation in the modular documents.
+- Balanced code fences, main-spec table-of-contents anchors and existing relative document links.
+- Exact generated-bundle and document-checksum freshness.
+
+Machine transport/schema/fixtures and native calls remain authoritative separate artifacts under `contracts/`; prose refinement did not redesign frozen endpoints. The source register records documentation research; structural validation does not freshly re-verify every external webpage or prove all implementation behavior.
+
+### Opaque contrast calculations
+
+The previously executed sRGB relative-luminance calculations used the known opaque token pairs below, not visual estimates. The latest DESIGN lint independently reports no token contrast warning.
 
 | Pair | Foreground | Background | Calculated ratio | Target |
 |---|---|---|---|---|
@@ -1837,40 +1949,16 @@ Calculated with the sRGB relative-luminance formula in Python, not estimated vis
 | Light error | `#B3261E` | `#FFFFFF` | 6.536:1 | 4.5:1 |
 | Light input boundary | `#8A8A92` | `#FFFFFF` | 3.425:1 | 3:1 |
 
-Transparent widgets over arbitrary wallpaper are **not contrast-certified** by these calculations or by the token linter. Their native material, readability and accessible fallback need device testing.
+Transparent widgets over arbitrary wallpapers are not contrast-certified by these figures. Stronger/solid alternatives still require native readability tests.
 
-#### Structural and citation checks
+## Remaining release gates — not claimed complete
 
-A Python checker actually parsed the saved Markdown after the independent reviews were integrated. It found:
+1. **Physical Android:** gallery/camera permissions and cancel, OCR accuracy/memory, widgets on supported launchers and multiple instances, refresh/resize/taps, notification delivery, alarms/full-screen eligibility/stop/reboot/force-stop, Clock hand-off and denial/recovery.
+2. **Mac/iOS:** compile Runner against the target SDK, create/embed/sign the WidgetKit extension, App Groups and entitlements, test AlarmKit authorization/query/cancel behavior on iOS 26+, notification fallback below iOS 26, photo/camera/OCR and widget rendering. The Windows environment cannot certify these.
+3. **Real sharing infrastructure:** configure an approved Supabase project and owned HTTPS domain; review role/grant/Auth/connection settings, apply the actual migration, deploy the five functions, validate real RLS/auth/rate-limit/network/deletion behavior and production origins. PGlite is real local PostgreSQL execution, not a deployed Supabase instance.
+4. **Verified links/browser hand-off:** real Android signing fingerprints, Apple team/app association, Associated Domains and web hosting/CSP/headers. Test fragment preservation and browser-to-app behavior on both OSes. Default placeholder associations must not be published as real ones.
+5. **Accessibility and smoothness:** full VoiceOver/TalkBack, large text across all screens, contrast on arbitrary wallpaper, Reduce Motion/Transparency, focus/keyboard/touch, empty/error/slow-I/O states and real frame/memory/battery profiling. No measured native smoothness claim is made.
+6. **Release/security/product decisions:** independent code/security findings must be resolved; production signing, dependency/toolchain warnings, store permissions/policy, privacy/legal/region, minors/account/session-loss recovery, retention/backups and remaining marked decisions need approval. SQLite is not encrypted by this app; no untested backup/recovery promise is made.
+7. **Cloud scan:** explicitly disabled. No provider request, paid scan, upload path, usage billing or accuracy test was performed. Enabling it later requires its own planned security, consent, quota and deletion verification.
 
-- **24** unique sequential requirement IDs.
-- **48** unique sequential acceptance-test IDs.
-- **35** registered/cited source IDs, with no undefined source or acceptance reference.
-- Balanced code fences and valid main table-of-contents anchors.
-- Existing relative document links and no unfinished implementation placeholders.
-
-The citation-ledger verifier also completed with **citations OK** in strict mode. This checks reference mapping and citation structure; it does not prove every proposed engineering decision through research or run any acceptance scenario.
-
-#### Independent review changes incorporated
-
-- Explicit Android exact/repeating-alarm, force-stop and native widget refresh constraints.
-- A distinction between the notification maintainer's pending-request limit and AlarmKit capacity.
-- Client-held share secrets, fragment-based links, digest-only persistence and secret-free creation replay; native fragment handling remains a future proof gate.
-- Anonymous-role/service-client authorization risks, runtime image-decoder limits, revoke/resolve races, and downloaded-preview revocation limits.
-- Conservative usage reservation and an `unknown` scan state instead of automatically repeating a possibly billed provider request.
-
-These are planning and source-review outcomes. No child-agent in-memory model or self-report is represented as a deployed security or native-device test.
-
-### Not tested or claimed
-
-- Flutter compilation or mobile screen rendering.
-- Native Android/iOS widget transparency, refresh budgets, launcher clipping or multiple widget instances.
-- Actual reminder/alarm delivery, exact scheduling, full-screen permission or Clock-app behavior.
-- Backend deployment, RLS enforcement, signed-storage access, quota handling or data deletion.
-- Live AI requests, image-recognition accuracy, latency or cost.
-- App-store policy approval, privacy/legal approval, authentication recovery or production security certification.
-- User approval of proposed defaults or unresolved product decisions.
-
-### Verification boundary
-
-The implementation plan and acceptance matrix describe future tests. They are not fabricated passing results. Files and lint/static checks are the only completed artifacts at this stage.
+No production deployment, real-device success, store approval or independent security certification is implied by this record.

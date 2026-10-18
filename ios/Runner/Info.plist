@@ -37,6 +37,12 @@
 			</array>
 		</dict>
 	</array>
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a schedule photo only when you choose camera import.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Select a schedule image to scan on this device.</string>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>Alarms ring for schedules where you turn them on.</string>
 	<key>UIApplicationSceneManifest</key>

@@ -1,9 +1,9 @@
-# Scheduling app: pre-implementation specification
+# Schediel: product and engineering specification
 
-**Document version:** 0.1 — for product approval, not an implementation claim  
+**Document version:** 0.2 — requirements baseline; implementation evidence is in VALIDATION.md
 **Prepared:** October 18, 2026, using the current conversation and primary documentation  
 **Platforms requested:** Android and iOS, built with Flutter  
-**Implementation status:** documentation only; no Flutter app, backend deployment, device alarm, widget, or AI extraction has been implemented or certified by this document.
+**Implementation status:** requirements baseline, not an implementation report. Existing Flutter code and frozen machine contracts must be evaluated separately; this document certifies no build, deployment, native behavior or AI accuracy.
 
 ## Contents
 
@@ -35,7 +35,7 @@
 
 This is a buildable product and engineering brief. It records the requested behavior, recommended architecture, UI states, data contracts, platform compromises, and tests that must exist before release. It is not a visual prototype, production migration, API response dump, delivery estimate, or claim of successful device testing.
 
-The app's name, logo, final accent color, supported device baseline, deployment region, AI provider, and commercial model have not been selected by the user. **Scheduling app** is a descriptive document title, not an invented brand.
+The user selected **Schediel**, app identity `com.manalogadiel.schediel`, and preview-first link sharing with independent recipient copies. The approved development direction is an offline-first Flutter app plus a locally tested Supabase sharing backend and static browser preview; sharing stays disabled until a real project and owned domain are configured. iOS sources may be written on Windows, but Mac/Xcode and device verification remain gates. No logo, production region, AI provider or commercial model is invented. Final visual presets, production policy, backup/recovery and audience/privacy decisions retain the labels below.
 
 ### 1.2 Decision labels
 
@@ -46,6 +46,8 @@ The app's name, logo, final accent color, supported device baseline, deployment 
 - **Future scope:** deliberately excluded from the first version unless the user changes priorities.
 
 Normative words such as **must** define the proposed implementation contract, not something already built.
+
+The frozen schemas, OpenAPI and native bridge in `contracts/` are authoritative for exact serialized fields, limits, routes and native calls. The prose below supplies product intent and review criteria; it does not override those artifacts or imply that unresolved approval/release gates have passed.
 
 ### 1.3 Non-negotiable boundaries
 
@@ -209,6 +211,8 @@ For a recurring entry, editing asks **This occurrence** or **Entire series**. Th
 
 Save errors preserve entered values. Dismissing unsaved edits requires a discard decision. Destructive actions identify whether they affect one occurrence, the series, or only an external share link.
 
+Keep persistent labels and optional-field guidance visible. Validate on field exit and submission without announcing errors on every keystroke. On submit, reveal collapsed groups containing errors and focus an error summary or the first invalid field; associate each error with its input and explain the correction. Do not silently truncate input at a contract limit. Manual-entry defaults are visible editable choices, not permission to fill unresolved source fields.
+
 ### 4.6 Import review screen
 
 Use a bottom sheet for the first compact preview and a full review page for long timetables. Keep a visible confirmation action and selection count derived from actual parsed candidates.
@@ -233,6 +237,23 @@ Controls are capability-driven. An unavailable native feature is either absent o
 The UI may contain only actual user data, reviewable source-supported candidates and approved interface labels. Development fixtures are explicitly labelled and must not populate release storage.
 
 Examples of genuine state copy: **No schedules yet**, **No schedules in this filter**, **Nothing else today**, **Needs review**, **Notifications are off**, **Alarm permission needed**, **Unable to scan this image**, **Shared link expired**, **Shared link unavailable**. Do not display a state merely to fill space.
+
+### 4.9 Interaction state and recovery requirements
+
+Apply the same confirmation boundary to manual entry, image review and shared-link review. Draft fields, selection and **Use changes** in a child editor do not publish to Today, native snapshots or alert scheduling. In these editor/import flows, the final **Save** or **Add selected schedules** is the commit boundary; other existing management actions retain their own explicit scope. Optional groups may collapse, but their active settings, unresolved blockers and actual alert status must remain discoverable. Show one primary action per step rather than simultaneous competing commit actions.
+
+| State / boundary | Available action and truthful feedback | Failure / cancellation and recovery |
+|---|---|---|
+| Loading local data or resolving a link | Identify the work in progress; retain safe last-known content without claiming it is refreshed. | Do not turn loading/error into an empty schedule. Offer Retry or Back for the failed read; local schedules remain usable when an online action fails. |
+| Manual editor or edited review draft | Edit, return to review, Save or Add as appropriate. Child-editor **Use changes** changes only the draft. | Back, Close and swipe dismissal share the same discard decision for changed drafts; keep editing is the safe alternative. An unchanged preview may close directly. No unfinished edit becomes active. |
+| Candidate review / required information unresolved | Select, edit or exclude candidates; show source evidence, field-level uncertainty and the actual selected count. | Explain which selected entries block confirmation and let the user resolve or exclude them. Never repair a malformed shared payload by silently dropping rows or invent missing values. |
+| Scan or preview request in progress | Show only the known stage, with Cancel/Back where the operation can be abandoned; never fabricate a percentage. | Ignore late results for a cancelled/replaced request so they cannot reopen review or overwrite newer edits. Preserve the source/edits where safe. Cancelling external work does not promise its usage or retention is undone. |
+| Ready to commit / local commit pending | On explicit confirmation, validate the current selection and admit one operation for that draft. Disable repeated confirmation and conflicting edits while its transaction is in flight. | Cancel before dispatch has no effect on schedules. After dispatch, do not label navigation as a rollback; resolve the transaction outcome before claiming saved or discarded. On an uncertain result, inspect the saved state/commit provenance before offering retry. |
+| Local commit succeeded, alert/widget work pending or failed | Report the actual saved count separately from native alert acceptance and widget refresh. | Keep saved schedules. Retry only the failed reconciliation/refresh work; never invite another import to repair an alert or widget failure. |
+| Share creation or revocation pending / outcome uncertain | Keep the approved scope visible and admit one mutation at a time for that operation. Reuse the retained request identity/secret for a safe identical create retry. | Closing a screen does not revoke a dispatched share. Preserve an uncertain outcome; check owner metadata rather than create another link blindly. Verify the exact owner status before saying revoked; recipient copies are unaffected. |
+| Cloud scan unavailable, failed or outcome unknown | Explain the actual capability/error and offer the existing local/manual path. Keep **Needs review** distinct from scan success or failure. | A closed cloud gate is not a running scan. An unknown possibly billed outcome must not auto-retry. Offer retry only when permitted by the typed error and the idempotency/budget rules in sections 14–16. |
+
+Confirmation authorizes only the selected local change and explicit personal alert choices; it cannot override invalid schemas, contract limits, OS permissions, ownership checks or a disabled cloud gate. Explain the boundary and offer the existing edit/local path rather than a bypass. Errors stay near the affected field/action with a specific recovery route; a disappearing toast is not the only record of a blocking problem. Busy guards protect a transaction, not a decorative transition: motion must not lock ordinary navigation or disable unrelated local work. These are required behaviors, not evidence that current screens satisfy them.
 
 ## 5. Visual system and widget design
 
@@ -274,6 +295,8 @@ Provide only options the host can honor. System accessibility/material settings 
 - Use generous platform-appropriate hit targets, clear focus states and spoken labels.
 - Preserve meaning without relying only on color, translucency or animation.
 - At large type sizes, hide optional widget details before essential title/time; if necessary show fewer entries and open the app for details.
+
+Apply DESIGN.md's minimum targets even in compact density. Reflow long labels and stacked actions without clipping confirmation, Cancel or error recovery behind the keyboard. Screen-reader/keyboard users must be able to review source evidence, identify each candidate's selection and warnings, edit, confirm and cancel in a logical focus order. Label actions from actual content or a neutral candidate ordinal, never an invented title. Restore focus after sheets; announce meaningful loading/error/result changes once rather than on every poll. Reduced motion must retain equivalent static status and confirmation feedback.
 
 ## 6. Schedule and recurrence behavior
 
@@ -461,6 +484,8 @@ Strict schema validation checks format, allowed keys, ranges and payload limits;
 7. Only after commit does the alert outbox schedule authorized requests and the widget snapshot refresh.
 
 Closing review or cancelling a scan creates no schedules, reminders or alarms. A native scheduling failure after a successful import leaves the schedules saved and visibly marks the affected alerts; do not pretend the entire import failed and invite duplicate retries.
+
+Cancellation invalidates the pending review request/revision: a late scan or resolve response cannot replace newer edits, reopen dismissed review or commit anything. Stopping observation is not proof that an in-flight provider request stopped or was unbilled. Preserve recoverable source/draft data only within the existing privacy/cleanup policy; no automatic upload, rescan or durable recovery guarantee is implied.
 
 ### 8.6 Cloud failure states
 
@@ -789,7 +814,7 @@ There is intentionally no backend endpoint that automatically adds a shared/AI-d
 
 ## 14. Backend API contracts
 
-These are proposed endpoint contracts, not implemented endpoints or sample responses. All bodies are typed/versioned JSON unless an upload protocol says otherwise. Request/response values shown as field names are schema definitions, not fabricated live records.
+The frozen transport contract is [contracts/openapi.yaml](contracts/openapi.yaml), including its server base `/functions/v1`, exact paths, envelopes, status codes and feature gates. The `/v1/...` inventory below preserves earlier illustrative product-operation names, not callable URLs or a second transport contract. In particular, resolve is `/functions/v1/share-resolve`, scan routes use `/functions/v1/scan/assets` and `/functions/v1/scan/jobs`, and share management uses `/functions/v1/share-links`. OpenAPI wins over these illustrations; scan request/result descriptions below are future intent, not accepted schemas while the gate returns `503 scan_unavailable`. No endpoint availability or deployment is certified here.
 
 ### 14.1 Common behavior
 
@@ -802,7 +827,7 @@ These are proposed endpoint contracts, not implemented endpoints or sample respo
 
 ### 14.2 Endpoint inventory
 
-| Endpoint | Authorization | Request / response contract |
+| Illustrative operation (not a callable path) | Authorization | Product intent; exact transport is in OpenAPI |
 |---|---|---|
 | `POST /v1/share-links` | Owner session | Input: schema version, selected validated payload, token digest, expiry choice. Output: share ID, non-secret route metadata, expiry, actual item count and snapshot version; client composes URL from its retained secret. Idempotent create. |
 | `GET /v1/share-links` | Owner session | Paginated owner metadata: IDs, creation/expiry/revocation state, scope summary and counts; no complete local database or raw tokens. |
@@ -833,7 +858,7 @@ Use the auth provider's documented anonymous-session API rather than inventing a
 - `429`: rate/quota/concurrency limit; safe retry guidance where applicable.
 - `5xx`: internal/provider unavailable/timeout category; no personal content in errors.
 
-A successful create is `201`; an existing idempotent create replay returns the documented same resource outcome without repeating work. Accepted asynchronous jobs/deletions may use `202`. Revoke/delete uses a documented idempotent response. Exact transport details are to be frozen with an OpenAPI contract before implementation.
+A successful share create and its identical idempotent replay use `201`; backend deletion is accepted with `202` and has a progress read endpoint. Share revocation returns owner metadata with `200`; verify it through the exact owner status read. Exact response schemas and route-specific status codes are already frozen in `contracts/openapi.yaml`; the gated scan operations return the documented unavailable response, not simulated job progress.
 
 ### 14.4 Idempotency and local imports
 
@@ -995,8 +1020,8 @@ Mocks cannot substitute for proving OS presentation, server access control or da
 | AT21 | Year, date order, AM/PM, term dates or table association is unclear | Field-level review required; no guessed fact presented as certain |
 | AT22 | Image text attempts to instruct the model/backend | Treated as data; no arbitrary tool/network/action execution |
 | AT23 | Extraction result is partial or uncertain | Source evidence and actual candidates shown; no fake confidence percentage/completeness |
-| AT24 | Image/link review is closed without confirmation | No schedules, notifications or alarms are created |
-| AT25 | Selected validated entries are confirmed, then native scheduling fails | Entries commit once; alert failure is shown without inviting duplicate imports |
+| AT24 | Image/link review is cancelled via Close, Back or swipe; a response arrives late or a child editor uses changes | No active writes before final confirmation; changed drafts have a discard decision; late results cannot reopen review or overwrite newer edits |
+| AT25 | Confirmation is repeated rapidly, completion is uncertain, or native scheduling fails after commit | One local commit; inspect saved state/provenance before retry; preserve edits on failure and report saved schedules separately from targeted alert/widget recovery |
 | AT26 | Exact repeated import or similar/overlapping entry is detected | Explicit skip/keep-copy choice and warning; no silent destructive merge |
 | AT27 | Sender shares current filter, all, or edited selection | Serialized scope/count exactly matches preview; limits never silently omit entries |
 | AT28 | Snapshot is inspected | Only approved fields; no source images, auth/device data or sender alert IDs/settings |
@@ -1010,7 +1035,7 @@ Mocks cannot substitute for proving OS presentation, server access control or da
 | AT36 | New/unknown snapshot or candidate schema version arrives | Safe rejection/update path; no crash or partial activation |
 | AT37 | Long timetable and configured upper-bound fixtures are used | Responsive scrolling and bounded expansion; measurements recorded on named devices |
 | AT38 | Database schema migration or reconciliation crashes mid-operation | Tested migration/transaction behavior; recoverable outbox without duplicate requests |
-| AT39 | Screen reader, large text, focus, keyboard and empty states are exercised | Accessible equivalent flows and truthful minimal copy; fixtures absent from release |
+| AT39 | Screen reader, large text, minimum targets, keyboard, reduced motion and form errors are exercised | Equivalent manual/image/share review and cancellation; reachable actions, revealed/associated errors, logical/restored focus and non-looping status announcements; truthful empty states and no release fixtures |
 | AT40 | User deletes backend data but keeps local schedules | Server deletion/revocation progresses truthfully; local schedule database is preserved |
 | AT41 | Anonymous session is lost | Recovery limitation is explicit; management rights are not granted to a new unrelated identity |
 | AT42 | First launch and ordinary local use | No signup wall, unsolicited uploads or bulk permission prompts |
@@ -1027,7 +1052,7 @@ The documentation tooling may validate Markdown, token references and opaque con
 
 ## 18. Implementation sequence
 
-All phases below are future work, not tasks already performed.
+This sequence defines required work and proof, not a phase-completion record. Existing code or frozen contracts do not establish that a phase's acceptance and native release gates have passed.
 
 ### Phase 0 — Approve the contract and prove native risks
 
@@ -1071,7 +1096,7 @@ Complete accessibility, performance, privacy disclosures, cleanup, backup/recove
 
 | ID | Decision | Recommended starting position | Blocks |
 |---|---|---|---|
-| D01 | Product name/logo | Leave unbranded until chosen | Branding, not domain work |
+| D01 | Product name/logo | Name selected: Schediel; app ID `com.manalogadiel.schediel`; no invented logo | Logo remains separate from domain work |
 | D02 | Supported OS/device baseline | Propose Android API 26+ and iOS 17+, subject to dependency/device-audience audit; AlarmKit gated separately | Native setup and release support |
 | D03 | Target audience: adults only or also minors | Do not assume; confirm before selecting AI/backend terms | Production cloud scanning |
 | D04 | Deployment region, provider and privacy arrangement | Select based on audience/jurisdiction and verified terms | Production backend/AI |
@@ -1084,7 +1109,7 @@ Complete accessibility, performance, privacy disclosures, cleanup, backup/recove
 | D11 | Accent presets and density defaults | Restrained blue, system theme, comfortable density | Final visual polish |
 | D12 | Local encryption/OS backup/recovery | Decide explicitly; do not imply Drift/SQLite automatically encrypts or synchronizes | Release privacy and data-loss expectations |
 | D13 | Proposed limits/expiry/retention | Validate against devices, backend policy and budget | Public rollout |
-| D14 | Access to Mac/Xcode and real target devices | Confirm availability; no Windows-only iOS certification | iOS implementation and QA |
+| D14 | Access to Mac/Xcode and real target devices | iOS source-only work accepted on Windows; Mac build/signing, widget target setup and device tests remain required | iOS QA and release |
 
 ### 19.2 Risk treatment
 
@@ -1108,7 +1133,7 @@ Before production app work begins, confirm:
 - [ ] The visual direction in DESIGN.md is accepted or edited.
 - [ ] Audience, backend identity/recovery, link semantics and cloud-scan privacy are decided sufficiently for the affected phase.
 - [ ] Native proof tasks and real-device access are available.
-- [ ] Dependency versions, schema/OpenAPI contracts and capability flags will be frozen at scaffold time, not guessed now.
+- [ ] The frozen schemas/OpenAPI/native bridge in `contracts/` are respected; dependency resolutions and capability flags are reviewed separately, without guessing or treating contract freeze as release approval.
 - [ ] No feature will be advertised as working until its acceptance tests and native checks actually run.
 
 A later implementation agent should read this file, DESIGN.md, CONTRACTS.md, SOURCES.md and VALIDATION.md before writing production code. Open decisions are intentional unresolved choices, not permission to invent missing product facts.

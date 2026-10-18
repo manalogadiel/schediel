@@ -1,0 +1,9 @@
+{
+  "name": "schediel-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": { "test": "node --test --test-concurrency=1 test/*.test.ts" },
+  "devDependencies": { "@electric-sql/pglite": "0.5.10" }
+}

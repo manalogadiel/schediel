@@ -15,21 +15,26 @@ import '../../../core/schedule/validation.dart';
 import '../../../core/time/local_date.dart';
 import '../../../core/time/local_time.dart';
 import '../../categories/domain/category.dart';
+import '../../imports/domain/import_entry.dart';
 import '../../reminders/domain/alert_rule.dart';
 import '../../reminders/presentation/alert_editor.dart';
 import '../data/schedule_repository.dart';
 
-enum EditorScope { create, series, occurrence }
+enum EditorScope { create, series, occurrence, review }
 
 /// The schedule editor (spec 4.5). Values survive save errors; leaving with
 /// unsaved changes asks first.
 class ScheduleEditorScreen extends ConsumerStatefulWidget {
-  const ScheduleEditorScreen({super.key, required this.scope, this.seriesId, this.occurrenceKey, this.initialDate});
+  const ScheduleEditorScreen({super.key, required this.scope, this.seriesId, this.occurrenceKey, this.initialDate,
+    this.initialDraft, this.initialAlerts = const [], this.initialExceptions = const []});
 
   final EditorScope scope;
   final String? seriesId;
   final LocalDate? occurrenceKey;
   final LocalDate? initialDate;
+  final ScheduleDraft? initialDraft;
+  final List<AlertPreference> initialAlerts;
+  final List<OccurrenceException> initialExceptions;
 
   @override
   ConsumerState<ScheduleEditorScreen> createState() => _ScheduleEditorScreenState();
@@ -109,17 +114,24 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
 
     if (widget.scope != EditorScope.create) {
       final repo = ref.read(scheduleRepositoryProvider);
-      final series = await repo.load(widget.seriesId!);
+      final d = widget.initialDraft;
+      final series = widget.scope == EditorScope.review && d != null
+          ? ScheduleSeries(id: 'review', revision: 1, title: d.title, time: d.time,
+              categoryId: d.categoryId, recurrence: d.recurrence, details: d.details,
+              exceptions: widget.initialExceptions)
+          : await repo.load(widget.seriesId!);
       if (!mounted) return;
       if (series == null) {
         setState(() => _loadFailed = true);
         return;
       }
       _original = series;
-      final rules = await repo.alertRules(series.id);
-      for (final r in rules) {
-        if (r.kind == AlertKind.notification) _notification = r.preference;
-        if (r.kind == AlertKind.alarm) _alarm = r.preference;
+      final preferences = widget.scope == EditorScope.review
+          ? widget.initialAlerts
+          : [for (final r in await repo.alertRules(series.id)) r.preference];
+      for (final a in preferences) {
+        if (a.kind == AlertKind.notification) _notification = a;
+        if (a.kind == AlertKind.alarm) _alarm = a;
       }
       var title = series.title;
       var time = series.time;
@@ -161,7 +173,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
           _lastDate = time.lastDate;
       }
       final rule = series.recurrence;
-      if (widget.scope == EditorScope.series && rule != null) {
+      if ((widget.scope == EditorScope.series || widget.scope == EditorScope.review) && rule != null) {
         _frequency = rule.frequency;
         _weekdays = {...rule.weekdays};
         _until = rule.untilDateInclusive;
@@ -176,6 +188,10 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
 
   int? get _endDayOffset {
     if (_dateOnly || !_hasEnd) return null;
+    final original = _original?.time;
+    if (original is TimedSpec && original.startTime == _start && original.endTime == _end) {
+      return original.endDayOffset;
+    }
     return _end.isBefore(_start) ? 1 : 0;
   }
 
@@ -264,6 +280,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       time: draft.time,
       recurrence: draft.recurrence,
       details: draft.details,
+      exceptions: widget.scope == EditorScope.review ? widget.initialExceptions : const [],
     );
     final errors = _messages(validator.validate(probe));
     for (final path in _alertErrors()) {
@@ -285,8 +302,17 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     });
     final repo = ref.read(scheduleRepositoryProvider);
     final alerts = [_notification, _alarm];
+    if (widget.scope == EditorScope.review) {
+      setState(() => _dirty = false);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop(ReviewEdit(draft, alerts.where((a) => a.enabled).toList()));
+      });
+      return;
+    }
     try {
       switch (widget.scope) {
+        case EditorScope.review:
+          return;
         case EditorScope.create:
           await repo.create(draft, alerts: alerts);
         case EditorScope.occurrence:
@@ -339,6 +365,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   Future<void> _confirmDiscard() async {
+    if (_saving) return;
     final discard = await showChoiceDialog<bool>(
       context,
       title: 'Discard changes?',
@@ -357,18 +384,19 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       EditorScope.create => 'New schedule',
       EditorScope.series => 'Edit schedule',
       EditorScope.occurrence => 'Edit occurrence',
+      EditorScope.review => 'Edit before adding',
     };
     return PopScope(
-      canPop: !_dirty,
+      canPop: !_dirty && !_saving,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _confirmDiscard();
+        if (!didPop && !_saving) _confirmDiscard();
       },
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
             tooltip: 'Close',
             icon: const AppIcon(AppIcons.close),
-            onPressed: () => Navigator.of(context).maybePop(),
+            onPressed: _saving ? null : () => Navigator.of(context).maybePop(),
           ),
           title: Text(title),
           actions: [
@@ -376,7 +404,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               padding: const EdgeInsets.only(right: Tokens.sm),
               child: TextButton(
                 onPressed: _initialized && !_saving ? _save : null,
-                child: const Text('Save', style: TextStyle(fontWeight: FontWeight.w600)),
+                child: Text(widget.scope == EditorScope.review ? 'Use changes' : 'Save', style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ],
@@ -385,7 +413,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
             ? const EmptyState(title: 'Schedule no longer available')
             : !_initialized
                 ? const Center(child: CircularProgressIndicator.adaptive())
-                : _form(context),
+                : IgnorePointer(ignoring: _saving, child: _form(context)),
       ),
     );
   }
@@ -405,6 +433,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, Tokens.xxl),
       children: [
+        if (_errors.keys.any((k) => k.startsWith('exceptions/')))
+          const Padding(padding: EdgeInsets.only(bottom: Tokens.md),
+            child: Text('This repeat change leaves a changed or cancelled occurrence outside the series. Keep the original repeat rule before adding.')),
         if (scopeNote != null)
           Padding(
             padding: const EdgeInsets.only(bottom: Tokens.md),

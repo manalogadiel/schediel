@@ -1,29 +1,84 @@
-# Documentation validation record
+# Implementation and documentation validation
 
-**Prepared:** October 18, 2026.  
-**Scope:** specification files only. No app implementation, deployment or real-device test is implied.
+**Recorded:** October 18, 2026 (Windows 11, UTC+08:00).
 
-## Current status
+## Status and boundaries
 
-The specification, typed contracts and design system are written. Independent native-platform and backend/security planning reviews have been integrated, and the parent retrieved the relevant primary references. Design lint, structural checks and citation-register verification have passed. The product remains a draft for user approval, not an implemented or certified app.
+Schediel now has a Flutter implementation, Android native code, iOS source, a locally tested optional sharing backend and a static browser preview. **This is a development build, not a production or real-device certification.** Supabase/domain deployment has not occurred. Cloud scanning stays off. No schedule data, credentials or signing identities were invented to make a test look deployed.
 
-## Checks actually run
+Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
 
-### Design-system linter
+## Independent review findings and fixes
 
-Executed the published `@google/design.md` CLI at pinned version `0.4.0` using its Windows-safe `designmd` alias.
+Independent source reviews found five issues that the passing suites had not caught. Each now has a regression test that failed before its fix:
 
-The latest completed lint returned:
+1. **Deletion cleanup scope (R1).** The first successful completion readback of a backend-deletion job cleared *all* local link records and secrets, including links created later. A deletion command now records the links owned when it was created; completion cleans only those, and never pending creations (which may commit after the deletion).
+2. **Identity-bound retries (R2).** Retrying an uncertain share creation could sign in a new anonymous identity and create a duplicate link. The submitting identity is now stored before the request; a retry never signs in and refuses (keeping the attempt) when the identity is missing or different.
+3. **Expired deletion replay (R3).** A lost deletion response could leave an expired idempotency key that failed forever. The app now reports this and offers **Request deletion again**, which needs a new confirmation and uses a new key and scope.
+4. **Browser hand-off (R4).** The preview's **Open in Schediel** navigated the same page to the token fragment, which stays in the browser. The button now appears only when a separate owned app-link origin is configured, and the app and Android manifest accept that host explicitly.
+5. **Backend driver packaging.** The PostgreSQL driver was imported through a variable, invisible to deployment bundling. It is now a literal import; `deno info` lists `npm:postgres@3.4.9` in the function graph.
 
-- Errors: **0**.
-- Warnings: **0**.
-- Informational token summary: **16 colors, 6 typography scales, 4 rounding levels, 6 spacing tokens, 13 components**.
+A second independent review of those fixes found three more gaps, also fixed with failing-first tests:
 
-An earlier pass identified unused decorative tokens and a custom extension map ignored by the exporter. The document was corrected: decorative tokens are referenced, and platform-specific widget/motion values are explicitly normative prose rather than falsely assumed to be exported.
+6. **Deletion scope per identity.** The server deletes only the calling identity's links, but the local scope included links made under an earlier anonymous identity, so their still-live secrets were erased. Each owned link now records its identity (on creation and on refresh); a deletion command covers only links of the identity sending it, never signs in, and is not replayed under a different identity.
+7. **Fresh request after a lost response.** After **Request deletion again** lost its response, the next tap minted another key. The new command is saved before sending, so the screen now replays it.
+8. **Unset hand-off host.** The Android build used an unresolvable placeholder for the optional hand-off host. On Android 11 and lower every verified host must verify, so this would have stopped the real share host from opening the app. When unset, it now repeats the share host.
+
+Also tightened: the deletion request is sent only as the identity its scope was computed for (pinned authorization); a share attempt kept after an auth or rate-limit rejection now blocks creating a second link until it is retried or discarded; an expired session is refreshed (same identity) before a retry; the web preview rejects an app-link origin with a non-default port, matching the app.
+
+## Checks actually executed
+
+Toolchain: Flutter 3.47.4, Dart 3.13.3, Android SDK/Java 17; Node 24 and pinned npm dependencies; Deno 2.5.4 for runtime type checking. The committed lockfiles record dependency resolutions.
+
+| Check | Actual local result | Evidence scope |
+|---|---|---|
+| `flutter analyze` | No issues found | Dart static analysis |
+| `flutter test` | **205 passed** | Domain, Drift repositories, widget/UI flows, mocked native/plugin seams and static native-source checks |
+| `flutter build apk --debug` | Exit 0; `build/app/outputs/flutter-apk/app-debug.apk` produced | Android debug compilation/packaging, not release signing or device execution |
+| Android `:app:testDebugUnitTest` | **21 tests, 0 failures, 0 errors** | Kotlin planner/reader/contract JVM tests |
+| Android `:app:lintDebug` | Build successful; **0 errors, 16 warnings** | Android static lint, with a narrowly scoped generated-file exception described below |
+| Backend `npm test` | **79 passed, 0 failed, 0 skipped** | Actual migration/functions in local PGlite, Fetch handlers, auth boundaries, limits, replay and deletion tests |
+| Backend `npm audit --omit=dev --audit-level=high` | 0 vulnerabilities reported | Registry audit for production npm dependency graph at execution time, not a security guarantee |
+| Deno `check --node-modules-dir=none` | Exit 0 for all five entrypoints | `share-links`, `share-resolve`, `privacy`, `scan`, `health`; no deployment |
+| Browser preview `npm test` | **136 passed, 0 failed, 0 skipped** | JS contract/controller/jsdom/configuration/static checks, not real mobile browser hand-off |
+| DESIGN linter 0.4.0 | **0 errors, 0 warnings**, 1 token-summary info | Token/reference/opaque contrast and document structure, not visual/device accessibility certification |
+
+The Android debug build emits a `home_widget` Kotlin Gradle Plugin deprecation warning. Android lint warnings are six `UnusedAttribute`, one `GradleDependency`, one `NewerVersionAvailable`, one `ObsoleteSdkInt` and seven `UseKtx` findings. They have not been silently represented as zero warnings. Gradle also reports deprecated features requiring review before Gradle 10.
+
+### Generated Windows-path lint exception
+
+Flutter rewrites ignored `android/local.properties` during its assemble task. This SDK serializer escapes Windows backslashes but leaves drive colons unescaped. Java Properties accepts the values and compilation succeeds, while Android lint reports `PropertyEscape` for that generated file. Manual rewrites are overwritten again by Flutter.
+
+`android/app/lint.xml` ignores **only `PropertyEscape` in `../local.properties`**. No source rule or other file is excluded. The complete JVM-test/lint command was rerun successfully with the exception in place. A Flutter SDK upgrade should recheck whether this workaround is still necessary.
+
+### Representative regression coverage
+
+- Strict share-host/UUID/token parsing; bearer material passed ephemerally rather than persisted in router paths.
+- Ordinary local use and public resolving do not initialize an anonymous owner identity. Share creation persists its command/secret before network use; uncertain creation cannot start a fresh second link and exposes saved-attempt recovery.
+- Import selection, editable inactive review, local category mapping, explicit confirmation, transaction rollback/idempotency and duplicate/independent-copy decisions.
+- Editing a title preserves an explicit next-day end relationship. A pending schedule save disables close/discard/form edits until completion.
+- Reopening a completed backend-deletion job does not repeatedly erase newer local share metadata. Local schedule deletion and online snapshot deletion remain different operations.
+- Image signature/byte/pixel limits, metadata-free normalization, local OCR mapping, conservative parser boundaries, explicit resolution, cancellation/stale-result rejection and crop/rotation source-revision invalidation.
+- One labelled Today share action; a 320px-wide Today screen at text scale 2 has no captured layout exception and passes Flutter's labelled-target guideline. This single-screen check is **not** an app-wide WCAG/VoiceOver/TalkBack audit.
+- iOS static-source assertions require querying actual AlarmKit records and preserving failed cancellations. Swift/AlarmKit behavior itself remains unbuilt and untested here.
+
+Tests use isolated fixtures and mocked platform boundaries where Windows cannot exercise mobile plugins. Mock success is not evidence of actual camera, OCR, notifications or alarm delivery.
+
+## Documentation validation
+
+`python3 tools/spec_bundle.py` regenerates the readable edition and LF-canonical SHA-256 manifest. `python3 tools/spec_bundle.py --check` checks saved outputs rather than rewriting them. Its structural checks enforce:
+
+- 24 sequential requirement IDs, R01–R24.
+- 48 sequential acceptance IDs, AT01–AT48.
+- A 35-entry primary-source register and no undefined numeric citation in the modular documents.
+- Balanced code fences, main-spec table-of-contents anchors and existing relative document links.
+- Exact generated-bundle and document-checksum freshness.
+
+Machine transport/schema/fixtures and native calls remain authoritative separate artifacts under `contracts/`; prose refinement did not redesign frozen endpoints. The source register records documentation research; structural validation does not freshly re-verify every external webpage or prove all implementation behavior.
 
 ### Opaque contrast calculations
 
-Calculated with the sRGB relative-luminance formula in Python, not estimated visually. These are known opaque foreground/background pairs only:
+The previously executed sRGB relative-luminance calculations used the known opaque token pairs below, not visual estimates. The latest DESIGN lint independently reports no token contrast warning.
 
 | Pair | Foreground | Background | Calculated ratio | Target |
 |---|---|---|---|---|
@@ -36,40 +91,16 @@ Calculated with the sRGB relative-luminance formula in Python, not estimated vis
 | Light error | `#B3261E` | `#FFFFFF` | 6.536:1 | 4.5:1 |
 | Light input boundary | `#8A8A92` | `#FFFFFF` | 3.425:1 | 3:1 |
 
-Transparent widgets over arbitrary wallpaper are **not contrast-certified** by these calculations or by the token linter. Their native material, readability and accessible fallback need device testing.
+Transparent widgets over arbitrary wallpapers are not contrast-certified by these figures. Stronger/solid alternatives still require native readability tests.
 
-### Structural and citation checks
+## Remaining release gates — not claimed complete
 
-A Python checker actually parsed the saved Markdown after the independent reviews were integrated. It found:
+1. **Physical Android:** gallery/camera permissions and cancel, OCR accuracy/memory, widgets on supported launchers and multiple instances, refresh/resize/taps, notification delivery, alarms/full-screen eligibility/stop/reboot/force-stop, Clock hand-off and denial/recovery.
+2. **Mac/iOS:** compile Runner against the target SDK, create/embed/sign the WidgetKit extension, App Groups and entitlements, test AlarmKit authorization/query/cancel behavior on iOS 26+, notification fallback below iOS 26, photo/camera/OCR and widget rendering. The Windows environment cannot certify these.
+3. **Real sharing infrastructure:** configure an approved Supabase project and owned HTTPS domain; review role/grant/Auth/connection settings, apply the actual migration, deploy the five functions, validate real RLS/auth/rate-limit/network/deletion behavior and production origins. PGlite is real local PostgreSQL execution, not a deployed Supabase instance.
+4. **Verified links/browser hand-off:** real Android signing fingerprints, Apple team/app association, Associated Domains and web hosting/CSP/headers. Test fragment preservation and browser-to-app behavior on both OSes. Default placeholder associations must not be published as real ones.
+5. **Accessibility and smoothness:** full VoiceOver/TalkBack, large text across all screens, contrast on arbitrary wallpaper, Reduce Motion/Transparency, focus/keyboard/touch, empty/error/slow-I/O states and real frame/memory/battery profiling. No measured native smoothness claim is made.
+6. **Release/security/product decisions:** independent code/security findings must be resolved; production signing, dependency/toolchain warnings, store permissions/policy, privacy/legal/region, minors/account/session-loss recovery, retention/backups and remaining marked decisions need approval. SQLite is not encrypted by this app; no untested backup/recovery promise is made.
+7. **Cloud scan:** explicitly disabled. No provider request, paid scan, upload path, usage billing or accuracy test was performed. Enabling it later requires its own planned security, consent, quota and deletion verification.
 
-- **24** unique sequential requirement IDs.
-- **48** unique sequential acceptance-test IDs.
-- **35** registered/cited source IDs, with no undefined source or acceptance reference.
-- Balanced code fences and valid main table-of-contents anchors.
-- Existing relative document links and no unfinished implementation placeholders.
-
-The citation-ledger verifier also completed with **citations OK** in strict mode. This checks reference mapping and citation structure; it does not prove every proposed engineering decision through research or run any acceptance scenario.
-
-### Independent review changes incorporated
-
-- Explicit Android exact/repeating-alarm, force-stop and native widget refresh constraints.
-- A distinction between the notification maintainer's pending-request limit and AlarmKit capacity.
-- Client-held share secrets, fragment-based links, digest-only persistence and secret-free creation replay; native fragment handling remains a future proof gate.
-- Anonymous-role/service-client authorization risks, runtime image-decoder limits, revoke/resolve races, and downloaded-preview revocation limits.
-- Conservative usage reservation and an `unknown` scan state instead of automatically repeating a possibly billed provider request.
-
-These are planning and source-review outcomes. No child-agent in-memory model or self-report is represented as a deployed security or native-device test.
-
-## Not tested or claimed
-
-- Flutter compilation or mobile screen rendering.
-- Native Android/iOS widget transparency, refresh budgets, launcher clipping or multiple widget instances.
-- Actual reminder/alarm delivery, exact scheduling, full-screen permission or Clock-app behavior.
-- Backend deployment, RLS enforcement, signed-storage access, quota handling or data deletion.
-- Live AI requests, image-recognition accuracy, latency or cost.
-- App-store policy approval, privacy/legal approval, authentication recovery or production security certification.
-- User approval of proposed defaults or unresolved product decisions.
-
-## Verification boundary
-
-The implementation plan and acceptance matrix describe future tests. They are not fabricated passing results. Files and lint/static checks are the only completed artifacts at this stage.
+No production deployment, real-device success, store approval or independent security certification is implied by this record.

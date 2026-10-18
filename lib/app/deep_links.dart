@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 
+import '../features/sharing/application/sharing_config.dart';
+import '../features/sharing/domain/share_link.dart';
+
 import 'app.dart';
 
 /// Routes received links (spec 12.4). Internal schediel:// links only open
@@ -18,9 +21,6 @@ class DeepLinkCoordinator {
   String? _lastHandled;
   DateTime _lastHandledAt = DateTime.fromMillisecondsSinceEpoch(0);
 
-  /// Registered by the sharing feature: returns the preview location for an
-  /// https share link, or null when the link is not a share link.
-  String? Function(Uri uri)? shareLinkRoute;
 
   Future<void> start() async {
     try {
@@ -66,9 +66,21 @@ class DeepLinkCoordinator {
       router.go(location);
     } else {
       // Pushed on top so an unsaved editor underneath keeps its values.
-      router.push(location);
+      // The bearer remains in ephemeral arguments, not a route/query that
+      // a router diagnostic or restoration log could disclose.
+      router.push(location, extra: location == '/share/open'
+          ? shareLinkFor(uri) : null);
     }
     return location;
+  }
+
+  /// Parses a bearer link on the share host or the configured hand-off host.
+  ShareLink? shareLinkFor(Uri uri) {
+    final config = _ref.read(sharingConfigProvider);
+    if (!config.isConfigured || uri.scheme != 'https') return null;
+    final app = config.validAppLinkHost;
+    return ShareLink.tryParse(uri, host: config.shareHost) ??
+        (app == null ? null : ShareLink.tryParse(uri, host: app));
   }
 
   String? routeFor(Uri uri) {
@@ -82,7 +94,7 @@ class DeepLinkCoordinator {
       }
       return null;
     }
-    if (uri.scheme == 'https') return shareLinkRoute?.call(uri);
+    if (shareLinkFor(uri) != null) return '/share/open';
     return null;
   }
 }
