@@ -97,8 +97,12 @@ class TestHarness {
     await tester.pumpAndSettle();
   }
 
+  /// Taps visible text. Unselected navigation destinations show only an
+  /// icon, so their names fall back to the destination's key.
   Future<void> tapText(String text) async {
-    await tester.tap(find.text(text).last);
+    final visible = find.text(text);
+    final nav = find.byKey(ValueKey('nav-${text.toLowerCase()}'));
+    await tester.tap(visible.evaluate().isEmpty && nav.evaluate().isNotEmpty ? nav : visible.last);
     await settle();
   }
 }

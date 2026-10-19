@@ -12,6 +12,7 @@ import 'lifecycle.dart';
 import 'providers.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
+import 'theme/tokens.dart';
 
 final routerProvider = Provider<GoRouter>((ref) => buildRouter());
 
@@ -39,6 +40,12 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAccessibilityFeatures() {
+    // Reduce Motion changed: rebuild so theme switches become instant.
+    if (mounted) setState(() {});
   }
 
   @override
@@ -70,11 +77,18 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
       }
     });
     ref.listen(appearanceProvider, (previous, next) {
-      if (previous != null && previous.themeMode != next.themeMode) ref.read(widgetSnapshotServiceProvider).refresh();
+      if (previous != null &&
+          (previous.themeMode != next.themeMode ||
+              previous.theme != next.theme ||
+              previous.customHue != next.customHue ||
+              previous.showCategoryColors != next.showCategoryColors)) {
+        ref.read(widgetSnapshotServiceProvider).refresh();
+      }
     });
+    final selected = appearance.schedielTheme;
     ThemeData theme(Brightness b) => buildTheme(
+          theme: selected,
           brightness: b,
-          accent: appearance.accent,
           density: appearance.density,
           showCategoryColors: appearance.showCategoryColors,
         );
@@ -83,8 +97,12 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
       debugShowCheckedModeBanner: false,
       theme: theme(Brightness.light),
       darkTheme: theme(Brightness.dark),
-      themeMode: appearance.themeMode,
-      themeAnimationDuration: const Duration(milliseconds: 160),
+      themeMode: effectiveThemeMode(selected, appearance.themeMode),
+      // Theme switches cross-fade (screen motion); reduced motion is instant.
+      // MaterialApp creates the MediaQuery, so read the platform setting.
+      themeAnimationDuration: WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations
+          ? Duration.zero
+          : Tokens.screenMotion,
       routerConfig: router,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('en')],

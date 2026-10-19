@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/time/local_date.dart';
 import '../features/appearance/appearance_screen.dart';
+import '../features/profile/presentation/profile_screen.dart';
 import '../features/image_import/presentation/image_import_screen.dart';
 import '../features/privacy/presentation/privacy_screen.dart';
 import '../features/categories/presentation/categories_screen.dart';
@@ -61,6 +62,11 @@ GoRouter buildRouter({String initialLocation = '/today', List<RouteBase> extraRo
             seriesId: state.pathParameters['id']!,
             originalKey: LocalDate.tryParse(state.pathParameters['key']!),
           ),
+        ),
+        GoRoute(
+          path: '/settings/profile',
+          parentNavigatorKey: rootNavigatorKey,
+          builder: (_, _) => const ProfileScreen(),
         ),
         GoRoute(
           path: '/settings/appearance',

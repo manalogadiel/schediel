@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:schediel/app/theme/schediel_theme.dart';
+import 'package:schediel/app/theme/theme_catalog.dart';
 import 'package:schediel/core/schedule/models.dart';
 import 'package:schediel/core/schedule/occurrence_engine.dart';
 import 'package:schediel/core/time/local_date.dart';
@@ -11,6 +14,7 @@ import 'package:schediel/features/categories/domain/category.dart';
 import 'package:schediel/features/widgets/application/widget_snapshot_builder.dart';
 import 'package:schediel/features/widgets/application/widget_snapshot_reader.dart';
 import 'package:schediel/features/widgets/domain/widget_config.dart';
+import 'package:schediel/features/widgets/domain/widget_theme.dart';
 
 void main() {
   late ZoneResolver zones;
@@ -101,6 +105,39 @@ void main() {
       final read = readWidgetSnapshot(jsonEncode(json),
           widgetKey: 'default', now: DateTime.utc(2026, 11, 2, 0, 30), deviceZone: 'Asia/Manila', zones: zones);
       expect(read.next, 'a/2026-11-02');
+    });
+
+    test('with a theme it writes contract 1.1: theme, useAppTheme and category colors', () {
+      final theme = widgetThemeJson(themeFor(ThemeId.pixel), ThemeMode.system);
+      final json = builder.build(
+        series: [series('a', category: 'school'), series('b', hour: 13)],
+        configs: [WidgetConfig.defaults, WidgetConfig.defaults.copyWith(widgetKey: '7', useAppTheme: false)],
+        now: DateTime.utc(2026, 11, 2, 0, 30),
+        zone: 'Asia/Manila',
+        dataRevision: 1,
+        use24h: true,
+        theme: theme,
+        categoryColors: const {'school': 'green'},
+      );
+      expect(json['schemaVersion'], '1.1');
+      expect(json['theme'], theme);
+      final widgets = json['widgets'] as Map;
+      expect(((widgets['default'] as Map)['configuration'] as Map)['useAppTheme'], isTrue);
+      expect(((widgets['7'] as Map)['configuration'] as Map)['useAppTheme'], isFalse);
+      final occurrences = ((widgets['default'] as Map)['occurrences'] as List).cast<Map<String, dynamic>>();
+      expect(occurrences.firstWhere((o) => o['seriesId'] == 'a')['categoryColor'], 'green');
+      expect(occurrences.firstWhere((o) => o['seriesId'] == 'b')['categoryColor'], isNull);
+      // Readers that know 1.0 rules read 1.1 the same way.
+      final read = readWidgetSnapshot(jsonEncode(json),
+          widgetKey: 'default', now: DateTime.utc(2026, 11, 2, 0, 30), deviceZone: 'Asia/Manila', zones: zones);
+      expect(read.state, WidgetReadState.entries);
+      expect(read.next, 'a/2026-11-02');
+      // Nothing from the profile or other app data leaks into the snapshot.
+      expect(jsonEncode(json), isNot(contains('profile')));
+      // A later major/minor version this app does not know still opens the app.
+      final future = readWidgetSnapshot(jsonEncode({...json, 'schemaVersion': '1.2'}),
+          widgetKey: 'default', now: DateTime.utc(2026, 11, 2, 0, 30), deviceZone: 'Asia/Manila', zones: zones);
+      expect(future.state, WidgetReadState.unsupported);
     });
 
     test('caps each widget at 24 occurrences and pulls coverage in accordingly', () {

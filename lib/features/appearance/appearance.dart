@@ -2,6 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme/schediel_theme.dart';
+import '../../app/theme/theme_catalog.dart';
 import '../../app/theme/tokens.dart';
 import '../../data/local/database.dart';
 
@@ -9,25 +11,34 @@ import '../../data/local/database.dart';
 class AppearanceSettings {
   const AppearanceSettings({
     this.themeMode = ThemeMode.system,
-    this.accent = AccentPreset.blue,
+    this.theme = ThemeId.lilac,
+    this.customHue = 250,
     this.density = Density.comfortable,
     this.showCategoryColors = true,
   });
 
   final ThemeMode themeMode;
-  final AccentPreset accent;
+  final ThemeId theme;
+
+  /// Hue (0–359) used by [ThemeId.custom].
+  final int customHue;
   final Density density;
   final bool showCategoryColors;
 
+  /// The resolved theme definition.
+  SchedielTheme get schedielTheme => themeFor(theme, customHue: customHue);
+
   AppearanceSettings copyWith({
     ThemeMode? themeMode,
-    AccentPreset? accent,
+    ThemeId? theme,
+    int? customHue,
     Density? density,
     bool? showCategoryColors,
   }) =>
       AppearanceSettings(
         themeMode: themeMode ?? this.themeMode,
-        accent: accent ?? this.accent,
+        theme: theme ?? this.theme,
+        customHue: (customHue ?? this.customHue) % 360,
         density: density ?? this.density,
         showCategoryColors: showCategoryColors ?? this.showCategoryColors,
       );
@@ -36,12 +47,13 @@ class AppearanceSettings {
   bool operator ==(Object other) =>
       other is AppearanceSettings &&
       other.themeMode == themeMode &&
-      other.accent == accent &&
+      other.theme == theme &&
+      other.customHue == customHue &&
       other.density == density &&
       other.showCategoryColors == showCategoryColors;
 
   @override
-  int get hashCode => Object.hash(themeMode, accent, density, showCategoryColors);
+  int get hashCode => Object.hash(themeMode, theme, customHue, density, showCategoryColors);
 }
 
 class AppearanceRepository {
@@ -55,7 +67,8 @@ class AppearanceRepository {
     if (row == null) return const AppearanceSettings();
     return AppearanceSettings(
       themeMode: ThemeMode.values.firstWhere((m) => m.name == row.themeMode, orElse: () => ThemeMode.system),
-      accent: AccentPreset.fromKey(row.accentKey),
+      theme: ThemeId.fromKey(row.themeKey),
+      customHue: row.customHue % 360,
       density: Density.values.firstWhere((d) => d.name == row.density, orElse: () => Density.comfortable),
       showCategoryColors: row.showCategoryColors,
     );
@@ -65,7 +78,8 @@ class AppearanceRepository {
         AppearancePreferencesCompanion.insert(
           id: const Value(1),
           themeMode: Value(s.themeMode.name),
-          accentKey: Value(s.accent.name),
+          themeKey: Value(s.theme.name),
+          customHue: Value(s.customHue),
           density: Value(s.density.name),
           showCategoryColors: Value(s.showCategoryColors),
           updatedAt: _clock().toUtc(),

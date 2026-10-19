@@ -10,14 +10,17 @@ import '../../../app/format.dart';
 import '../../../app/icons.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../app/theme/schediel_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
 import '../../../core/time/local_date.dart';
+import '../../appearance/appearance.dart';
 import '../../categories/domain/category.dart';
 import '../application/widget_snapshot_reader.dart';
 import '../application/widget_snapshot_service.dart';
 import '../domain/widget_config.dart';
 import '../domain/widget_style.dart';
+import '../domain/widget_theme.dart';
 
 bool get _isIOS => !kIsWeb && Platform.isIOS;
 
@@ -170,6 +173,14 @@ class _WidgetConfigScreenState extends ConsumerState<WidgetConfigScreen> {
                     onChanged: (v) => _update(config.copyWith(nextEmphasis: v)),
                   ),
                 ]),
+                SectionGroup(children: [
+                  SwitchListTile(
+                    title: const Text('Use app theme'),
+                    subtitle: const Text('Holders take the colors, shapes and heading font of your app theme'),
+                    value: config.useAppTheme,
+                    onChanged: (v) => _update(config.copyWith(useAppTheme: v)),
+                  ),
+                ]),
                 SectionGroup(header: 'Surface', children: [
                   RadioGroup<WidgetSurface>(
                     groupValue: config.surface,
@@ -273,6 +284,9 @@ class _Preview extends ConsumerWidget {
     final zone = ref.watch(deviceZoneProvider);
     final zones = ref.watch(zoneResolverProvider);
     final appDark = Theme.of(context).brightness == Brightness.dark;
+    final appearance = ref.watch(appearanceProvider);
+    final categories = ref.watch(categoriesProvider).value ?? const [];
+    final themeJson = widgetThemeJson(appearance.schedielTheme, appearance.themeMode);
     final json = ref.watch(widgetSnapshotBuilderProvider).build(
           series: series,
           configs: [config.copyWith(widgetKey: 'preview')],
@@ -281,7 +295,15 @@ class _Preview extends ConsumerWidget {
           dataRevision: 0,
           use24h: MediaQuery.alwaysUse24HourFormatOf(context),
           appIsDark: appDark,
+          theme: themeJson,
+          categoryColors: {
+            for (final c in categories)
+              if (appearance.showCategoryColors && CategoryColorKey.fromKey(c.colorKey) != null) c.id: c.colorKey,
+          },
         );
+    final themed = config.useAppTheme;
+    final palette = themeJson[appDark ? 'dark' : 'light']! as Map<String, Object?>;
+    final c = context.scheduleColors;
     final result = readWidgetSnapshot(jsonEncode(json), widgetKey: 'preview', now: now, deviceZone: zone, zones: zones);
     final tone = WidgetTextTone.values.byName(result.configuration['textTone'] as String? ?? config.textTone.name);
     final style = WidgetStyle.of(config.surface, tone);
@@ -303,34 +325,61 @@ class _Preview extends ConsumerWidget {
               return '$datePrefix$range${e.zoneLabel == null ? '' : ' (${e.zoneLabel})'}';
             }();
       final details = [e.location, e.professor, e.subtitle].whereType<String>().toList();
+      final emphasized = next && config.nextEmphasis;
+      final colors = themed
+          ? holderColors(palette, next: emphasized, categoryColor: e.json['categoryColor'] as String?, surface: config.surface.name)
+          : null;
+      final primary = colors?.ink ?? style.primaryText;
+      final secondary = colors?.ink ?? style.secondaryText;
+      final shapeStyle = c.style;
+      // Same rule as the native widget: hard shadows only on solid holders.
+      final shadow = themed &&
+          (shapeStyle == StyleFamily.pop || shapeStyle == StyleFamily.pixel) &&
+          config.surface == WidgetSurface.solid;
+      final decoration = colors == null
+          ? BoxDecoration(
+              color: emphasized ? style.nextHolder : style.upcomingHolder,
+              borderRadius: BorderRadius.circular(WidgetStyle.holderRadius),
+              border: emphasized ? Border.all(color: style.nextOutline) : null,
+            )
+          : BoxDecoration(
+              color: colors.fill,
+              borderRadius: BorderRadius.circular(switch (shapeStyle) {
+                StyleFamily.pixel => 0,
+                StyleFamily.pop => 14,
+                StyleFamily.sketch => 18,
+                StyleFamily.soft => WidgetStyle.holderRadius,
+              }),
+              border: shapeStyle == StyleFamily.soft
+                  ? (config.surface == WidgetSurface.clear ? Border.all(color: colors.outline.withValues(alpha: 0.4)) : null)
+                  : Border.all(color: colors.outline, width: 2),
+              boxShadow: shadow ? [BoxShadow(color: colors.outline, offset: const Offset(3, 3))] : null,
+            );
       return Container(
-        margin: const EdgeInsets.only(bottom: 6),
+        margin: EdgeInsets.only(bottom: 6, right: shadow ? 3 : 0),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: next && config.nextEmphasis ? style.nextHolder : style.upcomingHolder,
-          borderRadius: BorderRadius.circular(WidgetStyle.holderRadius),
-          border: next && config.nextEmphasis ? Border.all(color: style.nextOutline) : null,
-        ),
+        decoration: decoration,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               '${status == null ? '' : '$status · '}$timeText',
-              style: TextStyle(fontSize: 12, color: style.secondaryText, fontWeight: FontWeight.w500),
+              style: TextStyle(fontSize: 12, color: secondary, fontWeight: FontWeight.w500),
             ),
             Text(
               e.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 15,
-                color: style.primaryText,
-                fontWeight: next && config.nextEmphasis ? FontWeight.w700 : FontWeight.w600,
+                fontFamily: themed ? c.displayFont : null,
+                fontSize: themed && c.displayFont == 'Caveat' ? 19 : (themed && c.displayFont == 'Silkscreen' ? 13 : 15),
+                color: primary,
+                fontWeight: emphasized ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
             if (config.layout == WidgetLayout.expanded && details.isNotEmpty)
               Text(details.join(' · '),
-                  maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: style.secondaryText)),
+                  maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: secondary)),
           ],
         ),
       );

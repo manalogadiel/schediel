@@ -151,6 +151,10 @@ class WidgetConfigurations extends Table {
   BoolColumn get showProfessor => boolean().withDefault(const Constant(true))();
   BoolColumn get showSubtitle => boolean().withDefault(const Constant(true))();
   BoolColumn get matchApp => boolean().withDefault(const Constant(false))();
+
+  /// Holders use the app theme's colors, shapes and display font. New widgets
+  /// default on; widgets created before themes existed were migrated off.
+  BoolColumn get useAppTheme => boolean().withDefault(const Constant(true))();
   IntColumn get revision => integer().withDefault(const Constant(0))();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -162,9 +166,27 @@ class WidgetConfigurations extends Table {
 class AppearancePreferences extends Table {
   IntColumn get id => integer()();
   TextColumn get themeMode => text().withDefault(const Constant('system'))();
+
+  /// Legacy v1 accent; read only by the v2 migration.
   TextColumn get accentKey => text().withDefault(const Constant('blue'))();
+  TextColumn get themeKey => text().withDefault(const Constant('lilac'))();
+  IntColumn get customHue => integer().withDefault(const Constant(250))();
   TextColumn get density => text().withDefault(const Constant('comfortable'))();
   BoolColumn get showCategoryColors => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Optional on-device profile (design spec §6). Never shared or synced.
+@DataClassName('ProfileRow')
+class ProfilePreferences extends Table {
+  IntColumn get id => integer()();
+  TextColumn get displayName => text().nullable()();
+
+  /// Absolute path of the app-private 512x512 JPEG, or null.
+  TextColumn get photoPath => text().nullable()();
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -270,6 +292,7 @@ class KeyValues extends Table {
     OwnedShareLinks,
     PendingShareCreations,
     KeyValues,
+    ProfilePreferences,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -278,7 +301,7 @@ class AppDatabase extends _$AppDatabase {
   final DateTime Function() _clock;
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   static const builtInCategories = [
     ('school', 'School'),
@@ -303,6 +326,30 @@ class AppDatabase extends _$AppDatabase {
             ));
           }
           await into(appearancePreferences).insert(AppearancePreferencesCompanion.insert(id: const Value(1), updatedAt: now));
+        },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            // Themes, profile and themed widgets (design 2026-10-18).
+            await m.addColumn(appearancePreferences, appearancePreferences.themeKey);
+            await m.addColumn(appearancePreferences, appearancePreferences.customHue);
+            await m.addColumn(widgetConfigurations, widgetConfigurations.useAppTheme);
+            await m.createTable(profilePreferences);
+            // Existing widgets keep their look until the user opts in.
+            await customStatement('UPDATE widget_configurations SET use_app_theme = 0');
+            // Placed widgets without their own row read "default"; without a
+            // saved default they would get the new themed defaults. Other
+            // columns take their defaults, which equal WidgetConfig.defaults.
+            await customStatement(
+              "INSERT OR IGNORE INTO widget_configurations (widget_id, use_app_theme, updated_at) "
+              "VALUES ('default', 0, CAST(strftime('%s', 'now') AS INTEGER))",
+            );
+            // Nearest theme for the old accent presets.
+            await customStatement('''
+              UPDATE appearance_preferences SET theme_key = CASE accent_key
+                WHEN 'teal' THEN 'mint'
+                WHEN 'graphite' THEN CASE theme_mode WHEN 'dark' THEN 'midnight' ELSE 'clay' END
+                ELSE 'lilac' END''');
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

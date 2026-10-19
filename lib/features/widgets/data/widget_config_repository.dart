@@ -32,6 +32,7 @@ class WidgetConfigRepository {
           showProfessor: Value(next.showProfessor),
           showSubtitle: Value(next.showSubtitle),
           matchApp: Value(next.matchApp),
+          useAppTheme: Value(next.useAppTheme),
           revision: Value(next.revision),
           updatedAt: _clock().toUtc(),
         ));
@@ -53,6 +54,7 @@ class WidgetConfigRepository {
         showProfessor: r.showProfessor,
         showSubtitle: r.showSubtitle,
         matchApp: r.matchApp,
+        useAppTheme: r.useAppTheme,
         revision: r.revision,
       );
 }

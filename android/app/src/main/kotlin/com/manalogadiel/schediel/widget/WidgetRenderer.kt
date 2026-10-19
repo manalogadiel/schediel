@@ -7,6 +7,7 @@ import android.graphics.Typeface
 import android.icu.text.SimpleDateFormat
 import android.icu.util.TimeZone
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
@@ -27,6 +28,11 @@ import java.util.Date
  * only from the snapshot and approved labels; the root stays transparent.
  */
 class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
+    private companion object {
+        const val OPAQUE = 0xFF000000.toInt()
+        val BITMAP_TITLE_STYLES = setOf("pixel", "sketch")
+    }
+
     private val locale = context.resources.configuration.locales[0]
     private val icuZone = TimeZone.getTimeZone(zone.id)
     private val timeFormat = SimpleDateFormat(
@@ -46,8 +52,32 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
 
     private data class Holder(val root: Int, val time: Int, val title: Int, val details: Int)
 
+    /** Bitmap title views, present only in the pixel and sketch layouts. */
+    private val titleImageIds = listOf(
+        R.id.holder_0_title_image,
+        R.id.holder_1_title_image,
+        R.id.holder_2_title_image,
+        R.id.holder_3_title_image,
+    )
+
+    /** Shape layers present only in the themed layouts. */
+    private data class Shapes(val shadow: Int, val outline: Int, val fill: Int)
+
+    private val shapeIds = listOf(
+        Shapes(R.id.holder_0_shadow, R.id.holder_0_outline, R.id.holder_0_fill),
+        Shapes(R.id.holder_1_shadow, R.id.holder_1_outline, R.id.holder_1_fill),
+        Shapes(R.id.holder_2_shadow, R.id.holder_2_outline, R.id.holder_2_fill),
+        Shapes(R.id.holder_3_shadow, R.id.holder_3_outline, R.id.holder_3_fill),
+    )
+
+    private fun isNight(): Boolean =
+        (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
     fun build(result: ReadResult, options: Bundle?, nowMs: Long): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.widget_schedule)
+        // Themed holders when this widget opted in and the snapshot carries a
+        // valid theme; otherwise exactly the original look.
+        val theme = result.theme?.takeIf { result.settings?.useAppTheme == true }
+        val views = RemoteViews(context.packageName, ThemeStyle.layoutFor(theme))
         val light = (result.settings?.textTone ?: "light") == "light"
         val primary = context.getColor(if (light) R.color.widget_light_primary else R.color.widget_dark_primary)
         val secondary = context.getColor(if (light) R.color.widget_light_secondary else R.color.widget_dark_secondary)
@@ -65,7 +95,13 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
 
         val settings = result.settings!!
         val today = Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
-        val plan = WidgetPlanner.plan(result, heightDp(options), context.resources.configuration.fontScale)
+        val plan = WidgetPlanner.plan(
+            result,
+            heightDp(options),
+            context.resources.configuration.fontScale,
+            extraChromeDp = if (theme != null) 4f else 0f,
+            titleLineSp = ThemeStyle.titleLineSp(theme?.style),
+        )
         plan.allDay.forEachIndexed { i, entry ->
             val id = captionIds[i]
             views.setViewVisibility(id, View.VISIBLE)
@@ -76,16 +112,45 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
             val ids = holderIds[i]
             val entry = row.entry
             views.setViewVisibility(ids.root, View.VISIBLE)
-            views.setInt(ids.root, "setBackgroundResource", holderBackground(settings.surface, light, row.emphasized))
+            // Day and night ink: equal unless themed (the legacy look keeps its
+            // chosen text tone).
+            var ink = Pair(primary, primary)
+            var subtle = Pair(secondary, secondary)
+            if (theme != null) {
+                val day = ThemeStyle.holderColors(theme.light, row.emphasized, entry.categoryColor, settings.surface)
+                val night = ThemeStyle.holderColors(theme.dark, row.emphasized, entry.categoryColor, settings.surface)
+                paintShapes(views, shapeIds[i], theme.style, settings.surface, day, night)
+                ink = Pair(day.ink, night.ink)
+                subtle = ink
+            } else {
+                views.setInt(ids.root, "setBackgroundResource", holderBackground(settings.surface, light, row.emphasized))
+            }
             val (shown, spoken) = timeTexts(row, today)
             views.setTextViewText(ids.time, shown)
-            views.setTextColor(ids.time, secondary)
+            dayNight(views, ids.time, "setTextColor", subtle)
             views.setTextViewText(ids.title, if (row.emphasized) bold(entry.title) else entry.title)
-            views.setTextColor(ids.title, primary)
+            dayNight(views, ids.title, "setTextColor", ink)
+            val titleImage = titleImageIds[i]
+            val bitmap = if (theme != null && theme.style in BITMAP_TITLE_STYLES) {
+                TitleBitmap.maxWidthPx(widthDp(options), context.resources.displayMetrics.density)?.let { max ->
+                    TitleBitmap.render(context, theme.style, entry.title, row.emphasized, context.resources.configuration.fontScale, max)
+                }
+            } else {
+                null
+            }
+            if (bitmap != null) {
+                views.setImageViewBitmap(titleImage, bitmap)
+                dayNight(views, titleImage, "setColorFilter", ink)
+                views.setViewVisibility(titleImage, View.VISIBLE)
+                views.setViewVisibility(ids.title, View.GONE)
+            } else if (theme != null && theme.style in BITMAP_TITLE_STYLES) {
+                views.setViewVisibility(titleImage, View.GONE)
+                views.setViewVisibility(ids.title, View.VISIBLE)
+            }
             if (row.details != null) {
                 views.setViewVisibility(ids.details, View.VISIBLE)
                 views.setTextViewText(ids.details, row.details)
-                views.setTextColor(ids.details, secondary)
+                dayNight(views, ids.details, "setTextColor", subtle)
             } else {
                 views.setViewVisibility(ids.details, View.GONE)
             }
@@ -93,6 +158,43 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
             views.setOnClickPendingIntent(ids.root, launch(Uri.parse(entry.deepLink)))
         }
         return views
+    }
+
+    /**
+     * Tints the white shape layers: fill with the holder color and surface
+     * opacity, ring in the theme outline, hard shadow only on solid holders.
+     * Soft holders show a faint ring only on the clear surface.
+     */
+    private fun paintShapes(views: RemoteViews, ids: Shapes, style: String, surface: String, day: HolderColors, night: HolderColors) {
+        dayNight(views, ids.fill, "setColorFilter", Pair(day.fill or OPAQUE, night.fill or OPAQUE))
+        views.setInt(ids.fill, "setImageAlpha", ThemeStyle.sharedAlpha(day, night))
+        val ringAlpha = when {
+            style != "soft" -> 255
+            surface == "clear" -> 0x66
+            else -> 0
+        }
+        dayNight(views, ids.outline, "setColorFilter", Pair(day.outline or OPAQUE, night.outline or OPAQUE))
+        views.setInt(ids.outline, "setImageAlpha", ringAlpha)
+        if (ThemeStyle.showsShadow(style, surface)) {
+            views.setViewVisibility(ids.shadow, View.VISIBLE)
+            dayNight(views, ids.shadow, "setColorFilter", Pair(day.outline or OPAQUE, night.outline or OPAQUE))
+        } else {
+            views.setViewVisibility(ids.shadow, View.GONE)
+        }
+    }
+
+    /**
+     * Android 12+ switches these colors itself when night mode changes, even
+     * while the app is closed. Older versions get the current mode's color;
+     * the next widget update (app open, data change or scheduled refresh)
+     * picks up a later change.
+     */
+    private fun dayNight(views: RemoteViews, id: Int, method: String, colors: Pair<Int, Int>) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            views.setColorInt(id, method, colors.first, colors.second)
+        } else {
+            views.setInt(id, method, if (isNight()) colors.second else colors.first)
+        }
     }
 
     /** Visible and spoken time lines (x-readerRules R01-R05, R09). */
@@ -130,6 +232,13 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
         SpannableString(text).apply { setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
 
     private fun launch(uri: Uri) = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, uri)
+
+    private fun widthDp(options: Bundle?): Float? {
+        if (options == null) return null
+        val portrait = context.resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
+        val width = options.getInt(if (portrait) AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH else AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
+        return if (width > 0) width.toFloat() else null
+    }
 
     private fun heightDp(options: Bundle?): Float? {
         if (options == null) return null

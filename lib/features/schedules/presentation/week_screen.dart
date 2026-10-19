@@ -9,7 +9,10 @@ import '../../../app/icons.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/shell.dart';
+import '../../../app/theme/schediel_theme.dart';
 import '../../../app/widgets/common.dart';
+import '../../../app/widgets/themed.dart';
 import '../../../core/schedule/occurrence.dart';
 import '../../../core/time/local_date.dart';
 import '../../../core/time/local_time.dart';
@@ -57,11 +60,32 @@ class _WeekScreenState extends ConsumerState<WeekScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('Week', style: text.labelMedium?.copyWith(color: context.scheduleColors.secondaryInk)),
-                  Semantics(header: true, child: Text(f.range(start, start.addDays(6)), style: text.headlineMedium)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Week', style: text.labelMedium?.copyWith(color: context.scheduleColors.secondaryInk)),
+                        Semantics(header: true, child: Text(f.range(start, start.addDays(6)), style: text.headlineMedium)),
+                      ],
+                    ),
+                  ),
+                  if (_weekOffset != 0)
+                    Semantics(
+                      button: true,
+                      label: 'This week',
+                      excludeSemantics: true,
+                      child: InkWell(
+                        customBorder: const StadiumBorder(),
+                        onTap: () => setState(() => _weekOffset = 0),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                          child: ThemedPill(label: 'This week', emphasized: true),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -69,23 +93,24 @@ class _WeekScreenState extends ConsumerState<WeekScreen> {
               padding: const EdgeInsets.fromLTRB(Tokens.sm, Tokens.xs, Tokens.md, Tokens.sm),
               child: Row(
                 children: [
-                  IconButton(
+                  ThemedIconButton(
+                    icon: AppIcons.previous,
                     tooltip: 'Previous week',
+                    size: 40,
                     onPressed: () => setState(() => _weekOffset--),
-                    icon: const AppIcon(AppIcons.previous),
                   ),
-                  IconButton(
+                  ThemedIconButton(
+                    icon: AppIcons.next,
                     tooltip: 'Next week',
+                    size: 40,
                     onPressed: () => setState(() => _weekOffset++),
-                    icon: const AppIcon(AppIcons.next),
                   ),
-                  if (_weekOffset != 0)
-                    TextButton(onPressed: () => setState(() => _weekOffset = 0), child: const Text('This week')),
                   const Spacer(),
-                  IconButton(
+                  ThemedIconButton(
+                    icon: agenda ? AppIcons.grid : AppIcons.agenda,
                     tooltip: agenda ? 'Show time grid' : 'Show agenda',
+                    size: 40,
                     onPressed: () => setState(() => _agenda = !agenda),
-                    icon: AppIcon(agenda ? AppIcons.grid : AppIcons.agenda),
                   ),
                   const SizedBox(width: Tokens.xs),
                   const FilterPill(),
@@ -104,23 +129,26 @@ class _WeekScreenState extends ConsumerState<WeekScreen> {
                   if (empty) {
                     final any = w.days.first.hasAnySchedules;
                     final filtered = w.days.first.filterActive;
-                    return ListView(children: [
-                      EmptyState(
-                        title: !any
-                            ? 'No schedules yet'
-                            : filtered
-                                ? 'No schedules in this filter'
-                                : 'No schedules this week',
-                        action: !any
-                            ? FilledButton(onPressed: () => context.push('/schedule/new'), child: const Text('Create schedule'))
-                            : filtered
-                                ? TextButton(
-                                    onPressed: () => ref.read(appFilterProvider.notifier).set(const CategoryFilter.all()),
-                                    child: const Text('Show all'),
-                                  )
-                                : null,
-                      ),
-                    ]);
+                    return ListView(
+                      padding: EdgeInsets.only(bottom: AppShell.bottomInset(context)),
+                      children: [
+                        EmptyState(
+                          title: !any
+                              ? 'No schedules yet'
+                              : filtered
+                              ? 'No schedules in this filter'
+                              : 'No schedules this week',
+                          action: !any
+                              ? FilledButton(onPressed: () => context.push('/schedule/new'), child: const Text('Create schedule'))
+                              : filtered
+                              ? TextButton(
+                                  onPressed: () => ref.read(appFilterProvider.notifier).set(const CategoryFilter.all()),
+                                  child: const Text('Show all'),
+                                )
+                              : null,
+                        ),
+                      ],
+                    );
                   }
                   return agenda ? _WeekAgenda(week: w) : _WeekGrid(week: w);
                 },
@@ -141,18 +169,26 @@ class _WeekAgenda extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = Formats.of(context);
+    final text = Theme.of(context).textTheme;
+    final c = context.scheduleColors;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.xxl),
+      padding: EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, AppShell.bottomInset(context)),
       children: [
         for (final day in week.days)
-          if (!day.isEmpty)
-            SectionGroup(
-              header: '${f.dayTitle(day.date)}${day.isToday ? ' · Today' : ''}',
-              children: [
-                for (final o in [...day.agenda.dateOnly, ...day.agenda.needsReview, ...day.all.where((o) => o.timing is TimedTiming)])
-                  TimelineRow(occurrence: o, overlaps: day.overlapIds.contains(o.id)),
-              ],
+          if (!day.isEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: Tokens.sm, bottom: Tokens.sm),
+              child: Semantics(
+                header: true,
+                child: Text(
+                  '${f.dayTitle(day.date)}${day.isToday ? ' · Today' : ''}',
+                  style: text.labelLarge?.copyWith(color: day.isToday ? c.ink : c.secondaryInk),
+                ),
+              ),
             ),
+            for (final o in [...day.agenda.dateOnly, ...day.agenda.needsReview, ...day.all.where((o) => o.timing is TimedTiming)])
+              TimelineRow(occurrence: o, overlaps: day.overlapIds.contains(o.id)),
+          ],
       ],
     );
   }
@@ -201,7 +237,10 @@ class _WeekGrid extends ConsumerWidget {
 
     for (final s in result) {
       if (s.startMin >= clusterEnd && cluster.isNotEmpty) close();
-      final used = {for (final c in cluster) if (c.endMin > s.startMin) c.column};
+      final used = {
+        for (final c in cluster)
+          if (c.endMin > s.startMin) c.column,
+      };
       var col = 0;
       while (used.contains(col)) {
         col++;
@@ -236,116 +275,146 @@ class _WeekGrid extends ConsumerWidget {
     final hours = lastHour - firstHour;
     final hasStrip = week.days.any((d) => d.agenda.dateOnly.isNotEmpty || d.agenda.needsReview.isNotEmpty);
 
-    return LayoutBuilder(builder: (context, constraints) {
-      final colWidth = (constraints.maxWidth - _gutter - Tokens.md) / 7;
-      return Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: _gutter, right: Tokens.md),
-            child: Row(
-              children: [
-                for (final d in week.days)
-                  SizedBox(
-                    width: colWidth,
-                    child: Semantics(
-                      label: '${f.dayTitle(d.date)}${d.isToday ? ', today' : ''}',
-                      excludeSemantics: true,
-                      child: Column(children: [
-                        Text(f.weekdayShort(d.date.weekday), style: TextStyle(fontSize: 12, color: colors.secondaryInk)),
-                        const SizedBox(height: 2),
-                        Container(
-                          width: 30,
-                          height: 30,
-                          alignment: Alignment.center,
-                          decoration: d.isToday ? BoxDecoration(color: scheme.primary, shape: BoxShape.circle) : null,
-                          child: Text(
-                            '${d.date.day}',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: d.isToday ? scheme.onPrimary : colors.ink,
-                            ),
-                          ),
-                        ),
-                      ]),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (hasStrip)
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final colWidth = (constraints.maxWidth - _gutter - Tokens.md) / 7;
+        return Column(
+          children: [
             Padding(
-              padding: const EdgeInsets.only(left: _gutter, right: Tokens.md, top: Tokens.xs),
+              padding: const EdgeInsets.only(left: _gutter, right: Tokens.md),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   for (final d in week.days)
                     SizedBox(
                       width: colWidth,
-                      child: Column(children: [
-                        for (final o in [...d.agenda.dateOnly, ...d.agenda.needsReview])
-                          _Block(occurrence: o, compact: true, warn: o.timing is UnresolvedTiming),
-                      ]),
+                      child: Semantics(
+                        label: '${f.dayTitle(d.date)}${d.isToday ? ', today' : ''}',
+                        excludeSemantics: true,
+                        child: Column(
+                          children: [
+                            Text(f.weekdayShort(d.date.weekday), style: TextStyle(fontSize: 12, color: colors.secondaryInk)),
+                            const SizedBox(height: 2),
+                            Container(
+                              width: 30,
+                              height: 30,
+                              alignment: Alignment.center,
+                              decoration: d.isToday
+                                  ? BoxDecoration(
+                                      color: scheme.primary,
+                                      shape: colors.style == StyleFamily.pixel ? BoxShape.rectangle : BoxShape.circle,
+                                      border: colors.outlined ? Border.all(color: colors.palette.outline, width: 1.5) : null,
+                                    )
+                                  : null,
+                              child: Text(
+                                '${d.date.day}',
+                                style: TextStyle(
+                                  fontFamily: colors.displayFont,
+                                  fontSize: colors.displayFont == 'Caveat' ? 19 : (colors.displayFont == 'Silkscreen' ? 12 : 15),
+                                  fontWeight: FontWeight.w600,
+                                  color: d.isToday ? scheme.onPrimary : colors.ink,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                 ],
               ),
             ),
-          const SizedBox(height: Tokens.xs),
-          Divider(color: colors.divider),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: Tokens.xxl),
-              child: SizedBox(
-                height: hours * hourHeight + Tokens.sm,
-                child: Stack(
+            if (hasStrip)
+              Padding(
+                padding: const EdgeInsets.only(left: _gutter, right: Tokens.md, top: Tokens.xs),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (var h = 0; h <= hours; h++)
-                      Positioned(
-                        top: h * hourHeight,
-                        left: 0,
-                        right: Tokens.md,
-                        child: Row(children: [
-                          SizedBox(
-                            width: _gutter,
-                            child: ExcludeSemantics(
-                              child: Text(
-                                f.clock(LocalTime((firstHour + h) % 24, 0)),
-                                style: TextStyle(fontSize: 11, color: colors.secondaryInk),
-                              ),
-                            ),
-                          ),
-                          Expanded(child: Divider(color: colors.divider.withValues(alpha: 0.6))),
-                        ]),
-                      ),
-                    for (var i = 0; i < 7; i++)
-                      for (final s in perDay[i])
-                        Positioned(
-                          left: _gutter + i * colWidth + s.column * (colWidth / s.columns) + 1,
-                          width: colWidth / s.columns - 2,
-                          top: (s.startMin - firstHour * 60) * hourHeight / 60 + 6,
-                          height: math.max(20, (s.endMin - s.startMin) * hourHeight / 60 - 2),
-                          child: _Block(occurrence: s.occurrence, point: s.isPoint, overlaps: week.days[i].overlapIds.contains(s.occurrence.id)),
+                    for (final d in week.days)
+                      SizedBox(
+                        width: colWidth,
+                        child: Column(
+                          children: [
+                            for (final o in [...d.agenda.dateOnly, ...d.agenda.needsReview])
+                              _Block(occurrence: o, compact: true, warn: o.timing is UnresolvedTiming),
+                          ],
                         ),
-                    for (var i = 0; i < 7; i++)
-                      if (week.days[i].isToday)
-                        Builder(builder: (context) {
-                          final minutes = now.toUtc().difference(zones.startOfDay(week.days[i].date, zone)).inMinutes;
-                          if (minutes < firstHour * 60 || minutes > lastHour * 60) return const SizedBox.shrink();
-                          return Positioned(
-                            left: _gutter + i * colWidth,
-                            width: colWidth,
-                            top: (minutes - firstHour * 60) * hourHeight / 60 + 6,
-                            child: ExcludeSemantics(child: Container(height: 2, color: scheme.error)),
-                          );
-                        }),
+                      ),
                   ],
                 ),
               ),
+            const SizedBox(height: Tokens.xs),
+            Divider(color: colors.divider),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: AppShell.bottomInset(context)),
+                child: SizedBox(
+                  height: hours * hourHeight + Tokens.sm,
+                  child: Stack(
+                    children: [
+                      for (var h = 0; h <= hours; h++)
+                        Positioned(
+                          top: h * hourHeight,
+                          left: 0,
+                          right: Tokens.md,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: _gutter,
+                                child: ExcludeSemantics(
+                                  // "10:00 AM" can be wider than the column: shrink
+                                  // slightly rather than wrap the AM/PM marker.
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      f.clock(LocalTime((firstHour + h) % 24, 0)),
+                                      key: const ValueKey('week-hour-label'),
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      style: TextStyle(fontSize: 11, color: colors.secondaryInk),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(child: Divider(color: colors.divider.withValues(alpha: 0.6))),
+                            ],
+                          ),
+                        ),
+                      for (var i = 0; i < 7; i++)
+                        for (final s in perDay[i])
+                          Positioned(
+                            left: _gutter + i * colWidth + s.column * (colWidth / s.columns) + 1,
+                            width: colWidth / s.columns - 2,
+                            top: (s.startMin - firstHour * 60) * hourHeight / 60 + 6,
+                            height: math.max(20, (s.endMin - s.startMin) * hourHeight / 60 - 2),
+                            child: _Block(
+                              occurrence: s.occurrence,
+                              point: s.isPoint,
+                              overlaps: week.days[i].overlapIds.contains(s.occurrence.id),
+                            ),
+                          ),
+                      for (var i = 0; i < 7; i++)
+                        if (week.days[i].isToday)
+                          Builder(
+                            builder: (context) {
+                              final minutes = now.toUtc().difference(zones.startOfDay(week.days[i].date, zone)).inMinutes;
+                              if (minutes < firstHour * 60 || minutes > lastHour * 60) return const SizedBox.shrink();
+                              return Positioned(
+                                left: _gutter + i * colWidth,
+                                width: colWidth,
+                                top: (minutes - firstHour * 60) * hourHeight / 60 + 6,
+                                child: ExcludeSemantics(child: Container(height: 2, color: scheme.error)),
+                              );
+                            },
+                          ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ],
-      );
-    });
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -361,15 +430,17 @@ class _Block extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.scheduleColors;
-    final scheme = Theme.of(context).colorScheme;
     final category = ref.watch(categoryByIdProvider(occurrence.categoryId));
-    final categoryColor = colors.showCategoryColors ? CategoryColor.fromKey(category?.colorKey) : null;
-    final accent = categoryColor?.resolve(Theme.of(context).brightness) ?? scheme.primary;
+    final fill = colors.categoryFill(category?.colorKey);
+    final ink = colors.palette.cardInk;
+    final pixel = colors.style == StyleFamily.pixel;
     final zones = ref.watch(zoneResolverProvider);
     final zone = ref.watch(deviceZoneProvider);
     final f = Formats.of(context);
     final t = occurrence.timing;
-    final time = t is TimedTiming ? OccurrenceTimeText.of(t, zones, zone, f).range : (t is DateOnlyTiming ? 'All day' : 'Needs time review');
+    final time = t is TimedTiming
+        ? OccurrenceTimeText.of(t, zones, zone, f).range
+        : (t is DateOnlyTiming ? 'All day' : 'Needs time review');
     return Semantics(
       button: true,
       label: '${occurrence.title}, $time${overlaps ? ', overlaps another schedule' : ''}',
@@ -377,23 +448,25 @@ class _Block extends ConsumerWidget {
       child: Padding(
         padding: EdgeInsets.only(bottom: compact ? 2 : 0),
         child: Material(
-          color: accent.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.28 : 0.14),
+          key: const ValueKey('week-block'),
+          color: fill,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-            side: warn || overlaps ? BorderSide(color: colors.inputBoundary) : BorderSide.none,
+            borderRadius: BorderRadius.circular(pixel ? 0 : 8),
+            side: colors.outlined
+                ? BorderSide(color: colors.palette.outline, width: 1.5)
+                : (warn || overlaps ? BorderSide(color: colors.inputBoundary) : BorderSide.none),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => showOccurrenceSheet(context, occurrence),
             child: Container(
-              decoration: BoxDecoration(border: Border(left: BorderSide(color: accent, width: 3))),
-              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
               alignment: Alignment.topLeft,
               child: Text(
                 occurrence.title,
                 maxLines: compact ? 1 : 3,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, height: 1.2, fontWeight: FontWeight.w600, color: colors.ink),
+                style: TextStyle(fontSize: 11, height: 1.2, fontWeight: FontWeight.w600, color: ink),
               ),
             ),
           ),

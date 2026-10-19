@@ -49,31 +49,6 @@ abstract final class Tokens {
   static const screenMotion = Duration(milliseconds: 220);
 }
 
-/// A tested accent pair for one appearance.
-@immutable
-class AccentPair {
-  const AccentPair(this.accent, this.onAccent);
-  final Color accent;
-  final Color onAccent;
-}
-
-/// Tested accent presets (contrast-checked in test/app/theme_test.dart).
-enum AccentPreset {
-  blue('Blue', AccentPair(Tokens.tertiary, Tokens.onAccent), AccentPair(Tokens.darkAccent, Tokens.darkOnAccent)),
-  teal('Teal', AccentPair(Color(0xFF00756A), Color(0xFFFFFFFF)), AccentPair(Color(0xFF4FD1C5), Color(0xFF04201D))),
-  indigo('Indigo', AccentPair(Color(0xFF4F46E5), Color(0xFFFFFFFF)), AccentPair(Color(0xFFA5B4FC), Color(0xFF10123A))),
-  graphite('Graphite', AccentPair(Color(0xFF48484A), Color(0xFFFFFFFF)), AccentPair(Color(0xFFD1D1D6), Color(0xFF1C1C1E)));
-
-  const AccentPreset(this.label, this.light, this.dark);
-
-  final String label;
-  final AccentPair light;
-  final AccentPair dark;
-
-  static AccentPreset fromKey(String? key) =>
-      AccentPreset.values.firstWhere((p) => p.name == key, orElse: () => AccentPreset.blue);
-}
-
 /// Optional category accents. Always paired with a visible name; never text
 /// color (contrast-checked as non-text marks).
 enum CategoryColor {

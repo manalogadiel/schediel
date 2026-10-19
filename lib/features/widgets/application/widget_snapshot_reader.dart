@@ -66,7 +66,7 @@ WidgetReadResult readWidgetSnapshot(
   Map<String, dynamic> snapshot;
   try {
     final decoded = jsonDecode(raw);
-    if (decoded is! Map<String, dynamic> || decoded['schemaVersion'] != '1.0') return unsupported;
+    if (decoded is! Map<String, dynamic> || !const ['1.0', '1.1'].contains(decoded['schemaVersion'])) return unsupported;
     snapshot = decoded;
   } on FormatException {
     return unsupported;

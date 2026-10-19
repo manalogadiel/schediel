@@ -124,7 +124,7 @@ The requested capabilities are listed below. Platform-qualified requirements pre
 | Public link preview | Small semantic HTML/TypeScript page, independent of the Flutter app bundle | Proposed |
 | Sharing semantics | Immutable snapshots; recipient imports independent copies | Proposed |
 | Account model | No required account for local schedules; anonymous backend identity for online creation | Proposed; recovery trade-off must be approved |
-| Appearance | System app theme, restrained blue default accent; requested Clear widget where supported | Proposed |
+| Appearance | Eight tested themes (Lilac default) following system light/dark; requested Clear widget where supported, optionally in the app theme | Proposed |
 | Alerts | Both notification and alarm off until explicitly enabled or a user-chosen default is applied | Proposed |
 
 Flutter's architecture guidance separates UI, repositories and services; that separation is the basis for this design.[1]
@@ -155,7 +155,7 @@ Three destinations:
 
 1. **Today** — date navigation, current filter, chronological schedule and contextual Add/Import/Share.
 2. **Week** — weekly timetable with an equivalent chronological agenda presentation.
-3. **Settings** — appearance, widget setup, category management, alert status, privacy and shared-link management.
+3. **Settings** — optional profile, appearance, widget setup, category management, alert status, privacy and shared-link management.
 
 **Add** is an action, not a fourth destination. Its menu contains **Create schedule**, **Import image**, and **Open shared link**. A received verified deep link opens its preview directly, without routing through a new-user marketing screen.
 
@@ -170,7 +170,7 @@ Three destinations:
 
 ### 4.3 Today screen
 
-**Header:** selected date, date navigation, category filter, contextual Share and Add actions.
+**Header:** selected date, date navigation, category filter, contextual Share and Add actions. A time-of-day greeting uses the optional local profile name; with no profile it has no name and no avatar.
 
 **Content order:**
 
@@ -226,9 +226,9 @@ Use a bottom sheet for the first compact preview and a full review page for long
 
 ### 4.7 Appearance and widget settings
 
-App settings: system/light/dark, tested accent presets, comfortable/compact density, and optional category colors.
+App settings: one of eight tested themes (Lilac default, Clay, Pop, Mint, Midnight, Pixel, Sketch, Custom color with a single hue control), system/light/dark (Midnight is dark only), comfortable/compact density, and optional category colors. Themes change color, shape and heading font only, never copy, layout or behavior. An optional local profile (name up to 40 characters, photo cropped and re-encoded as 512×512 JPEG without metadata) personalizes the greeting; it is never uploaded, shared or written to the widget snapshot.
 
-Each widget: filter, compact/expanded layout, visible details, supported surface preset, text appearance where honored, and next-entry emphasis. **Match app** is an option, not forced coupling.
+Each widget: filter, compact/expanded layout, visible details, supported surface preset, text appearance where honored, next-entry emphasis and **Use app theme** (on for new installs; off after upgrading, for saved widgets and the default settings). **Match app** is an option, not forced coupling.
 
 Controls are capability-driven. An unavailable native feature is either absent or explained, not presented as a functional slider.
 
@@ -261,7 +261,7 @@ The complete machine-readable token spec and component rules are in [DESIGN.md](
 
 ### 5.1 Direction
 
-Minimal, modern and Apple-inspired: native system typography, quiet neutral surfaces, one restrained accent, clear spacing, consistent vectors and limited motion. No exact branded-screen clone, oversized hero, feature-tile grid, decorative gradient, repeated icon toppers, fake statistics or generic filler.
+Minimal, modern and Apple-inspired: native system typography for reading (two bundled display fonts only for headings in Pixel and Sketch), personal theme colors with one accent per theme, clear spacing, consistent vectors and limited motion. No exact branded-screen clone, oversized hero, feature-tile grid, decorative gradient, repeated icon toppers, fake statistics or generic filler.
 
 Use one curated SVG family. Proposed: Lucide local assets, rendered in Flutter through flutter_svg. Retain upstream notices and provide semantic labels for actions.[6][7] Native widgets use equivalent approved native vector assets or build-time conversions; do not assume Flutter's SVG renderer runs in WidgetKit or Glance.
 
@@ -276,6 +276,7 @@ Requested composition:
 - Upcoming schedules are quieter, not illegible.
 - Optional room, professor and subtitle lines appear only when available and enabled.
 - No timetable baked into an image and no wallpaper screenshot imitation.
+- With **Use app theme**, holders take the theme's accent (next) or category fills, outline and heading font, following the phone's night mode. Translucent holder opacity is computed, not guessed: the lowest value from 0.70 (Clear) or 0.88 (Soft tint), in 2% steps, at which all holder text keeps 4.5:1 over both black and white; otherwise opaque. The root stays transparent (CONTRACTS.md §6.1).
 
 **Native constraint:** iOS Clear/tinted widget rendering can replace the app's widget background and recolor content. The design must adapt to system rendering rather than promise arbitrary background removal or exact app colors.[10] Android supports transparent widget backgrounds, but host clipping and background detection need real launcher tests.[11]
 
@@ -568,8 +569,9 @@ All definitions below are a planned schema, not executed migrations. Use foreign
 | `alert_rules` | `id`, series or exception scope, notification/alarm kind, enabled flag, offset minutes or date-only clock-time rule, privacy preference, optional supported snooze preference |
 | `scheduled_alerts` | Rule/occurrence identity, native request ID, platform, request revision, intended trigger instant, actual status, error code, last reconciliation |
 | `reconciliation_outbox` | Unique operation key, reason, source revision, pending/running/retry status, retry metadata; no user-content logs |
-| `widget_configurations` | Native widget instance ID, selected category IDs, layout, detail visibility, match-app flag, supported appearance values, revision |
-| `appearance_preferences` | System/light/dark, tested accent key, density, accessibility overrides |
+| `widget_configurations` | Native widget instance ID, selected category IDs, layout, detail visibility, match-app flag, use-app-theme flag, supported appearance values, revision |
+| `appearance_preferences` | System/light/dark, theme key, custom hue, density, accessibility overrides (schema v2 maps the former accent key to the nearest theme) |
+| `profile_preferences` | Optional display name and app-private photo path; local only, removable, excluded from sharing, widgets and backend |
 | `import_drafts` | Draft ID/type, local source reference, candidate data, user edits, warnings, review state, expiration; not active schedules |
 | `import_provenance` | Local series ID, source type, share snapshot/item/version or image draft reference, fingerprint, imported timestamp |
 | `owned_share_links` | Backend share ID, snapshot version, scope summary, expiry/revocation state; raw bearer URL only in an appropriate local protected store if retained |

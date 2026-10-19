@@ -107,7 +107,7 @@ class CategoriesScreen extends ConsumerWidget {
                   ),
                   for (final color in CategoryColor.values)
                     ChoiceChip(
-                      avatar: CircleAvatar(backgroundColor: color.resolve(Theme.of(context).brightness), radius: 6),
+                      avatar: CategorySwatch(colorKey: color.name, size: 14),
                       label: Text(color.label),
                       selected: c.colorKey == color.name,
                       onSelected: (_) {

@@ -6,6 +6,7 @@ import '../../../app/widgets/common.dart';
 import '../../sharing/application/sharing_config.dart';
 import '../../sharing/data/share_api.dart';
 import '../../sharing/presentation/share_open_screen.dart';
+import '../../profile/data/profile_repository.dart';
 import '../data/privacy_repository.dart';
 import '../domain/backend_deletion.dart';
 
@@ -43,9 +44,31 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       TextButton(onPressed: () => Navigator.pop(c,true), child: Text(action)),
     ])) == true;
   Future<void> _localDelete() async {
-    if (!await _confirm('Delete local schedules?', 'This removes saved schedules, their exceptions and alert preferences from this app. Categories and appearance stay. Shared links are not revoked.', 'Delete schedules') || !mounted) return;
+    var removeProfile = true;
+    final confirmed = await showDialog<bool>(context: context, builder: (c) => StatefulBuilder(
+      builder: (c, setDialog) => AlertDialog(
+        scrollable: true,
+        title: const Text('Delete local schedules?'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('This removes saved schedules, their exceptions and alert preferences from this app. Categories and appearance stay. Shared links are not revoked.'),
+          const SizedBox(height: Tokens.sm),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: removeProfile,
+            onChanged: (v) => setDialog(() => removeProfile = v ?? false),
+            title: const Text('Also remove profile name and photo'),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Delete schedules')),
+        ],
+      ),
+    )) == true;
+    if (!confirmed || !mounted) return;
     await _run(() async {
       await ref.read(privacyRepositoryProvider).deleteLocalSchedules();
+      if (removeProfile) await ref.read(profileRepositoryProvider).clear();
       _message = 'Local schedules deleted. Native alerts and widgets will reconcile from the saved change.';
     });
   }
@@ -62,7 +85,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     return Scaffold(appBar: AppBar(title: const Text('Privacy and data')), body: ListView(
       padding: const EdgeInsets.all(Tokens.md), children: [
         SectionGroup(header:'On this device', children: [
-          const Padding(padding: EdgeInsets.all(Tokens.md), child: Text('Schedules are stored locally in the app database. They are not encrypted by Schediel and are not synchronized to a recovery account. Device security and platform backup behavior are separate. Uninstalling or losing the device can lose schedules.')),
+          const Padding(padding: EdgeInsets.all(Tokens.md), child: Text('Schedules are stored locally in the app database. They are not encrypted by Schediel and are not synchronized to a recovery account. Device security and platform backup behavior are separate. Uninstalling or losing the device can lose schedules. Your optional profile name and photo are stored the same way and are never uploaded by Schediel.')),
           ListTile(title: const Text('Delete local schedules'), onTap: _busy ? null : _localDelete),
         ]),
         const SectionGroup(header:'Image scanning', children:[

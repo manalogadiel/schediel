@@ -1,5 +1,7 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart' show Scrollable;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:schediel/data/local/database.dart';
 import 'package:schediel/app/providers.dart';
 import 'package:schediel/core/schedule/models.dart';
 import 'package:schediel/core/time/local_date.dart';
@@ -55,6 +57,22 @@ void main() {
     await h.tapText('Delete local schedules'); await h.tapText('Delete schedules');
     expect(await h.run(h.read(scheduleRepositoryProvider).loadAll),isEmpty);
     expect(await h.run(() => h.db.select(h.db.categories).get()),hasLength(3));
+  });
+
+  appTest('deleting local schedules also removes the profile unless unticked', (h) async {
+    Future<void> seedProfile() => h.run(() => h.db.into(h.db.profilePreferences).insertOnConflictUpdate(
+          ProfilePreferencesCompanion.insert(id: const Value(1), displayName: const Value('Diel'), updatedAt: DateTime.utc(2026, 11, 2))));
+    await seedProfile();
+    await h.tapText('Settings'); await h.tapText('Privacy and data');
+    await h.tapText('Delete local schedules');
+    expect(find.text('Also remove profile name and photo'), findsOneWidget);
+    await h.tapText('Delete schedules');
+    expect(await h.run(() => h.db.select(h.db.profilePreferences).get()), isEmpty);
+    await seedProfile();
+    await h.tapText('Delete local schedules');
+    await h.tapText('Also remove profile name and photo');
+    await h.tapText('Delete schedules');
+    expect(await h.run(() => h.db.select(h.db.profilePreferences).get()), hasLength(1));
   });
 
   final expiring = _ExpiringApi();

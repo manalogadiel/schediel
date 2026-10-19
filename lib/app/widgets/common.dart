@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,7 +7,10 @@ import '../../features/categories/domain/category.dart';
 import '../icons.dart';
 import '../providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/schediel_theme.dart';
 import '../theme/tokens.dart';
+import 'sketch_border.dart';
+import 'themed.dart';
 
 /// Motion durations that collapse to zero when the OS requests reduced motion.
 abstract final class AppMotion {
@@ -56,15 +61,46 @@ class SectionGroup extends StatelessWidget {
                 ],
               ),
             ),
-          if (rows.isNotEmpty)
-            DecoratedBox(
-              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(Tokens.radiusCard)),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(Tokens.radiusCard),
-                child: Material(type: MaterialType.transparency, child: Column(children: rows)),
-              ),
-            ),
+          if (rows.isNotEmpty) _GroupSurface(seed: header, child: Column(children: rows)),
         ],
+      ),
+    );
+  }
+}
+
+/// The rounded surface behind a [SectionGroup], drawn in the theme style.
+class _GroupSurface extends StatelessWidget {
+  const _GroupSurface({required this.child, this.seed});
+
+  final Widget child;
+  final Object? seed;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.scheduleColors;
+    final radius = BorderRadius.circular(c.style == StyleFamily.pixel ? 0 : math.min(c.radius, Tokens.radiusCard + 2));
+    final content = ClipRRect(borderRadius: radius, child: Material(type: MaterialType.transparency, child: child));
+    if (c.style == StyleFamily.sketch) {
+      return CustomPaint(
+        painter: SketchBorderPainter(seed: seed ?? 'group', fill: c.surface, ink: c.palette.outline, radius: radius.topLeft.x),
+        child: content,
+      );
+    }
+    final shadow = switch (c.style) {
+      StyleFamily.pop => 3.0,
+      StyleFamily.pixel => 3.0,
+      _ => 0.0,
+    };
+    return Padding(
+      padding: EdgeInsets.only(right: shadow, bottom: shadow),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: radius,
+          border: c.outlined ? Border.all(color: c.palette.outline, width: 2) : null,
+          boxShadow: shadow > 0 ? [BoxShadow(color: c.palette.outline, offset: Offset(shadow, shadow))] : null,
+        ),
+        child: content,
       ),
     );
   }
@@ -140,26 +176,7 @@ class StatusLabel extends StatelessWidget {
   final bool strong;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: strong ? scheme.primary : Colors.transparent,
-        border: strong ? null : Border.all(color: context.scheduleColors.inputBoundary),
-        borderRadius: BorderRadius.circular(Tokens.radiusPill),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          height: 1.3,
-          fontWeight: FontWeight.w600,
-          color: strong ? scheme.onPrimary : context.scheduleColors.ink,
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => strong ? ThemedPill(label: label, emphasized: true) : ThemedPill(label: label);
 }
 
 class CategoryDot extends StatelessWidget {
@@ -170,14 +187,33 @@ class CategoryDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = CategoryColor.fromKey(colorKey);
-    if (color == null || !context.scheduleColors.showCategoryColors) return const SizedBox.shrink();
+    final c = context.scheduleColors;
+    if (CategoryColor.fromKey(colorKey) == null || !c.showCategoryColors) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(right: 6),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(color: color.resolve(Theme.of(context).brightness), shape: BoxShape.circle),
+      child: CategorySwatch(colorKey: colorKey, size: size),
+    );
+  }
+}
+
+/// A category color as the current theme draws it, with an edge so pale
+/// fills stay visible.
+class CategorySwatch extends StatelessWidget {
+  const CategorySwatch({super.key, required this.colorKey, this.size = 12});
+
+  final String? colorKey;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.scheduleColors;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: c.palette.fillFor(colorKey),
+        shape: c.style == StyleFamily.pixel ? BoxShape.rectangle : BoxShape.circle,
+        border: Border.all(color: c.ink.withValues(alpha: 0.55), width: size >= 12 ? 1.5 : 1),
       ),
     );
   }
@@ -193,15 +229,19 @@ class FilterPill extends ConsumerWidget {
     final categories = ref.watch(categoriesProvider).value ?? const <Category>[];
     final label = filterLabel(filter, categories);
     final colors = context.scheduleColors;
+    final p = colors.palette;
+    final fg = filter.isAll ? colors.ink : p.onAccent;
+    final side = BorderSide(color: colors.outlined ? p.outline : colors.inputBoundary.withValues(alpha: 0.6), width: colors.outlined ? 2 : 1);
+    final ShapeBorder shape = colors.style == StyleFamily.pixel ? RoundedRectangleBorder(side: side) : StadiumBorder(side: side);
     return Semantics(
       button: true,
       label: 'Category filter: $label',
       excludeSemantics: true,
       child: Material(
-        color: filter.isAll ? colors.surface : Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-        shape: StadiumBorder(side: BorderSide(color: colors.inputBoundary.withValues(alpha: 0.6))),
+        color: filter.isAll ? colors.surface : p.accent,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          customBorder: const StadiumBorder(),
           onTap: () => showCategoryFilterSheet(context, ref),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 40, minWidth: Tokens.minTarget),
@@ -210,11 +250,11 @@ class FilterPill extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  AppIcon(AppIcons.filter, size: 16, color: colors.ink),
+                  AppIcon(AppIcons.filter, size: 16, color: fg),
                   const SizedBox(width: 6),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 160),
-                    child: Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, color: colors.ink)),
+                    child: Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: fg)),
                   ),
                 ],
               ),

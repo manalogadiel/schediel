@@ -4448,6 +4448,21 @@ class $WidgetConfigurationsTable extends WidgetConfigurations
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _useAppThemeMeta = const VerificationMeta(
+    'useAppTheme',
+  );
+  @override
+  late final GeneratedColumn<bool> useAppTheme = GeneratedColumn<bool>(
+    'use_app_theme',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("use_app_theme" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _revisionMeta = const VerificationMeta(
     'revision',
   );
@@ -4483,6 +4498,7 @@ class $WidgetConfigurationsTable extends WidgetConfigurations
     showProfessor,
     showSubtitle,
     matchApp,
+    useAppTheme,
     revision,
     updatedAt,
   ];
@@ -4575,6 +4591,15 @@ class $WidgetConfigurationsTable extends WidgetConfigurations
         matchApp.isAcceptableOrUnknown(data['match_app']!, _matchAppMeta),
       );
     }
+    if (data.containsKey('use_app_theme')) {
+      context.handle(
+        _useAppThemeMeta,
+        useAppTheme.isAcceptableOrUnknown(
+          data['use_app_theme']!,
+          _useAppThemeMeta,
+        ),
+      );
+    }
     if (data.containsKey('revision')) {
       context.handle(
         _revisionMeta,
@@ -4638,6 +4663,10 @@ class $WidgetConfigurationsTable extends WidgetConfigurations
         DriftSqlType.bool,
         data['${effectivePrefix}match_app'],
       )!,
+      useAppTheme: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}use_app_theme'],
+      )!,
       revision: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}revision'],
@@ -4668,6 +4697,10 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
   final bool showProfessor;
   final bool showSubtitle;
   final bool matchApp;
+
+  /// Holders use the app theme's colors, shapes and display font. New widgets
+  /// default on; widgets created before themes existed were migrated off.
+  final bool useAppTheme;
   final int revision;
   final DateTime updatedAt;
   const WidgetConfigRow({
@@ -4681,6 +4714,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
     required this.showProfessor,
     required this.showSubtitle,
     required this.matchApp,
+    required this.useAppTheme,
     required this.revision,
     required this.updatedAt,
   });
@@ -4699,6 +4733,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
     map['show_professor'] = Variable<bool>(showProfessor);
     map['show_subtitle'] = Variable<bool>(showSubtitle);
     map['match_app'] = Variable<bool>(matchApp);
+    map['use_app_theme'] = Variable<bool>(useAppTheme);
     map['revision'] = Variable<int>(revision);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -4718,6 +4753,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
       showProfessor: Value(showProfessor),
       showSubtitle: Value(showSubtitle),
       matchApp: Value(matchApp),
+      useAppTheme: Value(useAppTheme),
       revision: Value(revision),
       updatedAt: Value(updatedAt),
     );
@@ -4739,6 +4775,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
       showProfessor: serializer.fromJson<bool>(json['showProfessor']),
       showSubtitle: serializer.fromJson<bool>(json['showSubtitle']),
       matchApp: serializer.fromJson<bool>(json['matchApp']),
+      useAppTheme: serializer.fromJson<bool>(json['useAppTheme']),
       revision: serializer.fromJson<int>(json['revision']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -4757,6 +4794,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
       'showProfessor': serializer.toJson<bool>(showProfessor),
       'showSubtitle': serializer.toJson<bool>(showSubtitle),
       'matchApp': serializer.toJson<bool>(matchApp),
+      'useAppTheme': serializer.toJson<bool>(useAppTheme),
       'revision': serializer.toJson<int>(revision),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -4773,6 +4811,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
     bool? showProfessor,
     bool? showSubtitle,
     bool? matchApp,
+    bool? useAppTheme,
     int? revision,
     DateTime? updatedAt,
   }) => WidgetConfigRow(
@@ -4788,6 +4827,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
     showProfessor: showProfessor ?? this.showProfessor,
     showSubtitle: showSubtitle ?? this.showSubtitle,
     matchApp: matchApp ?? this.matchApp,
+    useAppTheme: useAppTheme ?? this.useAppTheme,
     revision: revision ?? this.revision,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -4813,6 +4853,9 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
           ? data.showSubtitle.value
           : this.showSubtitle,
       matchApp: data.matchApp.present ? data.matchApp.value : this.matchApp,
+      useAppTheme: data.useAppTheme.present
+          ? data.useAppTheme.value
+          : this.useAppTheme,
       revision: data.revision.present ? data.revision.value : this.revision,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -4831,6 +4874,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
           ..write('showProfessor: $showProfessor, ')
           ..write('showSubtitle: $showSubtitle, ')
           ..write('matchApp: $matchApp, ')
+          ..write('useAppTheme: $useAppTheme, ')
           ..write('revision: $revision, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -4849,6 +4893,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
     showProfessor,
     showSubtitle,
     matchApp,
+    useAppTheme,
     revision,
     updatedAt,
   );
@@ -4866,6 +4911,7 @@ class WidgetConfigRow extends DataClass implements Insertable<WidgetConfigRow> {
           other.showProfessor == this.showProfessor &&
           other.showSubtitle == this.showSubtitle &&
           other.matchApp == this.matchApp &&
+          other.useAppTheme == this.useAppTheme &&
           other.revision == this.revision &&
           other.updatedAt == this.updatedAt);
 }
@@ -4881,6 +4927,7 @@ class WidgetConfigurationsCompanion extends UpdateCompanion<WidgetConfigRow> {
   final Value<bool> showProfessor;
   final Value<bool> showSubtitle;
   final Value<bool> matchApp;
+  final Value<bool> useAppTheme;
   final Value<int> revision;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -4895,6 +4942,7 @@ class WidgetConfigurationsCompanion extends UpdateCompanion<WidgetConfigRow> {
     this.showProfessor = const Value.absent(),
     this.showSubtitle = const Value.absent(),
     this.matchApp = const Value.absent(),
+    this.useAppTheme = const Value.absent(),
     this.revision = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -4910,6 +4958,7 @@ class WidgetConfigurationsCompanion extends UpdateCompanion<WidgetConfigRow> {
     this.showProfessor = const Value.absent(),
     this.showSubtitle = const Value.absent(),
     this.matchApp = const Value.absent(),
+    this.useAppTheme = const Value.absent(),
     this.revision = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -4926,6 +4975,7 @@ class WidgetConfigurationsCompanion extends UpdateCompanion<WidgetConfigRow> {
     Expression<bool>? showProfessor,
     Expression<bool>? showSubtitle,
     Expression<bool>? matchApp,
+    Expression<bool>? useAppTheme,
     Expression<int>? revision,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -4941,6 +4991,7 @@ class WidgetConfigurationsCompanion extends UpdateCompanion<WidgetConfigRow> {
       if (showProfessor != null) 'show_professor': showProfessor,
       if (showSubtitle != null) 'show_subtitle': showSubtitle,
       if (matchApp != null) 'match_app': matchApp,
+      if (useAppTheme != null) 'use_app_theme': useAppTheme,
       if (revision != null) 'revision': revision,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -4958,6 +5009,7 @@ class WidgetConfigurationsCompanion extends UpdateCompanion<WidgetConfigRow> {
     Value<bool>? showProfessor,
     Value<bool>? showSubtitle,
     Value<bool>? matchApp,
+    Value<bool>? useAppTheme,
     Value<int>? revision,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -4973,6 +5025,7 @@ class WidgetConfigurationsCompanion extends UpdateCompanion<WidgetConfigRow> {
       showProfessor: showProfessor ?? this.showProfessor,
       showSubtitle: showSubtitle ?? this.showSubtitle,
       matchApp: matchApp ?? this.matchApp,
+      useAppTheme: useAppTheme ?? this.useAppTheme,
       revision: revision ?? this.revision,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -5012,6 +5065,9 @@ class WidgetConfigurationsCompanion extends UpdateCompanion<WidgetConfigRow> {
     if (matchApp.present) {
       map['match_app'] = Variable<bool>(matchApp.value);
     }
+    if (useAppTheme.present) {
+      map['use_app_theme'] = Variable<bool>(useAppTheme.value);
+    }
     if (revision.present) {
       map['revision'] = Variable<int>(revision.value);
     }
@@ -5037,6 +5093,7 @@ class WidgetConfigurationsCompanion extends UpdateCompanion<WidgetConfigRow> {
           ..write('showProfessor: $showProfessor, ')
           ..write('showSubtitle: $showSubtitle, ')
           ..write('matchApp: $matchApp, ')
+          ..write('useAppTheme: $useAppTheme, ')
           ..write('revision: $revision, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -5084,6 +5141,30 @@ class $AppearancePreferencesTable extends AppearancePreferences
     requiredDuringInsert: false,
     defaultValue: const Constant('blue'),
   );
+  static const VerificationMeta _themeKeyMeta = const VerificationMeta(
+    'themeKey',
+  );
+  @override
+  late final GeneratedColumn<String> themeKey = GeneratedColumn<String>(
+    'theme_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('lilac'),
+  );
+  static const VerificationMeta _customHueMeta = const VerificationMeta(
+    'customHue',
+  );
+  @override
+  late final GeneratedColumn<int> customHue = GeneratedColumn<int>(
+    'custom_hue',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(250),
+  );
   static const VerificationMeta _densityMeta = const VerificationMeta(
     'density',
   );
@@ -5126,6 +5207,8 @@ class $AppearancePreferencesTable extends AppearancePreferences
     id,
     themeMode,
     accentKey,
+    themeKey,
+    customHue,
     density,
     showCategoryColors,
     updatedAt,
@@ -5155,6 +5238,18 @@ class $AppearancePreferencesTable extends AppearancePreferences
       context.handle(
         _accentKeyMeta,
         accentKey.isAcceptableOrUnknown(data['accent_key']!, _accentKeyMeta),
+      );
+    }
+    if (data.containsKey('theme_key')) {
+      context.handle(
+        _themeKeyMeta,
+        themeKey.isAcceptableOrUnknown(data['theme_key']!, _themeKeyMeta),
+      );
+    }
+    if (data.containsKey('custom_hue')) {
+      context.handle(
+        _customHueMeta,
+        customHue.isAcceptableOrUnknown(data['custom_hue']!, _customHueMeta),
       );
     }
     if (data.containsKey('density')) {
@@ -5201,6 +5296,14 @@ class $AppearancePreferencesTable extends AppearancePreferences
         DriftSqlType.string,
         data['${effectivePrefix}accent_key'],
       )!,
+      themeKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}theme_key'],
+      )!,
+      customHue: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}custom_hue'],
+      )!,
       density: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}density'],
@@ -5225,7 +5328,11 @@ class $AppearancePreferencesTable extends AppearancePreferences
 class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
   final int id;
   final String themeMode;
+
+  /// Legacy v1 accent; read only by the v2 migration.
   final String accentKey;
+  final String themeKey;
+  final int customHue;
   final String density;
   final bool showCategoryColors;
   final DateTime updatedAt;
@@ -5233,6 +5340,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     required this.id,
     required this.themeMode,
     required this.accentKey,
+    required this.themeKey,
+    required this.customHue,
     required this.density,
     required this.showCategoryColors,
     required this.updatedAt,
@@ -5243,6 +5352,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     map['id'] = Variable<int>(id);
     map['theme_mode'] = Variable<String>(themeMode);
     map['accent_key'] = Variable<String>(accentKey);
+    map['theme_key'] = Variable<String>(themeKey);
+    map['custom_hue'] = Variable<int>(customHue);
     map['density'] = Variable<String>(density);
     map['show_category_colors'] = Variable<bool>(showCategoryColors);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -5254,6 +5365,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
       id: Value(id),
       themeMode: Value(themeMode),
       accentKey: Value(accentKey),
+      themeKey: Value(themeKey),
+      customHue: Value(customHue),
       density: Value(density),
       showCategoryColors: Value(showCategoryColors),
       updatedAt: Value(updatedAt),
@@ -5269,6 +5382,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
       id: serializer.fromJson<int>(json['id']),
       themeMode: serializer.fromJson<String>(json['themeMode']),
       accentKey: serializer.fromJson<String>(json['accentKey']),
+      themeKey: serializer.fromJson<String>(json['themeKey']),
+      customHue: serializer.fromJson<int>(json['customHue']),
       density: serializer.fromJson<String>(json['density']),
       showCategoryColors: serializer.fromJson<bool>(json['showCategoryColors']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -5281,6 +5396,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
       'id': serializer.toJson<int>(id),
       'themeMode': serializer.toJson<String>(themeMode),
       'accentKey': serializer.toJson<String>(accentKey),
+      'themeKey': serializer.toJson<String>(themeKey),
+      'customHue': serializer.toJson<int>(customHue),
       'density': serializer.toJson<String>(density),
       'showCategoryColors': serializer.toJson<bool>(showCategoryColors),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -5291,6 +5408,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     int? id,
     String? themeMode,
     String? accentKey,
+    String? themeKey,
+    int? customHue,
     String? density,
     bool? showCategoryColors,
     DateTime? updatedAt,
@@ -5298,6 +5417,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
     accentKey: accentKey ?? this.accentKey,
+    themeKey: themeKey ?? this.themeKey,
+    customHue: customHue ?? this.customHue,
     density: density ?? this.density,
     showCategoryColors: showCategoryColors ?? this.showCategoryColors,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -5307,6 +5428,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
       id: data.id.present ? data.id.value : this.id,
       themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
       accentKey: data.accentKey.present ? data.accentKey.value : this.accentKey,
+      themeKey: data.themeKey.present ? data.themeKey.value : this.themeKey,
+      customHue: data.customHue.present ? data.customHue.value : this.customHue,
       density: data.density.present ? data.density.value : this.density,
       showCategoryColors: data.showCategoryColors.present
           ? data.showCategoryColors.value
@@ -5321,6 +5444,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
           ..write('id: $id, ')
           ..write('themeMode: $themeMode, ')
           ..write('accentKey: $accentKey, ')
+          ..write('themeKey: $themeKey, ')
+          ..write('customHue: $customHue, ')
           ..write('density: $density, ')
           ..write('showCategoryColors: $showCategoryColors, ')
           ..write('updatedAt: $updatedAt')
@@ -5333,6 +5458,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     id,
     themeMode,
     accentKey,
+    themeKey,
+    customHue,
     density,
     showCategoryColors,
     updatedAt,
@@ -5344,6 +5471,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
           other.id == this.id &&
           other.themeMode == this.themeMode &&
           other.accentKey == this.accentKey &&
+          other.themeKey == this.themeKey &&
+          other.customHue == this.customHue &&
           other.density == this.density &&
           other.showCategoryColors == this.showCategoryColors &&
           other.updatedAt == this.updatedAt);
@@ -5353,6 +5482,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
   final Value<int> id;
   final Value<String> themeMode;
   final Value<String> accentKey;
+  final Value<String> themeKey;
+  final Value<int> customHue;
   final Value<String> density;
   final Value<bool> showCategoryColors;
   final Value<DateTime> updatedAt;
@@ -5360,6 +5491,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.accentKey = const Value.absent(),
+    this.themeKey = const Value.absent(),
+    this.customHue = const Value.absent(),
     this.density = const Value.absent(),
     this.showCategoryColors = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -5368,6 +5501,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.accentKey = const Value.absent(),
+    this.themeKey = const Value.absent(),
+    this.customHue = const Value.absent(),
     this.density = const Value.absent(),
     this.showCategoryColors = const Value.absent(),
     required DateTime updatedAt,
@@ -5376,6 +5511,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     Expression<int>? id,
     Expression<String>? themeMode,
     Expression<String>? accentKey,
+    Expression<String>? themeKey,
+    Expression<int>? customHue,
     Expression<String>? density,
     Expression<bool>? showCategoryColors,
     Expression<DateTime>? updatedAt,
@@ -5384,6 +5521,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
       if (id != null) 'id': id,
       if (themeMode != null) 'theme_mode': themeMode,
       if (accentKey != null) 'accent_key': accentKey,
+      if (themeKey != null) 'theme_key': themeKey,
+      if (customHue != null) 'custom_hue': customHue,
       if (density != null) 'density': density,
       if (showCategoryColors != null)
         'show_category_colors': showCategoryColors,
@@ -5395,6 +5534,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     Value<int>? id,
     Value<String>? themeMode,
     Value<String>? accentKey,
+    Value<String>? themeKey,
+    Value<int>? customHue,
     Value<String>? density,
     Value<bool>? showCategoryColors,
     Value<DateTime>? updatedAt,
@@ -5403,6 +5544,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
       id: id ?? this.id,
       themeMode: themeMode ?? this.themeMode,
       accentKey: accentKey ?? this.accentKey,
+      themeKey: themeKey ?? this.themeKey,
+      customHue: customHue ?? this.customHue,
       density: density ?? this.density,
       showCategoryColors: showCategoryColors ?? this.showCategoryColors,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -5420,6 +5563,12 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     }
     if (accentKey.present) {
       map['accent_key'] = Variable<String>(accentKey.value);
+    }
+    if (themeKey.present) {
+      map['theme_key'] = Variable<String>(themeKey.value);
+    }
+    if (customHue.present) {
+      map['custom_hue'] = Variable<int>(customHue.value);
     }
     if (density.present) {
       map['density'] = Variable<String>(density.value);
@@ -5439,6 +5588,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
           ..write('id: $id, ')
           ..write('themeMode: $themeMode, ')
           ..write('accentKey: $accentKey, ')
+          ..write('themeKey: $themeKey, ')
+          ..write('customHue: $customHue, ')
           ..write('density: $density, ')
           ..write('showCategoryColors: $showCategoryColors, ')
           ..write('updatedAt: $updatedAt')
@@ -8030,6 +8181,311 @@ class KeyValuesCompanion extends UpdateCompanion<KeyValueRow> {
   }
 }
 
+class $ProfilePreferencesTable extends ProfilePreferences
+    with TableInfo<$ProfilePreferencesTable, ProfileRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProfilePreferencesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _photoPathMeta = const VerificationMeta(
+    'photoPath',
+  );
+  @override
+  late final GeneratedColumn<String> photoPath = GeneratedColumn<String>(
+    'photo_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, displayName, photoPath, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'profile_preferences';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProfileRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('photo_path')) {
+      context.handle(
+        _photoPathMeta,
+        photoPath.isAcceptableOrUnknown(data['photo_path']!, _photoPathMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProfileRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProfileRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      ),
+      photoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_path'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProfilePreferencesTable createAlias(String alias) {
+    return $ProfilePreferencesTable(attachedDatabase, alias);
+  }
+}
+
+class ProfileRow extends DataClass implements Insertable<ProfileRow> {
+  final int id;
+  final String? displayName;
+
+  /// Absolute path of the app-private 512x512 JPEG, or null.
+  final String? photoPath;
+  final DateTime updatedAt;
+  const ProfileRow({
+    required this.id,
+    this.displayName,
+    this.photoPath,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
+    }
+    if (!nullToAbsent || photoPath != null) {
+      map['photo_path'] = Variable<String>(photoPath);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ProfilePreferencesCompanion toCompanion(bool nullToAbsent) {
+    return ProfilePreferencesCompanion(
+      id: Value(id),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      photoPath: photoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoPath),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ProfileRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProfileRow(
+      id: serializer.fromJson<int>(json['id']),
+      displayName: serializer.fromJson<String?>(json['displayName']),
+      photoPath: serializer.fromJson<String?>(json['photoPath']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'displayName': serializer.toJson<String?>(displayName),
+      'photoPath': serializer.toJson<String?>(photoPath),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ProfileRow copyWith({
+    int? id,
+    Value<String?> displayName = const Value.absent(),
+    Value<String?> photoPath = const Value.absent(),
+    DateTime? updatedAt,
+  }) => ProfileRow(
+    id: id ?? this.id,
+    displayName: displayName.present ? displayName.value : this.displayName,
+    photoPath: photoPath.present ? photoPath.value : this.photoPath,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ProfileRow copyWithCompanion(ProfilePreferencesCompanion data) {
+    return ProfileRow(
+      id: data.id.present ? data.id.value : this.id,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfileRow(')
+          ..write('id: $id, ')
+          ..write('displayName: $displayName, ')
+          ..write('photoPath: $photoPath, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, displayName, photoPath, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProfileRow &&
+          other.id == this.id &&
+          other.displayName == this.displayName &&
+          other.photoPath == this.photoPath &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ProfilePreferencesCompanion extends UpdateCompanion<ProfileRow> {
+  final Value<int> id;
+  final Value<String?> displayName;
+  final Value<String?> photoPath;
+  final Value<DateTime> updatedAt;
+  const ProfilePreferencesCompanion({
+    this.id = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.photoPath = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  ProfilePreferencesCompanion.insert({
+    this.id = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.photoPath = const Value.absent(),
+    required DateTime updatedAt,
+  }) : updatedAt = Value(updatedAt);
+  static Insertable<ProfileRow> custom({
+    Expression<int>? id,
+    Expression<String>? displayName,
+    Expression<String>? photoPath,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (displayName != null) 'display_name': displayName,
+      if (photoPath != null) 'photo_path': photoPath,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  ProfilePreferencesCompanion copyWith({
+    Value<int>? id,
+    Value<String?>? displayName,
+    Value<String?>? photoPath,
+    Value<DateTime>? updatedAt,
+  }) {
+    return ProfilePreferencesCompanion(
+      id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
+      photoPath: photoPath ?? this.photoPath,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (photoPath.present) {
+      map['photo_path'] = Variable<String>(photoPath.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfilePreferencesCompanion(')
+          ..write('id: $id, ')
+          ..write('displayName: $displayName, ')
+          ..write('photoPath: $photoPath, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8059,6 +8515,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PendingShareCreationsTable pendingShareCreations =
       $PendingShareCreationsTable(this);
   late final $KeyValuesTable keyValues = $KeyValuesTable(this);
+  late final $ProfilePreferencesTable profilePreferences =
+      $ProfilePreferencesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -8078,6 +8536,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ownedShareLinks,
     pendingShareCreations,
     keyValues,
+    profilePreferences,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -10941,6 +11400,7 @@ typedef $$WidgetConfigurationsTableCreateCompanionBuilder =
       Value<bool> showProfessor,
       Value<bool> showSubtitle,
       Value<bool> matchApp,
+      Value<bool> useAppTheme,
       Value<int> revision,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -10957,6 +11417,7 @@ typedef $$WidgetConfigurationsTableUpdateCompanionBuilder =
       Value<bool> showProfessor,
       Value<bool> showSubtitle,
       Value<bool> matchApp,
+      Value<bool> useAppTheme,
       Value<int> revision,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -11018,6 +11479,11 @@ class $$WidgetConfigurationsTableFilterComposer
 
   ColumnFilters<bool> get matchApp => $composableBuilder(
     column: $table.matchApp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get useAppTheme => $composableBuilder(
+    column: $table.useAppTheme,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11091,6 +11557,11 @@ class $$WidgetConfigurationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get useAppTheme => $composableBuilder(
+    column: $table.useAppTheme,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get revision => $composableBuilder(
     column: $table.revision,
     builder: (column) => ColumnOrderings(column),
@@ -11150,6 +11621,11 @@ class $$WidgetConfigurationsTableAnnotationComposer
 
   GeneratedColumn<bool> get matchApp =>
       $composableBuilder(column: $table.matchApp, builder: (column) => column);
+
+  GeneratedColumn<bool> get useAppTheme => $composableBuilder(
+    column: $table.useAppTheme,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get revision =>
       $composableBuilder(column: $table.revision, builder: (column) => column);
@@ -11211,6 +11687,7 @@ class $$WidgetConfigurationsTableTableManager
                 Value<bool> showProfessor = const Value.absent(),
                 Value<bool> showSubtitle = const Value.absent(),
                 Value<bool> matchApp = const Value.absent(),
+                Value<bool> useAppTheme = const Value.absent(),
                 Value<int> revision = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -11225,6 +11702,7 @@ class $$WidgetConfigurationsTableTableManager
                 showProfessor: showProfessor,
                 showSubtitle: showSubtitle,
                 matchApp: matchApp,
+                useAppTheme: useAppTheme,
                 revision: revision,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -11241,6 +11719,7 @@ class $$WidgetConfigurationsTableTableManager
                 Value<bool> showProfessor = const Value.absent(),
                 Value<bool> showSubtitle = const Value.absent(),
                 Value<bool> matchApp = const Value.absent(),
+                Value<bool> useAppTheme = const Value.absent(),
                 Value<int> revision = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -11255,6 +11734,7 @@ class $$WidgetConfigurationsTableTableManager
                 showProfessor: showProfessor,
                 showSubtitle: showSubtitle,
                 matchApp: matchApp,
+                useAppTheme: useAppTheme,
                 revision: revision,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -11304,6 +11784,8 @@ typedef $$AppearancePreferencesTableCreateCompanionBuilder =
       Value<int> id,
       Value<String> themeMode,
       Value<String> accentKey,
+      Value<String> themeKey,
+      Value<int> customHue,
       Value<String> density,
       Value<bool> showCategoryColors,
       required DateTime updatedAt,
@@ -11313,6 +11795,8 @@ typedef $$AppearancePreferencesTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> themeMode,
       Value<String> accentKey,
+      Value<String> themeKey,
+      Value<int> customHue,
       Value<String> density,
       Value<bool> showCategoryColors,
       Value<DateTime> updatedAt,
@@ -11339,6 +11823,16 @@ class $$AppearancePreferencesTableFilterComposer
 
   ColumnFilters<String> get accentKey => $composableBuilder(
     column: $table.accentKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get themeKey => $composableBuilder(
+    column: $table.themeKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get customHue => $composableBuilder(
+    column: $table.customHue,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11382,6 +11876,16 @@ class $$AppearancePreferencesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get themeKey => $composableBuilder(
+    column: $table.themeKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get customHue => $composableBuilder(
+    column: $table.customHue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get density => $composableBuilder(
     column: $table.density,
     builder: (column) => ColumnOrderings(column),
@@ -11415,6 +11919,12 @@ class $$AppearancePreferencesTableAnnotationComposer
 
   GeneratedColumn<String> get accentKey =>
       $composableBuilder(column: $table.accentKey, builder: (column) => column);
+
+  GeneratedColumn<String> get themeKey =>
+      $composableBuilder(column: $table.themeKey, builder: (column) => column);
+
+  GeneratedColumn<int> get customHue =>
+      $composableBuilder(column: $table.customHue, builder: (column) => column);
 
   GeneratedColumn<String> get density =>
       $composableBuilder(column: $table.density, builder: (column) => column);
@@ -11477,6 +11987,8 @@ class $$AppearancePreferencesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
                 Value<String> accentKey = const Value.absent(),
+                Value<String> themeKey = const Value.absent(),
+                Value<int> customHue = const Value.absent(),
                 Value<String> density = const Value.absent(),
                 Value<bool> showCategoryColors = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -11484,6 +11996,8 @@ class $$AppearancePreferencesTableTableManager
                 id: id,
                 themeMode: themeMode,
                 accentKey: accentKey,
+                themeKey: themeKey,
+                customHue: customHue,
                 density: density,
                 showCategoryColors: showCategoryColors,
                 updatedAt: updatedAt,
@@ -11493,6 +12007,8 @@ class $$AppearancePreferencesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
                 Value<String> accentKey = const Value.absent(),
+                Value<String> themeKey = const Value.absent(),
+                Value<int> customHue = const Value.absent(),
                 Value<String> density = const Value.absent(),
                 Value<bool> showCategoryColors = const Value.absent(),
                 required DateTime updatedAt,
@@ -11500,6 +12016,8 @@ class $$AppearancePreferencesTableTableManager
                 id: id,
                 themeMode: themeMode,
                 accentKey: accentKey,
+                themeKey: themeKey,
+                customHue: customHue,
                 density: density,
                 showCategoryColors: showCategoryColors,
                 updatedAt: updatedAt,
@@ -13079,6 +13597,197 @@ typedef $$KeyValuesTableProcessedTableManager =
       KeyValueRow,
       PrefetchHooks Function()
     >;
+typedef $$ProfilePreferencesTableCreateCompanionBuilder =
+    ProfilePreferencesCompanion Function({
+      Value<int> id,
+      Value<String?> displayName,
+      Value<String?> photoPath,
+      required DateTime updatedAt,
+    });
+typedef $$ProfilePreferencesTableUpdateCompanionBuilder =
+    ProfilePreferencesCompanion Function({
+      Value<int> id,
+      Value<String?> displayName,
+      Value<String?> photoPath,
+      Value<DateTime> updatedAt,
+    });
+
+class $$ProfilePreferencesTableFilterComposer
+    extends Composer<_$AppDatabase, $ProfilePreferencesTable> {
+  $$ProfilePreferencesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoPath => $composableBuilder(
+    column: $table.photoPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProfilePreferencesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProfilePreferencesTable> {
+  $$ProfilePreferencesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoPath => $composableBuilder(
+    column: $table.photoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProfilePreferencesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProfilePreferencesTable> {
+  $$ProfilePreferencesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get photoPath =>
+      $composableBuilder(column: $table.photoPath, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ProfilePreferencesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProfilePreferencesTable,
+          ProfileRow,
+          $$ProfilePreferencesTableFilterComposer,
+          $$ProfilePreferencesTableOrderingComposer,
+          $$ProfilePreferencesTableAnnotationComposer,
+          $$ProfilePreferencesTableCreateCompanionBuilder,
+          $$ProfilePreferencesTableUpdateCompanionBuilder,
+          (
+            ProfileRow,
+            BaseReferences<_$AppDatabase, $ProfilePreferencesTable, ProfileRow>,
+          ),
+          ProfileRow,
+          PrefetchHooks Function()
+        > {
+  $$ProfilePreferencesTableTableManager(
+    _$AppDatabase db,
+    $ProfilePreferencesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProfilePreferencesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProfilePreferencesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProfilePreferencesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
+                Value<String?> photoPath = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => ProfilePreferencesCompanion(
+                id: id,
+                displayName: displayName,
+                photoPath: photoPath,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
+                Value<String?> photoPath = const Value.absent(),
+                required DateTime updatedAt,
+              }) => ProfilePreferencesCompanion.insert(
+                id: id,
+                displayName: displayName,
+                photoPath: photoPath,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProfilePreferencesTable, ProfileRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ProfilePreferencesTable,
+                    ProfileRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProfilePreferencesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProfilePreferencesTable,
+      ProfileRow,
+      $$ProfilePreferencesTableFilterComposer,
+      $$ProfilePreferencesTableOrderingComposer,
+      $$ProfilePreferencesTableAnnotationComposer,
+      $$ProfilePreferencesTableCreateCompanionBuilder,
+      $$ProfilePreferencesTableUpdateCompanionBuilder,
+      (
+        ProfileRow,
+        BaseReferences<_$AppDatabase, $ProfilePreferencesTable, ProfileRow>,
+      ),
+      ProfileRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -13111,4 +13820,6 @@ class $AppDatabaseManager {
       $$PendingShareCreationsTableTableManager(_db, _db.pendingShareCreations);
   $$KeyValuesTableTableManager get keyValues =>
       $$KeyValuesTableTableManager(_db, _db.keyValues);
+  $$ProfilePreferencesTableTableManager get profilePreferences =>
+      $$ProfilePreferencesTableTableManager(_db, _db.profilePreferences);
 }

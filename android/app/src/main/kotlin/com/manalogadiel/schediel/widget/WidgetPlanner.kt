@@ -24,7 +24,19 @@ object WidgetPlanner {
     private const val TITLE_LINE_SP = 20f
     private const val CAPTION_MARGIN_DP = 4f
 
-    fun plan(result: ReadResult, heightDp: Float?, fontScale: Float): WidgetPlan {
+    const val DEFAULT_TITLE_LINE_SP = TITLE_LINE_SP
+
+    /**
+     * [extraChromeDp]: per-holder space themed shapes add (offset shadow);
+     * [titleLineSp]: the title line height of the layout's title font.
+     */
+    fun plan(
+        result: ReadResult,
+        heightDp: Float?,
+        fontScale: Float,
+        extraChromeDp: Float = 0f,
+        titleLineSp: Float = TITLE_LINE_SP,
+    ): WidgetPlan {
         val settings = result.settings ?: return WidgetPlan(emptyList(), emptyList())
         val compact = settings.layout == "compact"
         val showDetails = !compact && fontScale < LARGE_TEXT_SCALE
@@ -40,7 +52,7 @@ object WidgetPlanner {
         val available = heightDp - ROOT_PADDING_DP
         val captionHeight = SMALL_LINE_SP * fontScale + CAPTION_MARGIN_DP
         fun holderHeight(row: HolderRow) =
-            HOLDER_CHROME_DP + (SMALL_LINE_SP + TITLE_LINE_SP + if (row.details != null) SMALL_LINE_SP else 0f) * fontScale
+            HOLDER_CHROME_DP + extraChromeDp + (SMALL_LINE_SP + titleLineSp + if (row.details != null) SMALL_LINE_SP else 0f) * fontScale
 
         fun fitting(captionCount: Int): List<HolderRow> {
             var used = captionCount * captionHeight

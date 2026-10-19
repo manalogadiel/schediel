@@ -18,6 +18,31 @@ void main() {
     expect(manifest,contains('android:pathPrefix="/s/"'));
     expect(manifest,contains('android:scheme="schediel"'));
   });
+  test('iOS widget reader accepts snapshot 1.1 (theme ignored) and still rejects others', () {
+    final swift=File('ios/ScheduleWidget/ScheduleWidget.swift').readAsStringSync();
+    expect(swift,contains('["1.0", "1.1"].contains(version)'));
+    expect(swift,isNot(contains('== "1.0"')));
+  });
+  test('themed widget layouts and shapes are generated and current', () {
+    final result=Process.runSync('python3',['tools/gen_widget_layouts.py','--check']);
+    expect(result.exitCode,0,reason:'${result.stdout}${result.stderr}');
+    for (final style in ['soft','pop','pixel','sketch']) {
+      final xml=File('android/app/src/main/res/layout/widget_schedule_$style.xml').readAsStringSync();
+      expect(xml,contains('android:background="@android:color/transparent"'),reason:style);
+      for (var i=0;i<4;i++) {
+        expect(xml,contains('@+id/holder_${i}_fill'),reason:style);
+      }
+    }
+    expect(File('android/app/src/main/res/layout/widget_schedule_pixel.xml').readAsStringSync(),contains('@font/silkscreen'));
+    // Launchers ignore app fonts in RemoteViews: bundled-font titles also have a bitmap view.
+    for (final style in ['pixel','sketch']) {
+      expect(File('android/app/src/main/res/layout/widget_schedule_$style.xml').readAsStringSync(),contains('holder_3_title_image'),reason:style);
+    }
+    for (final style in ['soft','pop']) {
+      expect(File('android/app/src/main/res/layout/widget_schedule_$style.xml').readAsStringSync(),isNot(contains('title_image')),reason:style);
+    }
+    expect(File('android/app/src/main/res/layout/widget_schedule_sketch.xml').readAsStringSync(),contains('@font/caveat_variable'));
+  });
   test('iOS alarm status source reads native pending alarms rather than cached requests', () {
     final swift=File('ios/Runner/AppDelegate.swift').readAsStringSync();
     expect(swift,contains('try AlarmManager.shared.alarms'));

@@ -27,6 +27,7 @@ class WidgetConfig {
     required this.showSubtitle,
     required this.matchApp,
     required this.revision,
+    this.useAppTheme = true,
   });
 
   static const defaultKey = 'default';
@@ -43,6 +44,7 @@ class WidgetConfig {
     showSubtitle: true,
     matchApp: false,
     revision: 0,
+    useAppTheme: true,
   );
 
   final String widgetKey;
@@ -59,6 +61,9 @@ class WidgetConfig {
   final bool matchApp;
   final int revision;
 
+  /// Holders use the app theme's colors, shapes and display font.
+  final bool useAppTheme;
+
   WidgetConfig copyWith({
     String? widgetKey,
     CategoryFilter? filter,
@@ -71,6 +76,7 @@ class WidgetConfig {
     bool? showSubtitle,
     bool? matchApp,
     int? revision,
+    bool? useAppTheme,
   }) =>
       WidgetConfig(
         widgetKey: widgetKey ?? this.widgetKey,
@@ -84,6 +90,7 @@ class WidgetConfig {
         showSubtitle: showSubtitle ?? this.showSubtitle,
         matchApp: matchApp ?? this.matchApp,
         revision: revision ?? this.revision,
+        useAppTheme: useAppTheme ?? this.useAppTheme,
       );
 
   @override
@@ -99,9 +106,10 @@ class WidgetConfig {
       other.showProfessor == showProfessor &&
       other.showSubtitle == showSubtitle &&
       other.matchApp == matchApp &&
-      other.revision == revision;
+      other.revision == revision &&
+      other.useAppTheme == useAppTheme;
 
   @override
   int get hashCode => Object.hash(widgetKey, filter, layout, surface, textTone, nextEmphasis, showLocation,
-      showProfessor, showSubtitle, matchApp, revision);
+      showProfessor, showSubtitle, matchApp, revision, useAppTheme);
 }

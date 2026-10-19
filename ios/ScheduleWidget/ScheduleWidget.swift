@@ -74,7 +74,8 @@ enum SnapshotReader {
     static func read(_ raw: String?, widgetKey: String, now: Date, calendar: Calendar) -> ReadResult {
         guard let raw, let data = raw.data(using: .utf8),
               let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              root["schemaVersion"] as? String == "1.0",
+              // 1.1 only adds the optional app theme, which this widget ignores.
+              let version = root["schemaVersion"] as? String, ["1.0", "1.1"].contains(version),
               let coverageText = root["coverageEnd"] as? String,
               let coverageEnd = instant(coverageText),
               let widgets = root["widgets"] as? [String: Any],

@@ -2,6 +2,7 @@ package com.manalogadiel.schediel.widget
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 
@@ -101,5 +102,19 @@ class WidgetPlannerTest {
         assertEquals(1, plan.holders.size)
         assertEquals(RowStatus.NEXT, plan.holders[0].status)
         assertEquals(emptyList<SnapshotEntry>(), plan.allDay)
+    }
+
+    @Test
+    fun taller_title_fonts_fit_fewer_holders_instead_of_clipping() {
+        // Expanded holders with a location: 22 + (16 + title + 16) * scale.
+        val system = WidgetPlanner.plan(result(), heightDp = 230f, fontScale = 1.3f)
+        val sketch = WidgetPlanner.plan(
+            result(), heightDp = 230f, fontScale = 1.3f, extraChromeDp = 4f, titleLineSp = ThemeStyle.titleLineSp("sketch"),
+        )
+        assertTrue("${sketch.holders.size} vs ${system.holders.size}", sketch.holders.size < system.holders.size)
+        val used = 16f + sketch.holders.sumOf { (22.0 + 4 + (16 + 25 + if (it.details != null) 16 else 0) * 1.3) }
+        assertTrue("used $used", used <= 230.0)
+        assertEquals(WidgetPlanner.DEFAULT_TITLE_LINE_SP, ThemeStyle.titleLineSp(null))
+        assertEquals(17f, ThemeStyle.titleLineSp("pixel"))
     }
 }

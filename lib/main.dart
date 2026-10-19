@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app/fonts.dart';
 import 'app/app.dart';
 import 'app/lifecycle.dart';
 import 'app/providers.dart';
@@ -21,10 +22,13 @@ Future<void> main() async {
     final text = await rootBundle.loadString('assets/icons/LICENSE-lucide.txt');
     yield LicenseEntryWithLineBreaks(const ['Lucide icons'], text);
   });
+  registerFontLicenses();
 
   final zones = ZoneResolver.initialized();
   final db = AppDatabase(driftDatabase(name: 'schediel'));
-  final container = ProviderContainer(overrides: [databaseProvider.overrideWithValue(db)]);
+  final container = ProviderContainer(
+    overrides: [databaseProvider.overrideWithValue(db)],
+  );
 
   final zone = await container.read(deviceZoneSourceProvider)();
   final appearance = await AppearanceRepository(db, clock: DateTime.now).load();
@@ -36,11 +40,17 @@ Future<void> main() async {
       overrides: [
         databaseProvider.overrideWithValue(db),
         zoneResolverProvider.overrideWithValue(zones),
-        initialDeviceZoneProvider.overrideWithValue(zone != null && zones.isValidZone(zone) ? zone : 'UTC'),
+        initialDeviceZoneProvider.overrideWithValue(
+          zone != null && zones.isValidZone(zone) ? zone : 'UTC',
+        ),
         initialAppearanceProvider.overrideWithValue(appearance),
-        appearanceRepositoryProvider.overrideWithValue(AppearanceRepository(db, clock: DateTime.now)),
+        appearanceRepositoryProvider.overrideWithValue(
+          AppearanceRepository(db, clock: DateTime.now),
+        ),
         initialAppFilterProvider.overrideWithValue(
-          CategoryFilter.fromJson(savedFilter == null ? null : jsonDecode(savedFilter)),
+          CategoryFilter.fromJson(
+            savedFilter == null ? null : jsonDecode(savedFilter),
+          ),
         ),
       ],
       child: const SchedielApp(),

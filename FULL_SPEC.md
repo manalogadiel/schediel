@@ -126,7 +126,7 @@ The requested capabilities are listed below. Platform-qualified requirements pre
 | Public link preview | Small semantic HTML/TypeScript page, independent of the Flutter app bundle | Proposed |
 | Sharing semantics | Immutable snapshots; recipient imports independent copies | Proposed |
 | Account model | No required account for local schedules; anonymous backend identity for online creation | Proposed; recovery trade-off must be approved |
-| Appearance | System app theme, restrained blue default accent; requested Clear widget where supported | Proposed |
+| Appearance | Eight tested themes (Lilac default) following system light/dark; requested Clear widget where supported, optionally in the app theme | Proposed |
 | Alerts | Both notification and alarm off until explicitly enabled or a user-chosen default is applied | Proposed |
 
 Flutter's architecture guidance separates UI, repositories and services; that separation is the basis for this design.[1]
@@ -157,7 +157,7 @@ Three destinations:
 
 1. **Today** — date navigation, current filter, chronological schedule and contextual Add/Import/Share.
 2. **Week** — weekly timetable with an equivalent chronological agenda presentation.
-3. **Settings** — appearance, widget setup, category management, alert status, privacy and shared-link management.
+3. **Settings** — optional profile, appearance, widget setup, category management, alert status, privacy and shared-link management.
 
 **Add** is an action, not a fourth destination. Its menu contains **Create schedule**, **Import image**, and **Open shared link**. A received verified deep link opens its preview directly, without routing through a new-user marketing screen.
 
@@ -172,7 +172,7 @@ Three destinations:
 
 ### 4.3 Today screen
 
-**Header:** selected date, date navigation, category filter, contextual Share and Add actions.
+**Header:** selected date, date navigation, category filter, contextual Share and Add actions. A time-of-day greeting uses the optional local profile name; with no profile it has no name and no avatar.
 
 **Content order:**
 
@@ -228,9 +228,9 @@ Use a bottom sheet for the first compact preview and a full review page for long
 
 ### 4.7 Appearance and widget settings
 
-App settings: system/light/dark, tested accent presets, comfortable/compact density, and optional category colors.
+App settings: one of eight tested themes (Lilac default, Clay, Pop, Mint, Midnight, Pixel, Sketch, Custom color with a single hue control), system/light/dark (Midnight is dark only), comfortable/compact density, and optional category colors. Themes change color, shape and heading font only, never copy, layout or behavior. An optional local profile (name up to 40 characters, photo cropped and re-encoded as 512×512 JPEG without metadata) personalizes the greeting; it is never uploaded, shared or written to the widget snapshot.
 
-Each widget: filter, compact/expanded layout, visible details, supported surface preset, text appearance where honored, and next-entry emphasis. **Match app** is an option, not forced coupling.
+Each widget: filter, compact/expanded layout, visible details, supported surface preset, text appearance where honored, next-entry emphasis and **Use app theme** (on for new installs; off after upgrading, for saved widgets and the default settings). **Match app** is an option, not forced coupling.
 
 Controls are capability-driven. An unavailable native feature is either absent or explained, not presented as a functional slider.
 
@@ -263,7 +263,7 @@ The complete machine-readable token spec and component rules are in [DESIGN.md](
 
 ### 5.1 Direction
 
-Minimal, modern and Apple-inspired: native system typography, quiet neutral surfaces, one restrained accent, clear spacing, consistent vectors and limited motion. No exact branded-screen clone, oversized hero, feature-tile grid, decorative gradient, repeated icon toppers, fake statistics or generic filler.
+Minimal, modern and Apple-inspired: native system typography for reading (two bundled display fonts only for headings in Pixel and Sketch), personal theme colors with one accent per theme, clear spacing, consistent vectors and limited motion. No exact branded-screen clone, oversized hero, feature-tile grid, decorative gradient, repeated icon toppers, fake statistics or generic filler.
 
 Use one curated SVG family. Proposed: Lucide local assets, rendered in Flutter through flutter_svg. Retain upstream notices and provide semantic labels for actions.[6][7] Native widgets use equivalent approved native vector assets or build-time conversions; do not assume Flutter's SVG renderer runs in WidgetKit or Glance.
 
@@ -278,6 +278,7 @@ Requested composition:
 - Upcoming schedules are quieter, not illegible.
 - Optional room, professor and subtitle lines appear only when available and enabled.
 - No timetable baked into an image and no wallpaper screenshot imitation.
+- With **Use app theme**, holders take the theme's accent (next) or category fills, outline and heading font, following the phone's night mode. Translucent holder opacity is computed, not guessed: the lowest value from 0.70 (Clear) or 0.88 (Soft tint), in 2% steps, at which all holder text keeps 4.5:1 over both black and white; otherwise opaque. The root stays transparent (CONTRACTS.md §6.1).
 
 **Native constraint:** iOS Clear/tinted widget rendering can replace the app's widget background and recolor content. The design must adapt to system rendering rather than promise arbitrary background removal or exact app colors.[10] Android supports transparent widget backgrounds, but host clipping and background detection need real launcher tests.[11]
 
@@ -570,8 +571,9 @@ All definitions below are a planned schema, not executed migrations. Use foreign
 | `alert_rules` | `id`, series or exception scope, notification/alarm kind, enabled flag, offset minutes or date-only clock-time rule, privacy preference, optional supported snooze preference |
 | `scheduled_alerts` | Rule/occurrence identity, native request ID, platform, request revision, intended trigger instant, actual status, error code, last reconciliation |
 | `reconciliation_outbox` | Unique operation key, reason, source revision, pending/running/retry status, retry metadata; no user-content logs |
-| `widget_configurations` | Native widget instance ID, selected category IDs, layout, detail visibility, match-app flag, supported appearance values, revision |
-| `appearance_preferences` | System/light/dark, tested accent key, density, accessibility overrides |
+| `widget_configurations` | Native widget instance ID, selected category IDs, layout, detail visibility, match-app flag, use-app-theme flag, supported appearance values, revision |
+| `appearance_preferences` | System/light/dark, theme key, custom hue, density, accessibility overrides (schema v2 maps the former accent key to the nearest theme) |
+| `profile_preferences` | Optional display name and app-private photo path; local only, removable, excluded from sharing, widgets and backend |
 | `import_drafts` | Draft ID/type, local source reference, candidate data, user edits, warnings, review state, expiration; not active schedules |
 | `import_provenance` | Local series ID, source type, share snapshot/item/version or image draft reference, fingerprint, imported timestamp |
 | `owned_share_links` | Backend share ID, snapshot version, scope summary, expiry/revocation state; raw bearer URL only in an appropriate local protected store if retained |
@@ -1284,6 +1286,8 @@ The primary surface is **Monitor**: people glance at a timeline to find the curr
 
 The direction is minimal and Apple-inspired without cloning a branded screen. Hierarchy comes from type, spacing, alignment and restrained emphasis. Glass is limited to supported navigation/material treatments and widget holders. Important schedule text is not buried under blur.
 
+People choose one of eight themes (see **Themes** below) so the app feels like theirs, not a gray utility. Themes change color, shape and heading type only; layout, copy, flows and behavior are identical in every theme. The front-matter tokens above are the neutral base used by the browser preview and these documents; the app's themes are defined in `lib/app/theme/theme_catalog.dart` and summarized here. A detailed rationale is in [docs/superpowers/specs/2026-10-18-android-theme-revamp-design.md](docs/superpowers/specs/2026-10-18-android-theme-revamp-design.md).
+
 Normative product behavior, security rules and platform limits live in [SCHEDULER_SPEC.md](SCHEDULER_SPEC.md). External references are in [SOURCES.md](#appendix-c-primary-source-register).
 
 ### Implementation-specific values
@@ -1293,14 +1297,17 @@ The interchange format exports only its supported token maps. The values below a
 | Concern | Proposed value / rule |
 |---|---|
 | Units | Logical UI units, mapped to Flutter logical pixels and native points/dp |
-| Fonts | Platform system fonts; no proprietary Apple font bundled for Android |
+| Fonts | Platform system fonts for all body text and form fields. Two bundled OFL display fonts for headings only: Silkscreen (Pixel) and Caveat (Sketch); sources, SHA-256 and licenses in `assets/fonts/` and the app's license page. No proprietary Apple font is bundled |
+| Themes | Lilac (default), Clay, Pop, Mint, Midnight, Pixel, Sketch, Custom color; four style families: soft, pop, pixel, sketch |
+| Custom color | One hue control (0–359°, saved on release). Palette generated in HCT; text tones are moved until each pair passes contrast; category fills move at most 8° toward the hue |
 | Control motion | 160 ms |
 | Screen motion | 220 ms; reduced motion uses immediate changes or a brief non-spatial fade |
 | SVG family | Curated local Lucide assets with retained license notices |
 | SVG geometry | 24 by 24 view box; 2-unit stroke; round caps/joins; nominal display size 22 |
 | Clear widget root | Requested alpha 0, requested blur radius 0 |
-| Next holder | Proposed alpha 0.18, subject to native rendering/readability tests |
-| Upcoming holder | Proposed alpha 0.06, subject to native rendering/readability tests |
+| Next holder | Without app theme: proposed alpha 0.18. With app theme: theme accent at the computed surface opacity |
+| Upcoming holder | Without app theme: proposed alpha 0.06. With app theme: category fill (neutral when none) at the computed surface opacity |
+| Themed holder opacity | Clear starts at 0.70, Soft tint at 0.88; raised in 2% steps until every holder text pair has 4.5:1 composited over black and over white; else opaque |
 | Holder radius | Proposed 16 logical units, subject to native clipping and sizing |
 | Clear-mode contrast | No guarantee over arbitrary wallpaper; offer a solid accessible preset |
 | iOS widget material | System rendering mode may replace the background and tint content |
@@ -1323,6 +1330,23 @@ Use `dark-canvas`, `dark-surface`, `dark-ink`, `dark-secondary`, `dark-accent` a
 
 Category colors are optional accents, never the only way to identify School, Work, Personal or a custom category. Every category has a visible name and accessible label. Additional accent choices must ship as tested foreground/background pairs, not as an unrestricted color picker that can silently make text unreadable.
 
+### Themes
+
+Each theme ships a tested light and dark palette (Midnight is dark only and disables the mode choice with the text **Midnight is always dark.**). Category colors keep their hue family in every theme, so "green" is still recognizably green, and they are never the only identifier.
+
+| Theme | Style | Light canvas / accent | Dark canvas / accent | Character |
+|---|---|---|---|---|
+| Lilac | soft | `#F4F2FC` / `#6A5AE0` | `#15131F` / `#A99CFF` | Default; calm violet with pastel category cards |
+| Clay | soft | `#F3ECE4` / `#A9502C` | `#1C1714` / `#E39A73` | Warm paper and terracotta |
+| Pop | pop | `#FFF4D6` / `#FFD400` | `#141414` / `#FFD400` | Bold fills, 2-unit ink outlines, hard offset shadow, heavy headings |
+| Mint | soft | `#EDF5F0` / `#17805A` | `#0F1813` / `#5FD3A0` | Fresh green, quiet surfaces |
+| Midnight | soft | dark only | `#0F1117` / `#9DB8FF` | Always dark |
+| Pixel | pixel | `#EDEBDD` / `#3D5AFE` | `#101226` / `#8FA2FF` | Square corners, notched pixel outlines, Silkscreen headings |
+| Sketch | sketch | `#FBFAF5` / `#FFE066` | `#1F2A27` / `#FFE066` | Hand-drawn outlines (deterministic per item), Caveat headings |
+| Custom color | soft | generated | generated | The user's hue, contrast-checked |
+
+Tests (`test/app/theme_catalog_test.dart`) require every text pair in every palette to reach 4.5:1, selected pills 3:1 against their surroundings, and Custom palettes to pass at every 15° hue step.
+
 ### Contrast policy
 
 Opaque text/background pairings must meet the text-contrast targets in the product specification. Transparent widgets are an explicit exception in capability, not an accessibility claim: arbitrary wallpaper is unknown, so a fixed translucent fill cannot guarantee contrast.
@@ -1338,6 +1362,8 @@ Use the native system font deliberately. In Flutter, inherit the platform theme 
 - Room, professor and subtitle: body or caption depending on density, not illegibly small text.
 - Time column: `time`, aligned consistently and not distinguished by color alone.
 - User font scaling takes precedence over the nominal sizes above. At large sizes, wrap, expand or switch to an agenda layout instead of clipping essential content.
+
+Display fonts appear only in headings (page title, greeting, the Next card title, theme names in the picker and themed widget titles). They never appear in body text, schedule details, form fields, buttons or numbers that must be read precisely.
 
 Do not reduce all upcoming-entry text opacity until it becomes unreadable. The next entry should be stronger; upcoming entries must still be legible.
 
@@ -1361,6 +1387,7 @@ Do not reduce all upcoming-entry text opacity until it becomes unreadable. The n
 5. No artificial glowing frame, thick stroke, shimmer or perpetual animation.
 6. Date-only entries use an explicit date/all-day label rather than an invented time.
 7. A widget tap opens existing schedule details; it never creates a schedule or enables an alert.
+8. **Use app theme** (per widget; on for new installs, off after upgrading so existing widgets keep their look): holders take the theme's accent (Next) or category fills, its outline and its heading font, at the computed opacity for the chosen surface. The widget follows the phone's night mode with the theme's light or dark palette (Android 12+ switches immediately; Android 8–11 at the next widget update). Holder opacity uses the more opaque of the two palettes so both stay readable. Hard shadows appear only on solid holders, because a translucent holder would show the shadow through it. The root stays transparent in every theme, so the wallpaper is never replaced.
 
 Widget reading order must expose the actual date/time, Now/Next or review status, title and permitted visible details without depending on holder brightness. In a constrained family, remove optional details or show fewer entries before clipping essential content; the app remains the accessible route to full details. Appearance previews use actual saved data or an honest empty state over a labelled neutral preview backdrop, not invented schedules or a copy of the user's wallpaper. A readable preview does not certify Clear mode over arbitrary wallpaper.
 
@@ -1381,7 +1408,8 @@ Use a thin outline or a subtle text shadow only when it improves separation. Do 
 - Bottom sheets: `rounded.sheet`, with native presentation behavior where practical.
 - Pills: filters and selected states, not every label.
 - Native widget outer shape: obey the host's clipping and corner behavior rather than assuming an arbitrary app radius.
-- Widget holder radius: proposed 16 logical units, subject to native sizing and clipping tests.
+- Widget holder radius: proposed 16 logical units, subject to native sizing and clipping tests. Themed holders: soft 16, pop 14, sketch 18, pixel square with 3-unit notched corners.
+- Style families: **soft** uses the theme radius and no outline; **pop** adds a 2-unit ink outline and a hard 3-unit offset shadow; **pixel** uses square, notched outlines; **sketch** draws a slightly irregular hand-drawn outline that is stable for each item, so it never jitters between frames.
 
 ## Components
 
@@ -1412,6 +1440,12 @@ Keep the sender snapshot separate from recipient edits. Show one primary action 
 ### Appearance controls
 
 Start with a small set of tested presets. App and each widget can share appearance settings or be configured independently. Hide or explain unavailable native options. Separate app colors from the system's control of native widget glass/tint.
+
+**Settings → Appearance** shows the eight themes as a grid of small swatches (the theme's canvas, two category cards and its accent, with the theme name in its heading font), each labelled "*Name* theme" for screen readers. A choice applies at once and is saved. Custom color reveals one hue slider; there is no free color picker, so text stays readable.
+
+### Profile
+
+An optional, local-only name (up to 40 characters) and photo personalize the Today greeting. The photo is cropped (round mask; square in Pixel), re-encoded as a 512×512 JPEG without metadata and stored in the app's private folder. The profile is never uploaded, shared or written into the widget snapshot; with no profile, the greeting simply has no name and no avatar. Deleting local data offers **Also remove profile name and photo**.
 
 ### SVG assets
 
@@ -1459,6 +1493,8 @@ Approved concise state labels include **No schedules yet**, **No schedules in th
 - Indicate that an alarm is scheduled merely because an external Clock intent was sent.
 - Add missing dates, room numbers or professors to make an imported card look complete.
 - Ship unsupported controls, unlimited styling options or a misleadingly universal glass slider.
+- Use a display font for schedule details, form fields or precise numbers.
+- Let a theme change copy, layout, flows or what data is shown.
 
 
 ---
@@ -1691,14 +1727,25 @@ The table lists the frozen root envelope, not extra conceptual fields. Each nati
 
 | Field | Type | Meaning |
 |---|---|---|
-| `schemaVersion` | Literal `1.0` | Native reader compatibility gate |
+| `schemaVersion` | Literal `1.0` or `1.1` | Native reader compatibility gate; any other value renders the open-app state |
 | `dataRevision` | Nonnegative integer | Local snapshot revision; prevents mixed old/new snapshots |
 | `generatedAt` | UTC timestamp | Actual generation time |
 | `deviceTimeZone` | IANA zone string | Device zone at generation; readers format instants in the current device zone |
 | `coverageEnd` | UTC timestamp | At or after this instant, render the stale open-app state rather than claiming Now/Next or an empty future |
 | `widgets` | Map of native widget identity to projection | Each projection has `configuration`, bounded `occurrences` and `emptyReason`; per-widget settings remain isolated |
+| `theme` | Optional object (1.1) | App theme for widgets that opted in: `id`, `style` (`soft`, `pop`, `pixel`, `sketch`) and `light`/`dark` palettes |
 
 A snapshot contains committed schedule projections only: no provider key, backend bearer URL, full image or active editor/review draft. Native writers/readers use an atomic/versioned hand-off. Missing, invalid or unsupported snapshots use the safe open-app state; expiry of `coverageEnd` is not evidence of no upcoming schedules. Unresolved occurrence times never become Now or Next.
+
+### 6.1 Version 1.1: app theme (additive)
+
+Version 1.1 (`contracts/schemas/widget-snapshot-v1_1.schema.json`) adds three optional fields; everything else, including reader rules R01–R10, is unchanged, and the 1.0 schema stays for history.
+
+- Root `theme`: `{ id, style, light, dark }`. Each palette has `accent`, `onAccent`, `neutralFill`, `cardInk`, `outline`, six `categoryFills` (`blue`, `green`, `orange`, `red`, `purple`, `gray`) as `#RRGGBB`, and `opacity: { clear, softTint }`. Both palettes are always written so the widget can follow the phone's night mode while the app is closed (Android 12+ via day/night RemoteViews colors; earlier versions at the next widget update; one holder alpha, the higher of the two palettes); a fixed app mode or a dark-only theme writes the same palette twice.
+- `configuration.useAppTheme`: holders use the theme (R11): with next emphasis on, the Next holder takes `accent` with `onAccent` text; every other holder takes its category fill (`neutralFill` when none) with `cardInk` text. Absent means the 1.0 look. New installs default on; on upgrade, saved widgets and the `default` settings that unconfigured widgets read were set off.
+- `occurrence.categoryColor`: the category's color key, or null (uncategorized, uncolored, or category colors turned off in the app).
+
+Readability over unknown wallpaper is computed by the app, never guessed from the wallpaper: `opacity.clear` (from 0.70) and `opacity.softTint` (from 0.88) are the lowest values, in 2% steps, at which every holder text pair still has 4.5:1 contrast when the holder is composited over pure black and over pure white; if none passes, 1.0. Hard offset shadows (pop, pixel) are drawn only on solid holders, because a translucent holder would show the shadow through it (R12). A missing or malformed theme renders the 1.0 look rather than the open-app state. The shared fixture `contracts/fixtures/widget-snapshot-v1_1-cases.json` is generated by the Dart builder and read by the Android tests; `tools/check_widget_contracts.py` validates both fixtures against the schemas.
 
 Rendering respects current native appearance; requested alpha, colors or glass style are not a platform guarantee. Never repaint wallpaper from an image into a widget. Clear/Soft tint cannot guarantee contrast over arbitrary wallpaper: keep the existing solid accessible treatment available, with actual date/time/status and permitted details in the reading order. Motion or holder brightness must not be the only indication of Next or a review/staleness problem.
 
@@ -1858,7 +1905,7 @@ Two independent planning reviews were integrated. The parent also retrieved the 
 
 # Appendix D: Implementation validation
 
-**Recorded:** October 18, 2026 (Windows 11, UTC+08:00).
+**Recorded:** October 18–19, 2026 (Windows 11, UTC+08:00).
 
 ## Status and boundaries
 
@@ -1884,6 +1931,20 @@ A second independent review of those fixes found three more gaps, also fixed wit
 
 Also tightened: the deletion request is sent only as the identity its scope was computed for (pinned authorization); a share attempt kept after an auth or rate-limit rejection now blocks creating a second link until it is retried or discarded; an expired session is refreshed (same identity) before a retry; the web preview rejects an app-link origin with a non-default port, matching the app.
 
+## Theme revamp (themes, profile, themed widgets)
+
+Recorded October 19, 2026. An independent review found four medium issues, all fixed with failing-first tests: unconfigured widgets would have switched to the themed look on upgrade (the migration now saves the `default` widget settings off); turning category colors on/off did not refresh widgets; Reduce Motion did not reach the theme cross-fade in production; the themed widget did not follow night mode while the app was closed (Android 12+ now uses day/night colors; Android 8–11 updates at the next widget refresh). Smaller suggestions applied: taller title fonts fit fewer holders instead of clipping; the settings preview draws hard shadows only on solid; native opacity is never below the tested minimum.
+
+**On the phone (Samsung SM-A326B, Android 13, wireless adb), seen in screenshots:**
+
+- All eight themes apply on Today, Week and Appearance; Midnight disables Mode with its note; Custom shows the hue slider.
+- After the upgrade the existing widget kept its original look; with **Use app theme** on it rendered Clay, Pop, Pixel (notched, hard shadow on solid), Sketch and Midnight holders over the wallpaper, root transparent.
+- Profile photo picked, cropped and saved as a 512×512 JPEG with no EXIF (read back from app storage); Today shows the avatar and greeting.
+
+**Defects found only on the device and fixed (each with a test):** the Next pill stretched across the card; unselected Mode labels were yellow on white in Pop and Sketch; Week hour labels wrapped ("10:00 A / M"); the Samsung launcher ignores app font resources in widget RemoteViews, so Pixel and Sketch titles are now drawn as tinted bitmaps (the handwritten last letter was clipped at first; fixed and rechecked).
+
+**Not verified on the device:** dark mode switching of the widget, other launchers, multiple widget instances and resizing, 200% text on the device, TalkBack. iOS remains unbuilt.
+
 ## Checks actually executed
 
 Toolchain: Flutter 3.47.4, Dart 3.13.3, Android SDK/Java 17; Node 24 and pinned npm dependencies; Deno 2.5.4 for runtime type checking. The committed lockfiles record dependency resolutions.
@@ -1891,9 +1952,9 @@ Toolchain: Flutter 3.47.4, Dart 3.13.3, Android SDK/Java 17; Node 24 and pinned 
 | Check | Actual local result | Evidence scope |
 |---|---|---|
 | `flutter analyze` | No issues found | Dart static analysis |
-| `flutter test` | **205 passed** | Domain, Drift repositories, widget/UI flows, mocked native/plugin seams and static native-source checks |
+| `flutter test` | **279 passed** | Domain, Drift repositories, widget/UI flows, mocked native/plugin seams and static native-source checks |
 | `flutter build apk --debug` | Exit 0; `build/app/outputs/flutter-apk/app-debug.apk` produced | Android debug compilation/packaging, not release signing or device execution |
-| Android `:app:testDebugUnitTest` | **21 tests, 0 failures, 0 errors** | Kotlin planner/reader/contract JVM tests |
+| Android `:app:testDebugUnitTest` | **34 tests, 0 failures, 0 errors** | Kotlin planner/reader/theme/contract JVM tests |
 | Android `:app:lintDebug` | Build successful; **0 errors, 16 warnings** | Android static lint, with a narrowly scoped generated-file exception described below |
 | Backend `npm test` | **79 passed, 0 failed, 0 skipped** | Actual migration/functions in local PGlite, Fetch handlers, auth boundaries, limits, replay and deletion tests |
 | Backend `npm audit --omit=dev --audit-level=high` | 0 vulnerabilities reported | Registry audit for production npm dependency graph at execution time, not a security guarantee |

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:schediel/app/theme/app_theme.dart';
+import 'package:schediel/app/theme/schediel_theme.dart';
+import 'package:schediel/app/theme/theme_catalog.dart';
 import 'package:schediel/app/theme/tokens.dart';
+
+ThemeData build(ThemeId id, Brightness b, {int hue = 250}) =>
+    buildTheme(theme: themeFor(id, customHue: hue), brightness: b, density: Density.comfortable, showCategoryColors: true);
 
 void main() {
   test('contrast ratio matches known WCAG values', () {
@@ -9,50 +14,68 @@ void main() {
     expect(contrastRatio(Colors.white, Colors.white), closeTo(1, 0.001));
   });
 
-  test('opaque design-token text pairs meet 4.5:1', () {
-    final pairs = {
-      'primary/surface': (Tokens.primary, Tokens.surface),
-      'primary/neutral': (Tokens.primary, Tokens.neutral),
-      'secondary/surface': (Tokens.secondary, Tokens.surface),
-      'secondary/neutral': (Tokens.secondary, Tokens.neutral),
-      'error/surface': (Tokens.error, Tokens.surface),
-      'darkInk/darkSurface': (Tokens.darkInk, Tokens.darkSurface),
-      'darkSecondary/darkSurface': (Tokens.darkSecondary, Tokens.darkSurface),
-      'darkSecondary/darkCanvas': (Tokens.darkSecondary, Tokens.darkCanvas),
-      'darkError/darkSurface': (Tokens.darkError, Tokens.darkSurface),
-    };
-    pairs.forEach((name, pair) {
-      expect(contrastRatio(pair.$1, pair.$2), greaterThanOrEqualTo(4.5), reason: name);
-    });
-  });
-
-  test('every accent preset is a tested pair in both appearances', () {
-    for (final preset in AccentPreset.values) {
-      expect(contrastRatio(preset.light.accent, preset.light.onAccent), greaterThanOrEqualTo(4.5), reason: '${preset.name} light button');
-      expect(contrastRatio(preset.light.accent, Tokens.surface), greaterThanOrEqualTo(4.5), reason: '${preset.name} light link');
-      expect(contrastRatio(preset.light.accent, Tokens.neutral), greaterThanOrEqualTo(4.5), reason: '${preset.name} light link on canvas');
-      expect(contrastRatio(preset.dark.accent, preset.dark.onAccent), greaterThanOrEqualTo(4.5), reason: '${preset.name} dark button');
-      expect(contrastRatio(preset.dark.accent, Tokens.darkSurface), greaterThanOrEqualTo(4.5), reason: '${preset.name} dark link');
-      expect(contrastRatio(preset.dark.accent, Tokens.darkCanvas), greaterThanOrEqualTo(4.5), reason: '${preset.name} dark link on canvas');
+  test('error text stays readable on every theme surface', () {
+    for (final id in ThemeId.values) {
+      for (final b in Brightness.values) {
+        final t = build(id, b);
+        expect(contrastRatio(t.colorScheme.error, t.colorScheme.surface), greaterThanOrEqualTo(4.5), reason: '${id.name} $b');
+        expect(contrastRatio(t.colorScheme.error, t.scaffoldBackgroundColor), greaterThanOrEqualTo(4.5), reason: '${id.name} $b canvas');
+      }
     }
   });
 
-  test('category colors are visible non-text marks (3:1) in both appearances', () {
-    for (final color in CategoryColor.values) {
-      expect(contrastRatio(color.light, Tokens.surface), greaterThanOrEqualTo(3), reason: '${color.name} light');
-      expect(contrastRatio(color.light, Tokens.neutral), greaterThanOrEqualTo(3), reason: '${color.name} light canvas');
-      expect(contrastRatio(color.dark, Tokens.darkSurface), greaterThanOrEqualTo(3), reason: '${color.name} dark');
-      expect(contrastRatio(color.dark, Tokens.darkCanvas), greaterThanOrEqualTo(3), reason: '${color.name} dark canvas');
-    }
-  });
-
-  test('builds light and dark themes from the tokens', () {
-    final light = buildTheme(brightness: Brightness.light, accent: AccentPreset.blue, density: Density.comfortable, showCategoryColors: true);
-    expect(light.colorScheme.primary, Tokens.tertiary);
-    expect(light.scaffoldBackgroundColor, Tokens.neutral);
-    final dark = buildTheme(brightness: Brightness.dark, accent: AccentPreset.blue, density: Density.compact, showCategoryColors: false);
-    expect(dark.colorScheme.primary, Tokens.darkAccent);
-    expect(dark.colorScheme.onPrimary, Tokens.darkOnAccent);
+  test('the theme palette drives the color scheme', () {
+    final light = build(ThemeId.lilac, Brightness.light);
+    expect(light.colorScheme.primary, const Color(0xFF6A5AE0));
+    expect(light.scaffoldBackgroundColor, const Color(0xFFF4F2FC));
+    final colors = light.extension<ScheduleColors>()!;
+    expect(colors.style, StyleFamily.soft);
+    expect(colors.categoryFill('blue'), const Color(0xFFDDEBFF));
+    expect(colors.categoryFill(null), colors.palette.neutralFill);
+    final dark = buildTheme(theme: themeFor(ThemeId.lilac), brightness: Brightness.dark, density: Density.compact, showCategoryColors: false);
+    expect(dark.brightness, Brightness.dark);
     expect(dark.extension<ScheduleColors>()!.density, Density.compact);
+    // Category colors off: every category uses the neutral fill.
+    final off = dark.extension<ScheduleColors>()!;
+    expect(off.categoryFill('red'), off.palette.neutralFill);
+  });
+
+  test('Midnight is always dark', () {
+    expect(build(ThemeId.midnight, Brightness.light).brightness, Brightness.dark);
+    expect(effectiveThemeMode(themeFor(ThemeId.midnight), ThemeMode.light), ThemeMode.dark);
+    expect(effectiveThemeMode(themeFor(ThemeId.lilac), ThemeMode.light), ThemeMode.light);
+  });
+
+  test('display text styles use the theme display font and body styles never do', () {
+    final pixel = build(ThemeId.pixel, Brightness.light).textTheme;
+    expect(pixel.headlineMedium!.fontFamily, 'Silkscreen');
+    expect(pixel.titleLarge!.fontFamily, 'Silkscreen');
+    for (final style in [pixel.bodyLarge, pixel.bodyMedium, pixel.bodySmall, pixel.labelLarge, pixel.labelMedium, pixel.labelSmall, pixel.titleMedium]) {
+      // ThemeData fills in the platform font; never a display font.
+      expect(style!.fontFamily, isNot(anyOf('Silkscreen', 'Caveat')));
+    }
+    final sketch = build(ThemeId.sketch, Brightness.light).textTheme;
+    expect(sketch.headlineMedium!.fontFamily, 'Caveat');
+    expect(build(ThemeId.lilac, Brightness.light).textTheme.headlineMedium!.fontFamily, isNot(anyOf('Silkscreen', 'Caveat')));
+  });
+
+  test('segmented and text-button labels stay readable in every theme (yellow accents included)', () {
+    for (final id in ThemeId.values) {
+      for (final b in Brightness.values) {
+        final t = build(id, b);
+        final c = t.extension<ScheduleColors>()!;
+        final seg = t.segmentedButtonTheme.style!;
+        final unselected = seg.foregroundColor!.resolve(const {})!;
+        final selected = seg.foregroundColor!.resolve(const {WidgetState.selected})!;
+        final selectedBg = seg.backgroundColor!.resolve(const {WidgetState.selected})!;
+        for (final bg in [c.surface, c.palette.canvas]) {
+          expect(contrastRatio(unselected, bg), greaterThanOrEqualTo(4.5), reason: '${id.name} $b unselected segment');
+        }
+        expect(contrastRatio(selected, Color.alphaBlend(selectedBg, c.surface)), greaterThanOrEqualTo(4.5),
+            reason: '${id.name} $b selected segment');
+        final textButton = t.textButtonTheme.style!.foregroundColor!.resolve(const {})!;
+        expect(contrastRatio(textButton, c.palette.canvas), greaterThanOrEqualTo(4.5), reason: '${id.name} $b text button');
+      }
+    }
   });
 }

@@ -19,12 +19,14 @@ class CategoryRepository {
   final DateTime Function() _clock;
   final String Function() _newId;
 
-  Stream<List<Category>> watchAll() => (_db.select(_db.categories)
-        ..orderBy([(t) => OrderingTerm.asc(t.sortOrder), (t) => OrderingTerm.asc(t.name)]))
-      .watch()
-      .map((rows) => [for (final r in rows) _toCategory(r)]);
+  SimpleSelectStatement<$CategoriesTable, CategoryRow> _ordered() => _db.select(_db.categories)
+    ..orderBy([(t) => OrderingTerm.asc(t.sortOrder), (t) => OrderingTerm.asc(t.name)]);
 
-  Future<List<Category>> loadAll() => watchAll().first;
+  Stream<List<Category>> watchAll() => _ordered().watch().map((rows) => [for (final r in rows) _toCategory(r)]);
+
+  /// One read, without opening a stream query (callers such as the widget
+  /// snapshot refresh only need the current rows).
+  Future<List<Category>> loadAll() async => [for (final r in await _ordered().get()) _toCategory(r)];
 
   Future<Category> create(String name, {String? colorKey}) {
     return _db.transaction(() async {

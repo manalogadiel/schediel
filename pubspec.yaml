@@ -55,6 +55,8 @@ dependencies:
   app_links: ^7.2.2
   intl: ^0.20.3
   collection: ^1.19.1
+  # HCT color space for the Custom color theme (also used by Flutter itself).
+  material_color_utilities: ^0.13.0
   flutter_localizations:
     sdk: flutter
 
@@ -84,6 +86,20 @@ flutter:
 
   assets:
     - assets/icons/
+    - assets/fonts/LICENSE-Silkscreen.txt
+    - assets/fonts/LICENSE-Caveat.txt
+
+  # Display fonts for the Pixel and Sketch themes (SIL OFL 1.1, see
+  # assets/fonts/SOURCES.md). Body text always uses the system font.
+  fonts:
+    - family: Silkscreen
+      fonts:
+        - asset: assets/fonts/Silkscreen-Regular.ttf
+        - asset: assets/fonts/Silkscreen-Bold.ttf
+          weight: 700
+    - family: Caveat
+      fonts:
+        - asset: assets/fonts/Caveat-Variable.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

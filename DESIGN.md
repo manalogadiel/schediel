@@ -125,6 +125,8 @@ The primary surface is **Monitor**: people glance at a timeline to find the curr
 
 The direction is minimal and Apple-inspired without cloning a branded screen. Hierarchy comes from type, spacing, alignment and restrained emphasis. Glass is limited to supported navigation/material treatments and widget holders. Important schedule text is not buried under blur.
 
+People choose one of eight themes (see **Themes** below) so the app feels like theirs, not a gray utility. Themes change color, shape and heading type only; layout, copy, flows and behavior are identical in every theme. The front-matter tokens above are the neutral base used by the browser preview and these documents; the app's themes are defined in `lib/app/theme/theme_catalog.dart` and summarized here. A detailed rationale is in [docs/superpowers/specs/2026-10-18-android-theme-revamp-design.md](docs/superpowers/specs/2026-10-18-android-theme-revamp-design.md).
+
 Normative product behavior, security rules and platform limits live in [SCHEDULER_SPEC.md](SCHEDULER_SPEC.md). External references are in [SOURCES.md](SOURCES.md).
 
 ### Implementation-specific values
@@ -134,14 +136,17 @@ The interchange format exports only its supported token maps. The values below a
 | Concern | Proposed value / rule |
 |---|---|
 | Units | Logical UI units, mapped to Flutter logical pixels and native points/dp |
-| Fonts | Platform system fonts; no proprietary Apple font bundled for Android |
+| Fonts | Platform system fonts for all body text and form fields. Two bundled OFL display fonts for headings only: Silkscreen (Pixel) and Caveat (Sketch); sources, SHA-256 and licenses in `assets/fonts/` and the app's license page. No proprietary Apple font is bundled |
+| Themes | Lilac (default), Clay, Pop, Mint, Midnight, Pixel, Sketch, Custom color; four style families: soft, pop, pixel, sketch |
+| Custom color | One hue control (0–359°, saved on release). Palette generated in HCT; text tones are moved until each pair passes contrast; category fills move at most 8° toward the hue |
 | Control motion | 160 ms |
 | Screen motion | 220 ms; reduced motion uses immediate changes or a brief non-spatial fade |
 | SVG family | Curated local Lucide assets with retained license notices |
 | SVG geometry | 24 by 24 view box; 2-unit stroke; round caps/joins; nominal display size 22 |
 | Clear widget root | Requested alpha 0, requested blur radius 0 |
-| Next holder | Proposed alpha 0.18, subject to native rendering/readability tests |
-| Upcoming holder | Proposed alpha 0.06, subject to native rendering/readability tests |
+| Next holder | Without app theme: proposed alpha 0.18. With app theme: theme accent at the computed surface opacity |
+| Upcoming holder | Without app theme: proposed alpha 0.06. With app theme: category fill (neutral when none) at the computed surface opacity |
+| Themed holder opacity | Clear starts at 0.70, Soft tint at 0.88; raised in 2% steps until every holder text pair has 4.5:1 composited over black and over white; else opaque |
 | Holder radius | Proposed 16 logical units, subject to native clipping and sizing |
 | Clear-mode contrast | No guarantee over arbitrary wallpaper; offer a solid accessible preset |
 | iOS widget material | System rendering mode may replace the background and tint content |
@@ -164,6 +169,23 @@ Use `dark-canvas`, `dark-surface`, `dark-ink`, `dark-secondary`, `dark-accent` a
 
 Category colors are optional accents, never the only way to identify School, Work, Personal or a custom category. Every category has a visible name and accessible label. Additional accent choices must ship as tested foreground/background pairs, not as an unrestricted color picker that can silently make text unreadable.
 
+### Themes
+
+Each theme ships a tested light and dark palette (Midnight is dark only and disables the mode choice with the text **Midnight is always dark.**). Category colors keep their hue family in every theme, so "green" is still recognizably green, and they are never the only identifier.
+
+| Theme | Style | Light canvas / accent | Dark canvas / accent | Character |
+|---|---|---|---|---|
+| Lilac | soft | `#F4F2FC` / `#6A5AE0` | `#15131F` / `#A99CFF` | Default; calm violet with pastel category cards |
+| Clay | soft | `#F3ECE4` / `#A9502C` | `#1C1714` / `#E39A73` | Warm paper and terracotta |
+| Pop | pop | `#FFF4D6` / `#FFD400` | `#141414` / `#FFD400` | Bold fills, 2-unit ink outlines, hard offset shadow, heavy headings |
+| Mint | soft | `#EDF5F0` / `#17805A` | `#0F1813` / `#5FD3A0` | Fresh green, quiet surfaces |
+| Midnight | soft | dark only | `#0F1117` / `#9DB8FF` | Always dark |
+| Pixel | pixel | `#EDEBDD` / `#3D5AFE` | `#101226` / `#8FA2FF` | Square corners, notched pixel outlines, Silkscreen headings |
+| Sketch | sketch | `#FBFAF5` / `#FFE066` | `#1F2A27` / `#FFE066` | Hand-drawn outlines (deterministic per item), Caveat headings |
+| Custom color | soft | generated | generated | The user's hue, contrast-checked |
+
+Tests (`test/app/theme_catalog_test.dart`) require every text pair in every palette to reach 4.5:1, selected pills 3:1 against their surroundings, and Custom palettes to pass at every 15° hue step.
+
 ### Contrast policy
 
 Opaque text/background pairings must meet the text-contrast targets in the product specification. Transparent widgets are an explicit exception in capability, not an accessibility claim: arbitrary wallpaper is unknown, so a fixed translucent fill cannot guarantee contrast.
@@ -179,6 +201,8 @@ Use the native system font deliberately. In Flutter, inherit the platform theme 
 - Room, professor and subtitle: body or caption depending on density, not illegibly small text.
 - Time column: `time`, aligned consistently and not distinguished by color alone.
 - User font scaling takes precedence over the nominal sizes above. At large sizes, wrap, expand or switch to an agenda layout instead of clipping essential content.
+
+Display fonts appear only in headings (page title, greeting, the Next card title, theme names in the picker and themed widget titles). They never appear in body text, schedule details, form fields, buttons or numbers that must be read precisely.
 
 Do not reduce all upcoming-entry text opacity until it becomes unreadable. The next entry should be stronger; upcoming entries must still be legible.
 
@@ -202,6 +226,7 @@ Do not reduce all upcoming-entry text opacity until it becomes unreadable. The n
 5. No artificial glowing frame, thick stroke, shimmer or perpetual animation.
 6. Date-only entries use an explicit date/all-day label rather than an invented time.
 7. A widget tap opens existing schedule details; it never creates a schedule or enables an alert.
+8. **Use app theme** (per widget; on for new installs, off after upgrading so existing widgets keep their look): holders take the theme's accent (Next) or category fills, its outline and its heading font, at the computed opacity for the chosen surface. The widget follows the phone's night mode with the theme's light or dark palette (Android 12+ switches immediately; Android 8–11 at the next widget update). Holder opacity uses the more opaque of the two palettes so both stay readable. Hard shadows appear only on solid holders, because a translucent holder would show the shadow through it. The root stays transparent in every theme, so the wallpaper is never replaced.
 
 Widget reading order must expose the actual date/time, Now/Next or review status, title and permitted visible details without depending on holder brightness. In a constrained family, remove optional details or show fewer entries before clipping essential content; the app remains the accessible route to full details. Appearance previews use actual saved data or an honest empty state over a labelled neutral preview backdrop, not invented schedules or a copy of the user's wallpaper. A readable preview does not certify Clear mode over arbitrary wallpaper.
 
@@ -222,7 +247,8 @@ Use a thin outline or a subtle text shadow only when it improves separation. Do 
 - Bottom sheets: `rounded.sheet`, with native presentation behavior where practical.
 - Pills: filters and selected states, not every label.
 - Native widget outer shape: obey the host's clipping and corner behavior rather than assuming an arbitrary app radius.
-- Widget holder radius: proposed 16 logical units, subject to native sizing and clipping tests.
+- Widget holder radius: proposed 16 logical units, subject to native sizing and clipping tests. Themed holders: soft 16, pop 14, sketch 18, pixel square with 3-unit notched corners.
+- Style families: **soft** uses the theme radius and no outline; **pop** adds a 2-unit ink outline and a hard 3-unit offset shadow; **pixel** uses square, notched outlines; **sketch** draws a slightly irregular hand-drawn outline that is stable for each item, so it never jitters between frames.
 
 ## Components
 
@@ -253,6 +279,12 @@ Keep the sender snapshot separate from recipient edits. Show one primary action 
 ### Appearance controls
 
 Start with a small set of tested presets. App and each widget can share appearance settings or be configured independently. Hide or explain unavailable native options. Separate app colors from the system's control of native widget glass/tint.
+
+**Settings → Appearance** shows the eight themes as a grid of small swatches (the theme's canvas, two category cards and its accent, with the theme name in its heading font), each labelled "*Name* theme" for screen readers. A choice applies at once and is saved. Custom color reveals one hue slider; there is no free color picker, so text stays readable.
+
+### Profile
+
+An optional, local-only name (up to 40 characters) and photo personalize the Today greeting. The photo is cropped (round mask; square in Pixel), re-encoded as a 512×512 JPEG without metadata and stored in the app's private folder. The profile is never uploaded, shared or written into the widget snapshot; with no profile, the greeting simply has no name and no avatar. Deleting local data offers **Also remove profile name and photo**.
 
 ### SVG assets
 
@@ -300,3 +332,5 @@ Approved concise state labels include **No schedules yet**, **No schedules in th
 - Indicate that an alarm is scheduled merely because an external Clock intent was sent.
 - Add missing dates, room numbers or professors to make an imported card look complete.
 - Ship unsupported controls, unlimited styling options or a misleadingly universal glass slider.
+- Use a display font for schedule details, form fields or precise numbers.
+- Let a theme change copy, layout, flows or what data is shown.

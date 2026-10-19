@@ -11,11 +11,15 @@ import '../domain/widget_config.dart';
 
 const widgetSnapshotKey = 'schediel_widget_snapshot';
 const widgetSnapshotVersion = '1.0';
+
+/// Additive version carrying the app theme (design 2026-10-18 §8.2).
+const widgetSnapshotThemedVersion = '1.1';
 const widgetMaxOccurrences = 24;
 const widgetCoverageDays = 7;
 
 /// Serializes committed occurrences and per-widget settings into the native
-/// widget snapshot (contracts/schemas/widget-snapshot-v1.schema.json).
+/// widget snapshot (contracts/schemas/widget-snapshot-v1.schema.json; with a
+/// [theme], version 1.1 per widget-snapshot-v1_1.schema.json).
 class WidgetSnapshotBuilder {
   WidgetSnapshotBuilder(this.zones, this.engine);
 
@@ -30,7 +34,10 @@ class WidgetSnapshotBuilder {
     required int dataRevision,
     required bool use24h,
     bool appIsDark = false,
+    Map<String, Object?>? theme,
+    Map<String, String?> categoryColors = const {},
   }) {
+    final themed = theme != null;
     final utcNow = now.toUtc();
     final today = zones.localDateOf(utcNow, zone);
     final windowStart = zones.startOfDay(today, zone);
@@ -63,13 +70,20 @@ class WidgetSnapshotBuilder {
           'surface': config.surface.name,
           'textTone': (config.matchApp ? (appIsDark ? WidgetTextTone.light : WidgetTextTone.dark) : config.textTone).name,
           'nextEmphasis': config.nextEmphasis,
+          if (themed) 'useAppTheme': config.useAppTheme,
           'visibleDetails': {
             'location': config.showLocation,
             'professor': config.showProfessor,
             'subtitle': config.showSubtitle,
           },
         },
-        'occurrences': [for (final o in upcoming) _occurrence(o, config, zone, use24h)],
+        'occurrences': [
+          for (final o in upcoming)
+            {
+              ..._occurrence(o, config, zone, use24h),
+              if (themed) 'categoryColor': categoryColors[o.categoryId],
+            },
+        ],
         'emptyReason': series.isEmpty
             ? 'noSchedules'
             : visible.isEmpty
@@ -87,12 +101,13 @@ class WidgetSnapshotBuilder {
     }
 
     return {
-      'schemaVersion': widgetSnapshotVersion,
+      'schemaVersion': themed ? widgetSnapshotThemedVersion : widgetSnapshotVersion,
       'dataRevision': dataRevision,
       'generatedAt': utcNow.toIso8601String(),
       'deviceTimeZone': zone,
       'coverageEnd': coverageEnd.toIso8601String(),
       'widgets': widgets,
+      'theme': ?theme,
     };
   }
 

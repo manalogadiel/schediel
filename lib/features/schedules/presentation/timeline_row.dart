@@ -5,14 +5,17 @@ import '../../../app/format.dart';
 import '../../../app/icons.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../app/theme/schediel_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
+import '../../../app/widgets/themed.dart';
 import '../../../core/schedule/occurrence.dart';
 import 'occurrence_sheet.dart';
 
 enum RowEmphasis { now, next, normal, past }
 
-/// One timeline entry: time, title, then only the details that exist.
+/// One timeline entry: a time column and a card filled with the category's
+/// theme color, showing the title and only the details that exist.
 class TimelineRow extends ConsumerWidget {
   const TimelineRow({
     super.key,
@@ -28,6 +31,7 @@ class TimelineRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.scheduleColors;
+    final p = colors.palette;
     final text = Theme.of(context).textTheme;
     final f = Formats.of(context);
     final zones = ref.watch(zoneResolverProvider);
@@ -35,7 +39,6 @@ class TimelineRow extends ConsumerWidget {
     final category = ref.watch(categoryByIdProvider(occurrence.categoryId));
     final compact = colors.density == Density.compact;
     final past = emphasis == RowEmphasis.past;
-    final ink = past ? colors.secondaryInk : colors.ink;
 
     String primaryTime;
     String? secondaryTime;
@@ -76,68 +79,116 @@ class TimelineRow extends ConsumerWidget {
       if (past) 'Ended',
     ].join(', ');
 
-    final content = Padding(
-      padding: EdgeInsets.symmetric(horizontal: Tokens.md, vertical: compact ? 10 : 14),
-      child: Row(
+    // Past entries step back to the neutral fill; text stays readable.
+    final fill = past ? p.neutralFill : colors.categoryFill(category?.colorKey);
+    final ink = p.cardInk;
+    final detailStyle = text.bodySmall?.copyWith(color: ink);
+
+    double? elapsed;
+    if (emphasis == RowEmphasis.now && timing is TimedTiming && timing.endUtc != null) {
+      final total = timing.endUtc!.difference(timing.startUtc).inSeconds;
+      final done = ref.watch(nowProvider).toUtc().difference(timing.startUtc).inSeconds;
+      if (total > 0) elapsed = (done / total).clamp(0.0, 1.0);
+    }
+
+    final card = ThemedCard(
+      fill: fill,
+      seed: occurrence.id,
+      emphasized: emphasis == RowEmphasis.now || emphasis == RowEmphasis.next,
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: compact ? 10 : 14),
+      onTap: () => showOccurrenceSheet(context, occurrence),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 76,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(primaryTime, style: timeStyle(context).copyWith(color: ink)),
-                if (secondaryTime != null)
-                  Text(secondaryTime, style: timeStyle(context).copyWith(color: colors.secondaryInk, fontWeight: FontWeight.w400)),
-              ],
+          if (label != null) Padding(padding: const EdgeInsets.only(bottom: 6), child: ThemedPill(label: label, emphasized: true)),
+          Text(
+            occurrence.title,
+            style: text.titleMedium?.copyWith(
+              color: ink,
+              fontWeight: emphasis == RowEmphasis.next || emphasis == RowEmphasis.now ? FontWeight.w700 : FontWeight.w600,
             ),
           ),
-          const SizedBox(width: Tokens.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (label != null)
-                  Padding(padding: const EdgeInsets.only(bottom: 4), child: StatusLabel(label, strong: emphasis == RowEmphasis.now || emphasis == RowEmphasis.next)),
-                Text(
-                  occurrence.title,
-                  style: text.titleMedium?.copyWith(
-                    color: ink,
-                    fontWeight: emphasis == RowEmphasis.next || emphasis == RowEmphasis.now ? FontWeight.w700 : FontWeight.w600,
-                  ),
+          if (details.location != null) DetailLine(icon: AppIcons.location, text: details.location!, style: detailStyle),
+          if (details.professor != null) DetailLine(icon: AppIcons.person, text: details.professor!, style: detailStyle),
+          if (details.subtitle != null) DetailLine(icon: AppIcons.text, text: details.subtitle!, style: detailStyle),
+          if (sourceNote != null) DetailLine(icon: AppIcons.time, text: sourceNote, style: detailStyle),
+          if (timing is UnresolvedTiming) DetailLine(icon: AppIcons.warning, text: 'Needs time review', style: detailStyle),
+          if (overlaps) DetailLine(icon: AppIcons.warning, text: 'Overlaps another schedule', style: detailStyle),
+          if (category != null) Padding(padding: const EdgeInsets.only(top: 8), child: _CategoryTag(name: category.name, ink: ink)),
+          if (elapsed != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(colors.style == StyleFamily.pixel ? 0 : 3),
+                child: LinearProgressIndicator(
+                  key: const ValueKey('elapsed-bar'),
+                  value: elapsed,
+                  minHeight: 5,
+                  color: ink,
+                  backgroundColor: ink.withValues(alpha: 0.15),
                 ),
-                if (details.location != null) DetailLine(icon: AppIcons.location, text: details.location!),
-                if (details.professor != null) DetailLine(icon: AppIcons.person, text: details.professor!),
-                if (details.subtitle != null) DetailLine(icon: AppIcons.text, text: details.subtitle!),
-                if (category != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Row(children: [
-                      CategoryDot(colorKey: category.colorKey),
-                      Flexible(child: Text(category.name, style: text.labelSmall)),
-                    ]),
-                  ),
-                if (sourceNote != null) DetailLine(icon: AppIcons.time, text: sourceNote),
-                if (timing is UnresolvedTiming) DetailLine(icon: AppIcons.warning, text: 'Needs time review'),
-                if (overlaps) DetailLine(icon: AppIcons.warning, text: 'Overlaps another schedule'),
-              ],
+              ),
             ),
-          ),
         ],
       ),
     );
 
+    final timeColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(primaryTime, style: timeStyle(context).copyWith(color: past ? colors.secondaryInk : colors.ink, fontWeight: FontWeight.w700)),
+        if (secondaryTime != null)
+          Text(secondaryTime, style: timeStyle(context).copyWith(color: colors.secondaryInk, fontWeight: FontWeight.w400)),
+      ],
+    );
+
+    // Large text stacks the time above the card instead of squeezing both.
+    final stacked = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
     return Semantics(
       button: true,
       label: semantics,
       excludeSemantics: true,
-      child: Material(
-        color: emphasis == RowEmphasis.next ? colors.nextHolder : Colors.transparent,
-        child: InkWell(
-          onTap: () => showOccurrenceSheet(context, occurrence),
-          child: content,
-        ),
+      onTap: () => showOccurrenceSheet(context, occurrence),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: compact ? 8 : 12),
+        child: stacked
+            ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Padding(padding: const EdgeInsets.only(bottom: 6, left: 2), child: timeColumn),
+                card,
+              ])
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(width: 68, child: Padding(padding: const EdgeInsets.only(top: 12), child: timeColumn)),
+                  const SizedBox(width: Tokens.xs),
+                  Expanded(child: card),
+                ],
+              ),
       ),
+    );
+  }
+}
+
+class _CategoryTag extends StatelessWidget {
+  const _CategoryTag({required this.name, required this.ink});
+
+  final String name;
+  final Color ink;
+
+  @override
+  Widget build(BuildContext context) {
+    final pixel = context.scheduleColors.style == StyleFamily.pixel;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(pixel ? 0 : Tokens.radiusPill),
+        border: Border.all(color: ink.withValues(alpha: 0.45)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        AppIcon(AppIcons.category, size: 12, color: ink),
+        const SizedBox(width: 4),
+        Flexible(child: Text(name, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, height: 1.3, color: ink))),
+      ]),
     );
   }
 }

@@ -3,43 +3,65 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
+import 'schediel_theme.dart';
 import 'tokens.dart';
 
-/// Extra semantic colors the timeline needs beyond ColorScheme.
+/// Theme-driven colors, shapes and type the screens need beyond ColorScheme.
 @immutable
 class ScheduleColors extends ThemeExtension<ScheduleColors> {
   const ScheduleColors({
-    required this.canvas,
-    required this.surface,
-    required this.ink,
-    required this.secondaryInk,
-    required this.divider,
+    required this.palette,
+    required this.style,
+    required this.radius,
+    required this.displayFont,
+    required this.displayWeight,
     required this.inputBoundary,
+    required this.accentText,
     required this.nextHolder,
     required this.density,
     required this.showCategoryColors,
   });
 
-  final Color canvas;
-  final Color surface;
-  final Color ink;
-  final Color secondaryInk;
-  final Color divider;
+  final ThemePalette palette;
+  final StyleFamily style;
+
+  /// Card corner radius (0 for pixel).
+  final double radius;
+  final String? displayFont;
+  final FontWeight displayWeight;
   final Color inputBoundary;
 
-  /// Subtle accent wash marking the next schedule.
+  /// The accent when it is readable as text on surfaces, otherwise ink
+  /// (Pop and Sketch use a light highlighter accent).
+  final Color accentText;
+
+  /// Accent wash marking the next schedule.
   final Color nextHolder;
   final Density density;
   final bool showCategoryColors;
 
+  Color get canvas => palette.canvas;
+  Color get surface => palette.surface;
+  Color get ink => palette.ink;
+  Color get secondaryInk => palette.secondaryInk;
+  Color get divider => palette.divider;
+
+  /// Card fill for a category color key; neutral when colors are off or the
+  /// key is unknown.
+  Color categoryFill(String? colorKey) => showCategoryColors ? palette.fillFor(colorKey) : palette.neutralFill;
+
+  /// Styles with drawn outlines (pop, pixel, sketch).
+  bool get outlined => style != StyleFamily.soft;
+
   @override
   ScheduleColors copyWith({Density? density, bool? showCategoryColors}) => ScheduleColors(
-        canvas: canvas,
-        surface: surface,
-        ink: ink,
-        secondaryInk: secondaryInk,
-        divider: divider,
+        palette: palette,
+        style: style,
+        radius: radius,
+        displayFont: displayFont,
+        displayWeight: displayWeight,
         inputBoundary: inputBoundary,
+        accentText: accentText,
         nextHolder: nextHolder,
         density: density ?? this.density,
         showCategoryColors: showCategoryColors ?? this.showCategoryColors,
@@ -48,30 +70,41 @@ class ScheduleColors extends ThemeExtension<ScheduleColors> {
   @override
   ScheduleColors lerp(ThemeExtension<ScheduleColors>? other, double t) {
     if (other is! ScheduleColors) return this;
-    return ScheduleColors(
-      canvas: Color.lerp(canvas, other.canvas, t)!,
-      surface: Color.lerp(surface, other.surface, t)!,
-      ink: Color.lerp(ink, other.ink, t)!,
-      secondaryInk: Color.lerp(secondaryInk, other.secondaryInk, t)!,
-      divider: Color.lerp(divider, other.divider, t)!,
-      inputBoundary: Color.lerp(inputBoundary, other.inputBoundary, t)!,
-      nextHolder: Color.lerp(nextHolder, other.nextHolder, t)!,
-      density: t < 0.5 ? density : other.density,
-      showCategoryColors: t < 0.5 ? showCategoryColors : other.showCategoryColors,
-    );
+    // Palettes, shapes and fonts switch at the midpoint; ThemeData itself
+    // cross-fades the scheme colors.
+    return t < 0.5 ? this : other;
   }
 }
 
 extension ScheduleThemeContext on BuildContext {
   ScheduleColors get scheduleColors => Theme.of(this).extension<ScheduleColors>()!;
+
+  /// Preferred short name for new code.
+  ScheduleColors get schediel => scheduleColors;
 }
 
-/// Text styles from the DESIGN.md typography tokens. The platform system
-/// font is inherited; no font files are bundled.
-TextTheme _textTheme(Color ink, Color secondaryInk) {
+/// The app's theme mode: Midnight has no light variant.
+ThemeMode effectiveThemeMode(SchedielTheme theme, ThemeMode mode) => theme.darkOnly ? ThemeMode.dark : mode;
+
+/// Text styles from the DESIGN.md typography tokens. Body text always uses the
+/// platform font; only display styles take the theme's bundled display font.
+TextTheme _textTheme(SchedielTheme theme, Color ink, Color secondaryInk) {
+  final font = theme.displayFont;
+  // Caveat runs small and Silkscreen wide; scale so headings keep their size.
+  final scale = switch (font) { 'Caveat' => 1.25, 'Silkscreen' => 0.82, _ => 1.0 };
+  final weight = switch (font) { null => theme.displayWeight, 'Caveat' => FontWeight.w700, _ => FontWeight.w400 };
+  TextStyle display(double size, double height, double tracking) => TextStyle(
+        fontFamily: font,
+        fontSize: size * scale,
+        fontWeight: weight,
+        height: height,
+        letterSpacing: font == null ? tracking : 0,
+        color: ink,
+      );
   return TextTheme(
-    headlineMedium: TextStyle(fontSize: 30, fontWeight: FontWeight.w600, height: 1.15, letterSpacing: -0.6, color: ink),
-    titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, height: 1.25, letterSpacing: -0.22, color: ink),
+    headlineLarge: display(34, 1.1, -0.8),
+    headlineMedium: display(30, 1.15, -0.6),
+    titleLarge: display(22, 1.25, -0.22),
     titleMedium: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, height: 1.4, color: ink),
     bodyLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w400, height: 1.45, color: ink),
     bodyMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.4, color: ink),
@@ -91,28 +124,41 @@ TextStyle timeStyle(BuildContext context) => TextStyle(
       color: context.scheduleColors.ink,
     );
 
+/// Whichever of [a] or [b] reads better on [background].
+Color _readableOn(Color background, Color a, Color b) =>
+    contrastRatio(a, background) >= contrastRatio(b, background) ? a : b;
+
 ThemeData buildTheme({
+  required SchedielTheme theme,
   required Brightness brightness,
-  required AccentPreset accent,
   required Density density,
   required bool showCategoryColors,
 }) {
-  final dark = brightness == Brightness.dark;
-  final pair = dark ? accent.dark : accent.light;
-  final canvas = dark ? Tokens.darkCanvas : Tokens.neutral;
-  final surface = dark ? Tokens.darkSurface : Tokens.surface;
-  final ink = dark ? Tokens.darkInk : Tokens.primary;
-  final secondaryInk = dark ? Tokens.darkSecondary : Tokens.secondary;
-  final divider = dark ? Tokens.darkDivider : Tokens.divider;
-  final boundary = dark ? Tokens.darkInputBoundary : Tokens.inputBoundary;
+  final p = theme.palette(brightness);
+  final dark = p.brightness == Brightness.dark;
+  final canvas = p.canvas;
+  final surface = p.surface;
+  final ink = p.ink;
+  final secondaryInk = p.secondaryInk;
+  final divider = p.divider;
+  // Non-text boundaries need 3:1; accent-colored text needs 4.5:1.
+  final softBoundary = Color.lerp(secondaryInk, surface, 0.3)!;
+  final boundary = contrastRatio(softBoundary, surface) >= 3 ? softBoundary : secondaryInk;
+  final accentText = contrastRatio(p.accent, surface) >= 4.5 && contrastRatio(p.accent, canvas) >= 4.5 ? p.accent : ink;
+  final accentMark = contrastRatio(p.accent, surface) >= 3 ? p.accent : ink;
   final error = dark ? Tokens.darkError : Tokens.error;
+  final pixel = theme.style == StyleFamily.pixel;
+  final controlRadius = pixel ? 0.0 : Tokens.radiusControl;
+  final outlined = theme.style != StyleFamily.soft;
+  final outline = BorderSide(color: p.outline, width: 2);
+  final side = outlined ? outline : BorderSide(color: boundary);
 
   final scheme = ColorScheme(
-    brightness: brightness,
-    primary: pair.accent,
-    onPrimary: pair.onAccent,
-    secondary: pair.accent,
-    onSecondary: pair.onAccent,
+    brightness: p.brightness,
+    primary: p.accent,
+    onPrimary: p.onAccent,
+    secondary: p.accent,
+    onSecondary: p.onAccent,
     error: error,
     onError: dark ? const Color(0xFF410002) : Colors.white,
     surface: surface,
@@ -126,12 +172,14 @@ ThemeData buildTheme({
     surfaceContainerHigh: surface,
     surfaceContainerHighest: surface,
   );
-  final text = _textTheme(ink, secondaryInk);
-  final controlShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Tokens.radiusControl));
+  final text = _textTheme(theme, ink, secondaryInk);
+  final controlShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(controlRadius));
+  final selectedWash = outlined ? p.accent : p.accent.withValues(alpha: dark ? 0.26 : 0.14);
+  final onSelectedWash = outlined ? p.onAccent : ink;
 
   return ThemeData(
     useMaterial3: true,
-    brightness: brightness,
+    brightness: p.brightness,
     colorScheme: scheme,
     scaffoldBackgroundColor: canvas,
     canvasColor: canvas,
@@ -150,23 +198,34 @@ ThemeData buildTheme({
       titleTextStyle: text.titleMedium,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: surface,
+      backgroundColor: p.navBackground,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: pair.accent.withValues(alpha: dark ? 0.22 : 0.12),
+      indicatorColor: p.navSelected,
       elevation: 0,
       height: 64,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(color: states.contains(WidgetState.selected) ? p.navOnSelected : p.navInk),
+      ),
       labelTextStyle: WidgetStateProperty.resolveWith(
         (states) => TextStyle(
           fontSize: 12,
           fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
-          color: states.contains(WidgetState.selected) ? ink : secondaryInk,
+          color: p.navInk,
         ),
       ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: p.accent,
+      foregroundColor: p.onAccent,
+      elevation: outlined ? 0 : 2,
+      shape: pixel ? RoundedRectangleBorder(side: outline) : CircleBorder(side: outlined ? outline : BorderSide.none),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(Tokens.minTarget, Tokens.minTarget),
-        shape: controlShape,
+        shape: controlShape.copyWith(side: outlined ? outline : BorderSide.none),
+        backgroundColor: p.accent,
+        foregroundColor: p.onAccent,
         textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         padding: const EdgeInsets.symmetric(horizontal: Tokens.md, vertical: 12),
       ),
@@ -175,7 +234,7 @@ ThemeData buildTheme({
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(Tokens.minTarget, Tokens.minTarget),
         shape: controlShape,
-        side: BorderSide(color: boundary),
+        side: side,
         foregroundColor: ink,
         textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
       ),
@@ -184,7 +243,7 @@ ThemeData buildTheme({
       style: TextButton.styleFrom(
         minimumSize: const Size(Tokens.minTarget, Tokens.minTarget),
         shape: controlShape,
-        foregroundColor: pair.accent,
+        foregroundColor: accentText,
         textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
       ),
     ),
@@ -198,53 +257,54 @@ ThemeData buildTheme({
       filled: true,
       fillColor: surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: Tokens.md, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Tokens.radiusControl),
-        borderSide: BorderSide(color: boundary),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Tokens.radiusControl),
-        borderSide: BorderSide(color: boundary),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(controlRadius), borderSide: side),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(controlRadius), borderSide: side),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Tokens.radiusControl),
-        borderSide: BorderSide(color: pair.accent, width: 2),
+        borderRadius: BorderRadius.circular(controlRadius),
+        borderSide: BorderSide(color: accentMark, width: 2.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Tokens.radiusControl),
+        borderRadius: BorderRadius.circular(controlRadius),
         borderSide: BorderSide(color: error),
       ),
       labelStyle: TextStyle(color: secondaryInk),
       hintStyle: TextStyle(color: secondaryInk),
     ),
     chipTheme: ChipThemeData(
-      shape: const StadiumBorder(),
-      side: BorderSide(color: boundary),
+      shape: pixel ? const RoundedRectangleBorder() : const StadiumBorder(),
+      side: side,
       backgroundColor: surface,
-      selectedColor: pair.accent.withValues(alpha: dark ? 0.26 : 0.14),
+      selectedColor: selectedWash,
       labelStyle: TextStyle(fontSize: 15, color: ink),
+      secondaryLabelStyle: TextStyle(fontSize: 15, color: onSelectedWash),
       showCheckmark: true,
-      checkmarkColor: ink,
+      checkmarkColor: onSelectedWash,
     ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: surface,
       surfaceTintColor: Colors.transparent,
       showDragHandle: true,
       dragHandleColor: divider,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(Tokens.radiusSheet)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(pixel ? 0 : Tokens.radiusSheet)),
+        side: outlined ? outline : BorderSide.none,
       ),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: surface,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Tokens.radiusCard)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(theme.radius),
+        side: outlined ? outline : BorderSide.none,
+      ),
       titleTextStyle: text.titleMedium,
       contentTextStyle: text.bodyMedium,
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Tokens.radiusControl)),
+      backgroundColor: p.navBackground,
+      contentTextStyle: TextStyle(fontSize: 15, color: _readableOn(p.navBackground, p.navInk, surface)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(controlRadius)),
     ),
     switchTheme: SwitchThemeData(
       trackOutlineColor: WidgetStateProperty.resolveWith(
@@ -254,9 +314,14 @@ ThemeData buildTheme({
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
         minimumSize: const Size(Tokens.minTarget, 40),
-        side: BorderSide(color: boundary),
-        selectedBackgroundColor: pair.accent.withValues(alpha: dark ? 0.26 : 0.14),
-        selectedForegroundColor: ink,
+        side: side,
+        shape: controlShape,
+        // Unselected labels use ink: some accents (Pop, Sketch yellow) are
+        // fills, not text colors.
+        foregroundColor: ink,
+        backgroundColor: Colors.transparent,
+        selectedBackgroundColor: selectedWash,
+        selectedForegroundColor: onSelectedWash,
       ),
     ),
     listTileTheme: ListTileThemeData(
@@ -272,13 +337,14 @@ ThemeData buildTheme({
     ),
     extensions: [
       ScheduleColors(
-        canvas: canvas,
-        surface: surface,
-        ink: ink,
-        secondaryInk: secondaryInk,
-        divider: divider,
+        palette: p,
+        style: theme.style,
+        radius: theme.radius,
+        displayFont: theme.displayFont,
+        displayWeight: theme.displayWeight,
         inputBoundary: boundary,
-        nextHolder: pair.accent.withValues(alpha: dark ? 0.20 : 0.09),
+        accentText: accentText,
+        nextHolder: outlined ? p.accent : p.accent.withValues(alpha: dark ? 0.20 : 0.10),
         density: density,
         showCategoryColors: showCategoryColors,
       ),

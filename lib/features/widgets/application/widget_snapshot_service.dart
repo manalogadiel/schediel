@@ -9,7 +9,9 @@ import 'package:home_widget/home_widget.dart';
 import '../../../app/providers.dart';
 import '../../appearance/appearance.dart';
 import '../data/widget_config_repository.dart';
+import '../../../app/theme/schediel_theme.dart';
 import '../domain/widget_config.dart';
+import '../domain/widget_theme.dart';
 import 'widget_snapshot_builder.dart';
 
 const androidWidgetProvider = 'com.manalogadiel.schediel.widget.ScheduleWidgetProvider';
@@ -85,28 +87,47 @@ class WidgetSnapshotService {
   final Ref _ref;
 
   Future<String> refresh() async {
-    final series = await _ref.read(scheduleRepositoryProvider).loadAll();
-    final configs = await _ref.read(widgetConfigRepositoryProvider).loadAll();
-    final revision = await _ref.read(databaseProvider).dataRevision();
+    // Capture everything from the container before awaiting: the provider
+    // may be disposed (app shutdown, tests) while loads are in flight.
     final appearance = _ref.read(appearanceProvider);
+    final scheduleRepository = _ref.read(scheduleRepositoryProvider);
+    final configRepository = _ref.read(widgetConfigRepositoryProvider);
+    final categoryRepository = _ref.read(categoryRepositoryProvider);
+    final database = _ref.read(databaseProvider);
+    final builder = _ref.read(widgetSnapshotBuilderProvider);
+    final writer = _ref.read(widgetSnapshotWriterProvider);
+    final now = _ref.read(clockProvider)();
+    final zone = _ref.read(deviceZoneProvider);
+    final last = _ref.read(lastWidgetSnapshotProvider.notifier);
+
+    final series = await scheduleRepository.loadAll();
+    final configs = await configRepository.loadAll();
+    final revision = await database.dataRevision();
+    final categories = await categoryRepository.loadAll();
     final platformDark = PlatformDispatcher.instance.platformBrightness == Brightness.dark;
     final appIsDark = switch (appearance.themeMode.name) {
       'dark' => true,
       'light' => false,
       _ => platformDark,
-    };
-    final snapshot = _ref.read(widgetSnapshotBuilderProvider).build(
-          series: series,
-          configs: configs,
-          now: _ref.read(clockProvider)(),
-          zone: _ref.read(deviceZoneProvider),
-          dataRevision: revision,
-          use24h: PlatformDispatcher.instance.alwaysUse24HourFormat,
-          appIsDark: appIsDark,
-        );
+    } || appearance.schedielTheme.darkOnly;
+    final snapshot = builder.build(
+      series: series,
+      configs: configs,
+      now: now,
+      zone: zone,
+      dataRevision: revision,
+      use24h: PlatformDispatcher.instance.alwaysUse24HourFormat,
+      appIsDark: appIsDark,
+      theme: widgetThemeJson(appearance.schedielTheme, appearance.themeMode),
+      // With category colors off, holders use the neutral fill.
+      categoryColors: {
+        for (final c in categories)
+          if (appearance.showCategoryColors && CategoryColorKey.fromKey(c.colorKey) != null) c.id: c.colorKey,
+      },
+    );
     final json = jsonEncode(snapshot);
-    await _ref.read(widgetSnapshotWriterProvider).write(json);
-    _ref.read(lastWidgetSnapshotProvider.notifier).set(json);
+    await writer.write(json);
+    if (_ref.mounted) last.set(json);
     return json;
   }
 }

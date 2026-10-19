@@ -1,6 +1,6 @@
 # Schediel
 
-Offline-first Flutter scheduling app for Android and iOS. Repeating schedules, room/professor/subtitle details, Today and Week, categories, native home-screen widgets, optional reminders/alarms, image review and preview-first share links.
+Offline-first Flutter scheduling app for Android and iOS. Repeating schedules, room/professor/subtitle details, Today and Week, categories, native home-screen widgets, optional reminders/alarms, image review and preview-first share links. Eight themes (Lilac, Clay, Pop, Mint, Midnight, Pixel, Sketch, Custom color) and an optional local profile; home-screen widgets can follow the app theme.
 
 **Development build, not release-certified.** Android debug compilation and local automated tests are recorded in [VALIDATION.md](VALIDATION.md). No backend or share domain is deployed. iOS code has not been built on a Mac; the WidgetKit target still requires the documented Xcode setup. Real-device checks remain mandatory.
 
@@ -45,6 +45,21 @@ The backend stores only the selected snapshot and the secret's digest; it is not
 
 No real project, domain, certificate fingerprint, Apple team ID, region, credentials or recovery promise is fabricated in this repository. A local test pass is not production security approval.
 
+## Themes, profile and widgets
+
+Settings → Appearance switches the theme at once; Custom color has one hue slider and is contrast-checked. Settings → Profile holds an optional name and photo, stored only on the device. Pixel and Sketch use two bundled display fonts (Silkscreen, Caveat; SIL Open Font License, see `assets/fonts/`) for headings only.
+
+To place the widget on Android: open the app once, long-press the home screen → Widgets → Schediel → Schedules. Per-widget settings, including **Use app theme**, are under Settings → Home screen widgets. The widget sits on your wallpaper; it never replaces it.
+
+The themed widget layouts and shapes are generated; after editing `tools/gen_widget_layouts.py` run:
+
+```sh
+python3 tools/gen_widget_layouts.py            # writes android/app/src/main/res/{layout,drawable,font}
+python3 tools/gen_widget_layouts.py --check    # also run by flutter test
+python tools/check_widget_contracts.py         # needs the jsonschema package
+UPDATE_FIXTURES=1 flutter test test/contracts/widget_snapshot_v1_1_fixture_test.dart   # after changing palettes
+```
+
 ## Image import
 
 Gallery/camera selection is explicit. JPEG/PNG admission, metadata removal, crop/rotation and bounded normalization precede on-device OCR. Extracted fields remain inactive drafts; unknown year, date order, AM/PM, time zone, semester bounds and row associations must be resolved, not guessed. Selected entries remain editable before one explicit local import transaction. Notifications and alarms start off.
@@ -62,7 +77,7 @@ This conservative parser does not claim to understand every timetable or every s
 ## Specifications
 
 - [SCHEDULER_SPEC.md](SCHEDULER_SPEC.md): scope, behavior, traceability and release gates.
-- [DESIGN.md](DESIGN.md): minimal Apple-inspired tokens, accessibility and motion requirements.
+- [DESIGN.md](DESIGN.md): minimal Apple-inspired tokens, themes, accessibility and motion requirements.
 - [CONTRACTS.md](CONTRACTS.md): domain and integration contracts; machine artifacts in `contracts/` are authoritative.
 - [SOURCES.md](SOURCES.md): primary-source register and limits of its claims.
 - [VALIDATION.md](VALIDATION.md): executed checks and unverified behavior.
