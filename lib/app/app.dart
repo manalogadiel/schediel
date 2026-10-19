@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -87,11 +88,11 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
     });
     final selected = appearance.schedielTheme;
     ThemeData theme(Brightness b) => buildTheme(
-          theme: selected,
-          brightness: b,
-          density: appearance.density,
-          showCategoryColors: appearance.showCategoryColors,
-        );
+      theme: selected,
+      brightness: b,
+      density: appearance.density,
+      showCategoryColors: appearance.showCategoryColors,
+    );
     return MaterialApp.router(
       title: 'Schediel',
       debugShowCheckedModeBanner: false,
@@ -106,6 +107,20 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
       routerConfig: router,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('en')],
+      builder: (context, child) {
+        final colors = context.scheduleColors;
+        final chrome = Theme.of(context).brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: chrome.copyWith(
+            statusBarColor: Colors.transparent,
+            systemNavigationBarColor: colors.canvas,
+            systemNavigationBarDividerColor: Colors.transparent,
+            systemNavigationBarContrastEnforced: false,
+            systemStatusBarContrastEnforced: false,
+          ),
+          child: ColoredBox(color: colors.canvas, child: child!),
+        );
+      },
     );
   }
 }
