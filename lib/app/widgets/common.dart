@@ -119,7 +119,27 @@ class _GroupSurface extends StatelessWidget {
   }
 }
 
-/// A genuine empty or problem state: one line of copy and an optional action.
+/// A named setting/category uses color as a secondary cue, never alone.
+class SoftIcon extends StatelessWidget {
+  const SoftIcon(this.icon, {super.key, this.colorKey});
+  final AppIcons icon;
+  final String? colorKey;
+  @override
+  Widget build(BuildContext context) {
+    final c = context.scheduleColors;
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: colorKey == null ? c.palette.accent.withValues(alpha: 0.10) : c.categoryFill(colorKey),
+        borderRadius: BorderRadius.circular(c.style == StyleFamily.pixel ? 0 : Tokens.radiusControl),
+      ),
+      child: Center(child: AppIcon(icon, color: colorKey == null ? c.accentText : c.palette.cardInk)),
+    );
+  }
+}
+
+/// Original decorative calendar and clock for an empty schedule.
 class ScheduleEmptyArt extends StatelessWidget {
   const ScheduleEmptyArt({super.key});
 

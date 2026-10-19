@@ -29,6 +29,7 @@ enum AppIcons {
   link('link'),
   warning('triangle-alert'),
   category('tag'),
+  folder('folder-soft'),
   grid('layout-grid'),
   agenda('list'),
   restore('rotate-ccw'),

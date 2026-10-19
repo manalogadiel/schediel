@@ -15,6 +15,10 @@ class LabeledField extends StatelessWidget {
     this.enabled = true,
     this.autofocus = false,
     this.prefixIcon,
+    this.onChanged,
+    this.onSubmitted,
+    this.textCapitalization = TextCapitalization.sentences,
+    this.textInputAction,
   });
 
   final String label;
@@ -24,6 +28,10 @@ class LabeledField extends StatelessWidget {
   final bool enabled;
   final bool autofocus;
   final Widget? prefixIcon;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final TextCapitalization textCapitalization;
+  final TextInputAction? textInputAction;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +50,10 @@ class LabeledField extends StatelessWidget {
           autofocus: autofocus,
           minLines: 1,
           maxLines: maxLines,
-          textCapitalization: TextCapitalization.sentences,
+          textCapitalization: textCapitalization,
+          textInputAction: textInputAction,
+          onChanged: onChanged,
+          onSubmitted: onSubmitted,
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
             labelText: label,

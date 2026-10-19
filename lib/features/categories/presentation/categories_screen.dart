@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/icons.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../app/theme/schediel_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
 import '../../../core/schedule/limits.dart';
@@ -23,11 +24,7 @@ class CategoriesScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Categories'),
         actions: [
-          IconButton(
-            tooltip: 'Add category',
-            icon: const AppIcon(AppIcons.add),
-            onPressed: () => _editName(context, ref, null),
-          ),
+          IconButton(tooltip: 'Add category', icon: const AppIcon(AppIcons.add), onPressed: () => _editName(context, ref, null)),
         ],
       ),
       body: categories.when(
@@ -50,15 +47,21 @@ class CategoriesScreen extends ConsumerWidget {
                 },
                 itemBuilder: (context, i) {
                   final c = list[i];
-                  return Material(
-                    key: ValueKey(c.id),
-                    color: context.scheduleColors.surface,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Tokens.radiusControl)),
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
+                  final colors = context.scheduleColors;
+                  return Padding(
+                    key: ValueKey('category-row-${c.id}'),
+                    padding: const EdgeInsets.only(bottom: Tokens.sm),
+                    child: Material(
+                      key: ValueKey(c.id),
+                      color: colors.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(colors.style == StyleFamily.pixel ? 0 : Tokens.radiusControl),
+                      ),
                       child: ListTile(
-                        leading: CategoryDot(colorKey: c.colorKey, size: 12),
+                        minTileHeight: 64,
+                        leading: SoftIcon(AppIcons.folder, key: ValueKey('category-icon-${c.id}'), colorKey: c.colorKey),
                         title: Text(c.name),
+                        trailing: const AppIcon(AppIcons.next, size: 18),
                         onTap: () => _actions(context, ref, c, list),
                       ),
                     ),
@@ -139,10 +142,7 @@ class CategoriesScreen extends ConsumerWidget {
       context,
       title: 'Delete “${c.name}”?',
       message: 'Schedules are kept. Choose where schedules in this category go.',
-      choices: [
-        for (final o in others) (o.id, 'Move to ${o.name}', false),
-        ('', 'Make uncategorized', false),
-      ],
+      choices: [for (final o in others) (o.id, 'Move to ${o.name}', false), ('', 'Make uncategorized', false)],
     );
     if (destination == null) return;
     await ref.read(categoryRepositoryProvider).delete(c.id, reassignTo: destination.isEmpty ? null : destination);
@@ -176,11 +176,13 @@ class CategoriesScreen extends ConsumerWidget {
                     }
                     if (dialogContext.mounted) Navigator.of(dialogContext).pop();
                   } on CategoryNameException catch (e) {
-                    setState(() => error = switch (e.problem) {
-                          CategoryNameProblem.empty => 'Enter a name',
-                          CategoryNameProblem.tooLong => 'Use at most ${ScheduleLimits.categoryNameMax} characters',
-                          CategoryNameProblem.duplicate => 'A category with this name exists',
-                        });
+                    setState(
+                      () => error = switch (e.problem) {
+                        CategoryNameProblem.empty => 'Enter a name',
+                        CategoryNameProblem.tooLong => 'Use at most ${ScheduleLimits.categoryNameMax} characters',
+                        CategoryNameProblem.duplicate => 'A category with this name exists',
+                      },
+                    );
                   }
                 },
                 child: const Text('Save'),

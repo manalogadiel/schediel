@@ -142,8 +142,9 @@ class _DetailsBody extends ConsumerWidget {
     if (occurrence.isOverride) lines.add(const DetailLine(icon: AppIcons.edit, text: 'This occurrence was changed'));
     if (category != null) lines.add(DetailLine(icon: AppIcons.category, text: category.name, semanticPrefix: 'Category'));
     if (details.location != null) lines.add(DetailLine(icon: AppIcons.location, text: details.location!, semanticPrefix: 'Room'));
-    if (details.professor != null)
+    if (details.professor != null) {
       lines.add(DetailLine(icon: AppIcons.person, text: details.professor!, semanticPrefix: 'Person'));
+    }
     if (details.subtitle != null) lines.add(DetailLine(icon: AppIcons.text, text: details.subtitle!, semanticPrefix: 'Subtitle'));
 
     return ListView(
