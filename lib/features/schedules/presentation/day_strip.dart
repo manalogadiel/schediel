@@ -6,6 +6,7 @@ import '../../../app/format.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/schediel_theme.dart';
+import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
 import '../../../core/time/local_date.dart';
 
@@ -124,12 +125,13 @@ class _DayCell extends StatelessWidget {
     final fg = selected ? p.onAccent : c.ink;
     final shape = pixel
         ? RoundedRectangleBorder(side: selected || isToday ? BorderSide(color: p.outline, width: 2) : BorderSide.none)
-        : StadiumBorder(
+        : RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Tokens.radiusControl),
             side: selected && c.outlined
                 ? BorderSide(color: p.outline, width: 2)
                 : isToday && !selected
-                    ? BorderSide(color: c.accentText, width: 1.5)
-                    : BorderSide.none,
+                ? BorderSide(color: c.accentText, width: 1.5)
+                : BorderSide.none,
           );
     final label = [title, if (isToday) 'today', if (hasSchedules) 'has schedules'].join(', ');
     return Semantics(
@@ -151,11 +153,16 @@ class _DayCell extends StatelessWidget {
               curve: Curves.easeOutCubic,
               constraints: const BoxConstraints(minHeight: 64),
               padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: ShapeDecoration(color: selected ? p.accent : Colors.transparent, shape: shape),
+              decoration: ShapeDecoration(color: selected ? p.accent : c.surface, shape: shape),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(weekday, maxLines: 1, overflow: TextOverflow.clip, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: selected ? fg : c.secondaryInk)),
+                  Text(
+                    weekday,
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: selected ? fg : c.secondaryInk),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     '${date.day}',

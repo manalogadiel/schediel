@@ -48,7 +48,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
               sliver: SliverToBoxAdapter(child: DateHeading(onPick: () => _pickDate(context, date))),
             ),
             const SliverPadding(
-              padding: EdgeInsets.fromLTRB(Tokens.sm, Tokens.sm, Tokens.sm, Tokens.sm),
+              padding: EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, Tokens.sm),
               sliver: SliverToBoxAdapter(child: DayStrip()),
             ),
             ...view.when(

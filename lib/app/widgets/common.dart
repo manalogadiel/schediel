@@ -36,13 +36,14 @@ class SectionGroup extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
-      if (i > 0)
+      if (i > 0) {
         rows.add(
           Padding(
             padding: const EdgeInsets.only(left: Tokens.md),
             child: Divider(color: colors.divider),
           ),
         );
+      }
       rows.add(children[i]);
     }
     return Padding(

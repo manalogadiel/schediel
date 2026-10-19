@@ -17,12 +17,7 @@ enum RowEmphasis { now, next, normal, past }
 /// One timeline entry: a time column and a card filled with the category's
 /// theme color, showing the title and only the details that exist.
 class TimelineRow extends ConsumerWidget {
-  const TimelineRow({
-    super.key,
-    required this.occurrence,
-    this.emphasis = RowEmphasis.normal,
-    this.overlaps = false,
-  });
+  const TimelineRow({super.key, required this.occurrence, this.emphasis = RowEmphasis.normal, this.overlaps = false});
 
   final Occurrence occurrence;
   final RowEmphasis emphasis;
@@ -100,7 +95,11 @@ class TimelineRow extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (label != null) Padding(padding: const EdgeInsets.only(bottom: 6), child: ThemedPill(label: label, emphasized: true)),
+          if (label != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: ThemedPill(label: label, emphasized: true),
+            ),
           Text(
             occurrence.title,
             style: text.titleMedium?.copyWith(
@@ -114,7 +113,11 @@ class TimelineRow extends ConsumerWidget {
           if (sourceNote != null) DetailLine(icon: AppIcons.time, text: sourceNote, style: detailStyle),
           if (timing is UnresolvedTiming) DetailLine(icon: AppIcons.warning, text: 'Needs time review', style: detailStyle),
           if (overlaps) DetailLine(icon: AppIcons.warning, text: 'Overlaps another schedule', style: detailStyle),
-          if (category != null) Padding(padding: const EdgeInsets.only(top: 8), child: _CategoryTag(name: category.name, ink: ink)),
+          if (category != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: _CategoryTag(name: category.name, ink: ink),
+            ),
           if (elapsed != null)
             Padding(
               padding: const EdgeInsets.only(top: 10),
@@ -136,9 +139,15 @@ class TimelineRow extends ConsumerWidget {
     final timeColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(primaryTime, style: timeStyle(context).copyWith(color: past ? colors.secondaryInk : colors.ink, fontWeight: FontWeight.w700)),
+        Text(
+          primaryTime,
+          style: timeStyle(context).copyWith(color: past ? colors.secondaryInk : colors.ink, fontWeight: FontWeight.w700),
+        ),
         if (secondaryTime != null)
-          Text(secondaryTime, style: timeStyle(context).copyWith(color: colors.secondaryInk, fontWeight: FontWeight.w400)),
+          Text(
+            secondaryTime,
+            style: timeStyle(context).copyWith(color: colors.secondaryInk, fontWeight: FontWeight.w400),
+          ),
       ],
     );
 
@@ -152,14 +161,17 @@ class TimelineRow extends ConsumerWidget {
       child: Padding(
         padding: EdgeInsets.only(bottom: compact ? 8 : 12),
         child: stacked
-            ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Padding(padding: const EdgeInsets.only(bottom: 6, left: 2), child: timeColumn),
-                card,
-              ])
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(width: 68, child: Padding(padding: const EdgeInsets.only(top: 12), child: timeColumn)),
+                  Padding(padding: const EdgeInsets.only(bottom: 6, left: 2), child: timeColumn),
+                  card,
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(width: 68, child: timeColumn),
                   const SizedBox(width: Tokens.xs),
                   Expanded(child: card),
                 ],
@@ -184,11 +196,19 @@ class _CategoryTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(pixel ? 0 : Tokens.radiusPill),
         border: Border.all(color: ink.withValues(alpha: 0.45)),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        AppIcon(AppIcons.category, size: 12, color: ink),
-        const SizedBox(width: 4),
-        Flexible(child: Text(name, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, height: 1.3, color: ink))),
-      ]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppIcon(AppIcons.category, size: 12, color: ink),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              name,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, height: 1.3, color: ink),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
