@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/format.dart';
+import '../../../app/icons.dart';
+import '../../schedules/presentation/schedule_time_picker.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/time/local_time.dart';
@@ -97,7 +99,6 @@ class _AlertBlock extends StatelessWidget {
     final p = preference;
     final secondary = context.scheduleColors.secondaryInk;
     final isAlarm = p.kind == AlertKind.alarm;
-    final custom = !_presetOffsets.contains(p.offsetMinutes);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -109,28 +110,11 @@ class _AlertBlock extends StatelessWidget {
         ),
         if (p.enabled) ...[
           CapabilityNote(kind: p.kind),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.sm),
-            child: Wrap(
-              spacing: Tokens.sm,
-              runSpacing: Tokens.sm,
-              children: [
-                for (final m in _presetOffsets)
-                  ChoiceChip(
-                    label: Text(m == 0 ? 'At start' : f.offsetLabel(m).replaceAll(' before', '')),
-                    selected: p.offsetMinutes == m,
-                    onSelected: (_) => onChanged(p.copyWith(offsetMinutes: m)),
-                  ),
-                ChoiceChip(
-                  label: Text(custom ? f.offsetLabel(p.offsetMinutes).replaceAll(' before', '') : 'Custom'),
-                  selected: custom,
-                  onSelected: (_) async {
-                    final value = await _askMinutes(context, p.offsetMinutes);
-                    if (value != null) onChanged(p.copyWith(offsetMinutes: value));
-                  },
-                ),
-              ],
-            ),
+          ListTile(
+            title: Text('$title timing'),
+            subtitle: Text(f.offsetLabel(p.offsetMinutes)),
+            trailing: const AppIcon(AppIcons.expand, size: 18),
+            onTap: () => _pickOffset(context, f),
           ),
           if (dateOnly)
             ListTile(
@@ -148,8 +132,8 @@ class _AlertBlock extends StatelessWidget {
               ),
               onTap: () async {
                 final initial = p.dateOnlyAnchorTime ?? LocalTime(9, 0);
-                final picked = await showTimePicker(
-                  context: context,
+                final picked = await showScheduleTimePicker(
+                  context,
                   initialTime: TimeOfDay(hour: initial.hour, minute: initial.minute),
                 );
                 if (picked != null) {
@@ -171,23 +155,17 @@ class _AlertBlock extends StatelessWidget {
               style: TextStyle(color: secondary),
             ),
             value: p.lockScreenDetails == LockScreenDetails.detailsRequested,
-            onChanged: (v) => onChanged(
-              p.copyWith(lockScreenDetails: v ? LockScreenDetails.detailsRequested : LockScreenDetails.titleOnly),
-            ),
+            onChanged: (v) =>
+                onChanged(p.copyWith(lockScreenDetails: v ? LockScreenDetails.detailsRequested : LockScreenDetails.titleOnly)),
           ),
           if (isAlarm && prominentAvailable)
             SwitchListTile(
               title: const Text('Prominent alarm when allowed'),
-              subtitle: Text(
-                'Uses a full-screen alarm only where the device permits it.',
-                style: TextStyle(color: secondary),
-              ),
+              subtitle: Text('Uses a full-screen alarm only where the device permits it.', style: TextStyle(color: secondary)),
               value: p.presentationPreference == PresentationPreference.prominentIfSupported,
               onChanged: (v) => onChanged(
                 p.copyWith(
-                  presentationPreference: v
-                      ? PresentationPreference.prominentIfSupported
-                      : PresentationPreference.standard,
+                  presentationPreference: v ? PresentationPreference.prominentIfSupported : PresentationPreference.standard,
                 ),
               ),
             ),
@@ -212,6 +190,39 @@ class _AlertBlock extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  Future<void> _pickOffset(BuildContext context, Formats f) async {
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      useSafeArea: true,
+      builder: (sheet) => SafeArea(
+        top: false,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(Tokens.md),
+              child: Text('$title timing', style: Theme.of(sheet).textTheme.titleLarge),
+            ),
+            for (final minutes in _presetOffsets)
+              Semantics(
+                selected: preference.offsetMinutes == minutes,
+                child: ListTile(
+                  key: ValueKey('alert-offset-$minutes'),
+                  title: Text(f.offsetLabel(minutes)),
+                  trailing: preference.offsetMinutes == minutes ? const AppIcon(AppIcons.confirm) : null,
+                  onTap: () => Navigator.of(sheet).pop(minutes),
+                ),
+              ),
+            ListTile(title: const Text('Custom'), onTap: () => Navigator.of(sheet).pop(-1)),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || !context.mounted) return;
+    final value = picked == -1 ? await _askMinutes(context, preference.offsetMinutes) : picked;
+    if (value != null && context.mounted) onChanged(preference.copyWith(offsetMinutes: value));
   }
 
   Future<int?> _askMinutes(BuildContext context, int current) {

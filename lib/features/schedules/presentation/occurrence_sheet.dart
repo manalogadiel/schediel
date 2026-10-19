@@ -121,24 +121,29 @@ class _DetailsBody extends ConsumerWidget {
         }
       case DateOnlyTiming():
         final last = timing.endDateExclusive.addDays(-1);
-        lines.add(DetailLine(
-          icon: AppIcons.calendar,
-          text: last == timing.startDate ? '${f.fullDate(timing.startDate)} · All day' : f.range(timing.startDate, last),
-          style: text.bodyLarge,
-        ));
+        lines.add(
+          DetailLine(
+            icon: AppIcons.calendar,
+            text: last == timing.startDate ? '${f.fullDate(timing.startDate)} · All day' : f.range(timing.startDate, last),
+            style: text.bodyLarge,
+          ),
+        );
       case UnresolvedTiming():
-        lines.add(DetailLine(
-          icon: AppIcons.time,
-          text: '${f.fullDate(timing.localDate)} · ${f.clock(timing.localStartTime)} ${zoneCity(timing.sourceZone)} time',
-          style: text.bodyLarge,
-        ));
+        lines.add(
+          DetailLine(
+            icon: AppIcons.time,
+            text: '${f.fullDate(timing.localDate)} · ${f.clock(timing.localStartTime)} ${zoneCity(timing.sourceZone)} time',
+            style: text.bodyLarge,
+          ),
+        );
         lines.add(DetailLine(icon: AppIcons.warning, text: 'Needs time review. ${reviewReasonLabel(timing.reason)}'));
     }
     lines.add(DetailLine(icon: AppIcons.repeat, text: f.repeatSummary(series.recurrence)));
     if (occurrence.isOverride) lines.add(const DetailLine(icon: AppIcons.edit, text: 'This occurrence was changed'));
     if (category != null) lines.add(DetailLine(icon: AppIcons.category, text: category.name, semanticPrefix: 'Category'));
     if (details.location != null) lines.add(DetailLine(icon: AppIcons.location, text: details.location!, semanticPrefix: 'Room'));
-    if (details.professor != null) lines.add(DetailLine(icon: AppIcons.person, text: details.professor!, semanticPrefix: 'Person'));
+    if (details.professor != null)
+      lines.add(DetailLine(icon: AppIcons.person, text: details.professor!, semanticPrefix: 'Person'));
     if (details.subtitle != null) lines.add(DetailLine(icon: AppIcons.text, text: details.subtitle!, semanticPrefix: 'Subtitle'));
 
     return ListView(
@@ -175,10 +180,13 @@ class _DetailsBody extends ConsumerWidget {
             ),
             const SizedBox(width: Tokens.sm),
             Expanded(
-              child: OutlinedButton.icon(
+              child: FilledButton.tonalIcon(
                 icon: AppIcon(AppIcons.remove, size: 18, color: Theme.of(context).colorScheme.error),
                 label: Text(occurrence.isRecurring ? 'Remove' : 'Delete'),
-                style: OutlinedButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+                style: FilledButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+                  backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                ),
                 onPressed: () => removeOccurrence(context, ref, occurrence, inSheet: inSheet),
               ),
             ),
@@ -212,11 +220,14 @@ class _TimeReviewActions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ambiguous = timing.reason == TimeReviewReason.startAmbiguous || timing.reason == TimeReviewReason.endAmbiguous;
     Future<void> choose(TimeResolution resolution) async {
-      final base = (occurrence.isOverride ? series.exceptionFor(occurrence.originalKey)!.replacement!.time : series.time) as TimedSpec;
+      final base =
+          (occurrence.isOverride ? series.exceptionFor(occurrence.originalKey)!.replacement!.time : series.time) as TimedSpec;
       final resolved = timing.reason == TimeReviewReason.startAmbiguous
           ? base.copyWith(startDate: timing.localDate, seedTimeResolution: () => resolution)
           : base.copyWith(startDate: timing.localDate, endTimeResolution: () => resolution);
-      await ref.read(scheduleRepositoryProvider).overrideOccurrence(
+      await ref
+          .read(scheduleRepositoryProvider)
+          .overrideOccurrence(
             series.id,
             occurrence.originalKey,
             OccurrenceReplacement(title: occurrence.title, time: resolved, details: occurrence.details),
@@ -224,7 +235,7 @@ class _TimeReviewActions extends ConsumerWidget {
     }
 
     if (!ambiguous) {
-      return OutlinedButton(
+      return FilledButton.tonal(
         onPressed: () => context.push('/schedule/${series.id}/edit?scope=occurrence&key=${occurrence.originalKey.toIso()}'),
         child: const Text('Choose a time for this occurrence'),
       );
@@ -232,9 +243,9 @@ class _TimeReviewActions extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OutlinedButton(onPressed: () => choose(TimeResolution.earlier), child: const Text('Use the first time')),
+        FilledButton.tonal(onPressed: () => choose(TimeResolution.earlier), child: const Text('Use the first time')),
         const SizedBox(height: Tokens.sm),
-        OutlinedButton(onPressed: () => choose(TimeResolution.later), child: const Text('Use the second time')),
+        FilledButton.tonal(onPressed: () => choose(TimeResolution.later), child: const Text('Use the second time')),
       ],
     );
   }
@@ -250,7 +261,8 @@ Future<void> editOccurrence(BuildContext context, Occurrence occurrence) async {
   final scope = await showChoiceDialog<String>(
     context,
     title: 'Edit repeating schedule',
-    message: 'Change only this occurrence, or every occurrence in the series? Changes to one occurrence do not affect the others.',
+    message:
+        'Change only this occurrence, or every occurrence in the series? Changes to one occurrence do not affect the others.',
     choices: const [('occurrence', 'This occurrence', false), ('series', 'Entire series', false)],
   );
   if (scope == null || !context.mounted) return;
@@ -273,7 +285,8 @@ Future<void> removeOccurrence(BuildContext context, WidgetRef ref, Occurrence oc
     final choice = await showChoiceDialog<String>(
       context,
       title: 'Remove repeating schedule',
-      message: 'Cancel only the occurrence on ${f.fullDate(occurrence.originalKey)}, or delete the entire series and its reminders?',
+      message:
+          'Cancel only the occurrence on ${f.fullDate(occurrence.originalKey)}, or delete the entire series and its reminders?',
       choices: const [('occurrence', 'Cancel this occurrence', false), ('series', 'Delete entire series', true)],
     );
     if (choice == null) return;
@@ -311,46 +324,48 @@ class _ClockHandoff extends ConsumerWidget {
     if (record != null) {
       children.add(const DetailLine(icon: AppIcons.alarm, text: 'Sent to Clock · not verified'));
       if (record.sourceRevision != series.revision) {
-        children.add(const DetailLine(
-          icon: AppIcons.warning,
-          text: 'This schedule changed after it was sent to Clock. Update that alarm in the Clock app.',
-        ));
+        children.add(
+          const DetailLine(
+            icon: AppIcons.warning,
+            text: 'This schedule changed after it was sent to Clock. Update that alarm in the Clock app.',
+          ),
+        );
       }
     }
     if (plan != null) {
       final days = plan.weekdays == null
           ? 'once'
           : plan.weekdays!.length == 7
-              ? 'every day'
-              : 'every ${plan.weekdays!.map(f.weekdayShort).join(', ')}';
-      children.add(Padding(
-        padding: const EdgeInsets.only(top: Tokens.sm),
-        child: OutlinedButton.icon(
-          icon: const AppIcon(AppIcons.alarm, size: 18),
-          label: const Text('Add to Clock'),
-          onPressed: () async {
-            final confirmed = await showChoiceDialog<bool>(
-              context,
-              title: 'Add to Clock?',
-              message: 'Sends an alarm for ${f.clock(plan.time)}, $days, to your Clock app. '
-                  'Schediel cannot confirm it was saved and will not update it if this schedule changes. '
-                  'End dates and cancelled occurrences are not included.',
-              choices: const [(true, 'Send to Clock', false)],
-            );
-            if (confirmed != true) return;
-            final result = await service.send(series, occurrence, plan);
-            if (!context.mounted) return;
-            showMessage(
-              context,
-              switch (result) {
+          ? 'every day'
+          : 'every ${plan.weekdays!.map(f.weekdayShort).join(', ')}';
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(top: Tokens.sm),
+          child: FilledButton.tonalIcon(
+            icon: const AppIcon(AppIcons.alarm, size: 18),
+            label: const Text('Add to Clock'),
+            onPressed: () async {
+              final confirmed = await showChoiceDialog<bool>(
+                context,
+                title: 'Add to Clock?',
+                message:
+                    'Sends an alarm for ${f.clock(plan.time)}, $days, to your Clock app. '
+                    'Schediel cannot confirm it was saved and will not update it if this schedule changes. '
+                    'End dates and cancelled occurrences are not included.',
+                choices: const [(true, 'Send to Clock', false)],
+              );
+              if (confirmed != true) return;
+              final result = await service.send(series, occurrence, plan);
+              if (!context.mounted) return;
+              showMessage(context, switch (result) {
                 ClockLaunchResult.launched => 'Opened your Clock app',
                 ClockLaunchResult.unavailable => 'No Clock app can receive this alarm',
                 ClockLaunchResult.failed => 'Could not open the Clock app',
-              },
-            );
-          },
+              });
+            },
+          ),
         ),
-      ));
+      );
     }
     if (children.isEmpty) return const SizedBox.shrink();
     return Padding(
