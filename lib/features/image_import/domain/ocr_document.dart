@@ -17,10 +17,19 @@ class OcrDocument {
 }
 
 class OcrLine {
-  const OcrLine({required this.text, required this.start, required this.blockId, this.region});
+  const OcrLine({required this.text, required this.start, required this.blockId, this.region, this.glyphs = const []});
   final String text;
   final int start, blockId;
   final ImageEvidenceRegion? region;
+  final List<OcrGlyph> glyphs;
+}
+
+/// Android character geometry helps distinguish a narrow, separated table
+/// delimiter from the first character of a room. iOS may omit this evidence.
+class OcrGlyph {
+  const OcrGlyph(this.text, this.region);
+  final String text;
+  final ImageEvidenceRegion region;
 }
 
 class OcrSpan {

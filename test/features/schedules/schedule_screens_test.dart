@@ -76,8 +76,8 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
     await h.settle();
 
-    await tester.enterText(find.widgetWithText(TextField, 'Title'), '  Fixture lecture  ');
-    final room = find.widgetWithText(TextField, 'Room or location');
+    await tester.enterText(textField('Title'), '  Fixture lecture  ');
+    final room = textField('Room or location');
     await tester.scrollUntilVisible(room, 120, scrollable: find.byType(Scrollable).last);
     await tester.enterText(room, 'Fixture hall');
     await h.tapText('Next');
@@ -92,7 +92,7 @@ void main() {
   appTest('leaving the editor with unsaved edits asks before discarding', (h) async {
     final tester = h.tester;
     await h.tapText('Create schedule');
-    await tester.enterText(find.widgetWithText(TextField, 'Title'), 'Fixture draft');
+    await tester.enterText(textField('Title'), 'Fixture draft');
     await tester.pump();
     await tester.tap(find.byTooltip('Close'));
     await h.settle();

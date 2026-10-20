@@ -4,8 +4,9 @@ import '../../../core/time/zone_resolver.dart';
 import 'image_candidate.dart';
 import 'image_preparation.dart';
 import 'ocr_document.dart';
+import 'university_timetable_parser.dart';
 
-/// A deliberately small line-oriented parser, not a timetable interpreter.
+/// Conservative line parsing with a geometry-checked university table adapter.
 /// OCR remains untrusted plain data; this class has no network or tool API.
 class ConservativeCandidateParser {
   static const _months = 'January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec';
@@ -22,8 +23,11 @@ class ConservativeCandidateParser {
     if (document.text.length > 100000 || document.lines.length > 2000) {
       throw const ImageImportFailure(ImageFailureCode.tooManyCandidates);
     }
-    final rows = <ImageCandidate>[];
+    final table = UniversityTimetableParser().parse(document);
+    final rows = <ImageCandidate>[...?table?.candidates];
+    if (rows.length > 100) throw const ImageImportFailure(ImageFailureCode.tooManyCandidates);
     for (final line in document.lines) {
+      if (table?.consumedLines.contains(line.start) ?? false) continue;
       if (line.start < 0 || line.start + line.text.length > document.text.length ||
           document.text.substring(line.start, line.start + line.text.length) != line.text) {
         continue;

@@ -120,7 +120,7 @@ void main() {
     expect(compactApi.lastRequestedId, isNull);
     expect(await h.run(h.read(scheduleRepositoryProvider).loadAll), isEmpty);
     await h.tapText('Edit');
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Edited shared copy');
+    await h.tester.enterText(textField('Title'), 'Edited shared copy');
     await h.tapText('Next'); await h.tapText('Next'); await h.tapText('Use changes');
     expect(await h.run(h.read(scheduleRepositoryProvider).loadAll), isEmpty);
     expect(find.text('Edited shared copy'), findsOneWidget);

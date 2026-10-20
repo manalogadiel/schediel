@@ -26,6 +26,7 @@ class MlKitOnDeviceOcr implements OnDeviceOcr {
         if (result.text.trim().isEmpty) throw const ImageImportFailure(ImageFailureCode.noText);
         final lines = <OcrLine>[];
         final buffer = StringBuffer();
+        var glyphCount = 0;
         for (var b = 0; b < result.blocks.length; b++) {
           for (final line in result.blocks[b].lines) {
             if (lines.length >= 2000 || buffer.length + line.text.length > 100000) throw const ImageImportFailure(ImageFailureCode.tooManyCandidates);
@@ -33,7 +34,18 @@ class MlKitOnDeviceOcr implements OnDeviceOcr {
             final region = ImageEvidenceRegion.validated(left: box.left / image.width, top: box.top / image.height,
               right: box.right / image.width, bottom: box.bottom / image.height,
               sourceRevision: image.sourceRevision, width: image.width, height: image.height);
-            lines.add(OcrLine(text: line.text, start: buffer.length, blockId: b, region: region));
+            final glyphs = <OcrGlyph>[];
+            for (final element in line.elements) {
+              for (final symbol in element.symbols) {
+                if (++glyphCount > 100000) throw const ImageImportFailure(ImageFailureCode.tooManyCandidates);
+                final box = symbol.boundingBox;
+                final symbolRegion = ImageEvidenceRegion.validated(left: box.left / image.width, top: box.top / image.height,
+                  right: box.right / image.width, bottom: box.bottom / image.height,
+                  sourceRevision: image.sourceRevision, width: image.width, height: image.height);
+                if (symbolRegion != null && symbol.text.isNotEmpty) glyphs.add(OcrGlyph(symbol.text, symbolRegion));
+              }
+            }
+            lines.add(OcrLine(text: line.text, start: buffer.length, blockId: b, region: region, glyphs: List.unmodifiable(glyphs)));
             buffer.writeln(line.text);
           }
         }

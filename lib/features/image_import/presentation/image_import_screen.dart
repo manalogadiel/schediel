@@ -4,13 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/icons.dart';
+import '../../../app/format.dart';
+import '../../../app/providers.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/time/local_time.dart';
 import '../../imports/presentation/import_review_screen.dart';
 import '../application/image_import_controller.dart';
 import '../application/image_import_providers.dart';
 import '../domain/image_services.dart';
 import 'candidate_resolution_screen.dart';
 import 'image_crop_screen.dart';
+import 'university_term_form.dart';
 
 class ImageImportScreen extends ConsumerStatefulWidget {
   const ImageImportScreen({super.key});
@@ -33,7 +37,11 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) { if(mounted) Navigator.of(context).pop(); });
   }
   Future<void> _review(ImageImportController c) async {
-    final entries = c.reviewEntries();
+    final categories = await ref.read(categoryRepositoryProvider).loadAll();
+    if (!mounted) return;
+    final school = categories.where((category) => category.name.trim().toLowerCase() == 'school').firstOrNull
+      ?? categories.where((category) => category.id == 'school').firstOrNull;
+    final entries = c.reviewEntries(universityCategoryId: school?.id);
     if(entries==null) return;
     final result = await Navigator.of(context).push<List<String>>(MaterialPageRoute(builder:(_)=>ImportReviewScreen(
       entries:entries,sourceText:c.sourceText,sourceImagePath:c.image?.path)));
@@ -86,11 +94,20 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
           ],
           if(c.failure!=null) Semantics(liveRegion:true,child:Padding(padding:const EdgeInsets.symmetric(vertical:Tokens.md),child:Text(c.failure!.message))),
           if(c.notice!=null) Semantics(liveRegion:true,child:Padding(padding:const EdgeInsets.symmetric(vertical:Tokens.md),child:Text(c.notice!))),
+          if(c.candidates.any((candidate) => candidate.universityTimetable))
+            UniversityTermForm(key: ValueKey(c.imageDraftId), controller: c, initialZone: ref.read(deviceZoneProvider)),
           for(final candidate in c.candidates) Card(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-            CheckboxListTile(value:c.selected.contains(candidate.candidateId),title:Text(candidate.title.value??'Unresolved title'),
-              subtitle:Text(c.resolved.containsKey(candidate.candidateId)?'Ready for review':'Needs review'),
+            CheckboxListTile(value:c.selected.contains(candidate.candidateId),title:Text(c.edits[candidate.candidateId]?.title.isNotEmpty == true
+                ? c.edits[candidate.candidateId]!.title : 'Unresolved title'),
+              subtitle:Text([
+                if(candidate.universityTimetable) _classSummary(context, c, candidate.candidateId),
+                c.resolved.containsKey(candidate.candidateId)?'Ready for review':'Needs review'].join('\n')),
               onChanged:c.busy?null:(on)=>c.select(candidate.candidateId,on==true)),
-            Padding(padding:const EdgeInsets.symmetric(horizontal:Tokens.md),child:SelectableText(candidate.sourceLine.text)),
+            if(!candidate.universityTimetable)
+              Padding(padding:const EdgeInsets.symmetric(horizontal:Tokens.md),child:SelectableText(candidate.sourceLine.text)),
+            if(candidate.universityTimetable && c.edits[candidate.candidateId]!.professor.isNotEmpty)
+              Padding(padding:const EdgeInsets.symmetric(horizontal:Tokens.md),child:Text(c.edits[candidate.candidateId]!.professor,
+                style: Theme.of(context).textTheme.bodySmall)),
             TextButton(onPressed:c.busy?null:()=>Navigator.of(context).push<bool>(MaterialPageRoute(builder:(_)=>CandidateResolutionScreen(
               controller:c,candidate:candidate))),child:const Text('Resolve fields')),
           ])),
@@ -99,5 +116,15 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
           const Text('Cloud AI scanning is disabled. This flow never uploads your image or OCR text.'),
         ]),
       )));
+  }
+
+  String _classSummary(BuildContext context, ImageImportController controller, String id) {
+    final e = controller.edits[id]!;
+    final f = Formats.of(context);
+    final start = LocalTime.tryParse(e.startTime), end = LocalTime.tryParse(e.endTime);
+    return [if(e.subtitle.isNotEmpty) e.subtitle,
+      e.weekdays.map(f.weekdayShort).join(', '),
+      if(start != null) '${f.clock(start)}${end == null ? '' : '–${f.clock(end)}'}',
+      if(e.location.isNotEmpty) e.location].where((s) => s.isNotEmpty).join(' · ');
   }
 }

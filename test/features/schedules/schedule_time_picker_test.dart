@@ -42,7 +42,7 @@ void main() {
   }
   appTest('wheel time picker cancels without changing the draft and applies Done', (h) async {
     await h.tapText('Create schedule');
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Fixture time');
+    await h.tester.enterText(textField('Title'), 'Fixture time');
     await h.tapText('Next');
     String startText() => (h.tester.widget<ListTile>(find.widgetWithText(ListTile, 'Starts')).trailing as Text).data!;
     final original = startText();

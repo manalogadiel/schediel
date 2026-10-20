@@ -11,8 +11,8 @@ enum CandidateEndChoice { noEnd, sameDay, nextDay }
 
 /// Raw form data lives in memory even when validation or OCR retries fail.
 class CandidateEdits {
-  CandidateEdits({this.title = '', this.date = '', this.lastDate = '', this.startTime = '', this.endTime = '', this.timeZone = '', this.termEnd = '', this.location = '', this.professor = '', this.kind, this.endChoice, this.associationConfirmed = false, this.weekdays = const [], this.seedResolution, this.endResolution});
-  String title, date, lastDate, startTime, endTime, timeZone, termEnd, location, professor;
+  CandidateEdits({this.title = '', this.date = '', this.lastDate = '', this.startTime = '', this.endTime = '', this.timeZone = '', this.termEnd = '', this.location = '', this.professor = '', this.subtitle = '', this.kind, this.endChoice, this.associationConfirmed = false, this.weekdays = const [], this.seedResolution, this.endResolution});
+  String title, date, lastDate, startTime, endTime, timeZone, termEnd, location, professor, subtitle;
   CandidateTimeKind? kind;
   CandidateEndChoice? endChoice;
   bool associationConfirmed;
@@ -23,7 +23,8 @@ class CandidateEdits {
     title: c.title.value ?? '', date: c.date.value?.toIso() ?? '',
     startTime: c.startTime.value?.toHhMm() ?? '', endTime: c.endTime.value?.toHhMm() ?? '',
     timeZone: c.timeZone.value ?? '', termEnd: c.termEnd.value?.toIso() ?? '',
-    location: c.location.value ?? '', professor: c.professor.value ?? '',
+    location: c.location.value ?? '', professor: c.professor.value ?? '', subtitle: c.subtitle.value ?? '',
+    endChoice: c.endDayOffset == 0 ? CandidateEndChoice.sameDay : c.endDayOffset == 1 ? CandidateEndChoice.nextDay : null,
     kind: c.timeKind.value, weekdays: [...?c.weekdays.value]);
 }
 
@@ -101,7 +102,7 @@ CandidateResolutionResult resolveImageCandidate(ImageCandidate c, CandidateEdits
   }
   String? optional(String value) => value.trim().isEmpty ? null : value.trim();
   final draft = ScheduleDraft(title: title, time: time, recurrence: recurrence,
-    details: ScheduleDetails(location: optional(e.location), professor: optional(e.professor)));
+    details: ScheduleDetails(location: optional(e.location), professor: optional(e.professor), subtitle: optional(e.subtitle)));
   final issues = SeriesValidator(zones, OccurrenceEngine(zones)).validate(ScheduleSeries(id: 'image-draft', revision: 1,
     title: title, time: time, recurrence: recurrence, details: draft.details));
   for (final issue in issues) { errors[issue.path] = 'Check this value (${issue.code}); nothing was truncated.'; }
@@ -112,6 +113,7 @@ CandidateResolutionResult resolveImageCandidate(ImageCandidate c, CandidateEdits
     'title': field(c.title, title), 'date': field(c.date, actualDate),
     'timeKind': field(c.timeKind, e.kind),
     'location': field(c.location, optional(e.location)), 'professor': field(c.professor, optional(e.professor)),
+    'subtitle': field(c.subtitle, optional(e.subtitle)),
     'association': const CandidateField(value: true, origin: FieldOrigin.userSupplied),
     if (time is TimedSpec) ...{
       'startTime': field(c.startTime, time.startTime), 'endTime': field(c.endTime, time.endTime),

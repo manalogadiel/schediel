@@ -4,7 +4,25 @@ import '../theme/app_theme.dart';
 import '../theme/schediel_theme.dart';
 import '../theme/tokens.dart';
 
-/// The label stays inside the filled field, not across its outline.
+/// A persistent label above the control, outside its fill and outline.
+class FieldLabel extends StatelessWidget {
+  const FieldLabel({super.key, required this.label, required this.child});
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      ExcludeSemantics(child: Text(label, style: Theme.of(context).textTheme.labelMedium)),
+      const SizedBox(height: Tokens.xs),
+      Semantics(label: label, child: child),
+    ],
+  );
+}
+
+/// The label stays above the filled field, clear of its outline.
 class LabeledField extends StatelessWidget {
   const LabeledField({
     super.key,
@@ -37,7 +55,7 @@ class LabeledField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.scheduleColors;
     final radius = BorderRadius.circular(colors.style == StyleFamily.pixel ? 0 : Tokens.radiusControl);
-    return DecoratedBox(
+    return FieldLabel(label: label, child: DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
         border: Border.all(color: errorText == null ? colors.inputBoundary : Theme.of(context).colorScheme.error),
@@ -56,9 +74,6 @@ class LabeledField extends StatelessWidget {
           onSubmitted: onSubmitted,
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
-            labelText: label,
-            floatingLabelBehavior: FloatingLabelBehavior.always,
-            floatingLabelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.secondaryInk),
             errorText: errorText,
             prefixIcon: prefixIcon,
             filled: true,
@@ -73,6 +88,6 @@ class LabeledField extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }

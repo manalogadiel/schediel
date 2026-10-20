@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/labeled_field.dart';
 import '../../../core/schedule/models.dart';
 import '../application/image_import_controller.dart';
 import '../domain/candidate_resolution.dart';
@@ -19,9 +20,9 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
   Map<String, String> _errors = {};
   void _changed() => widget.controller.edited(widget.candidate.candidateId);
   Widget field(String name, String label, String value, ValueChanged<String> update, {String? hint, Key? key}) => Padding(
-    padding: const EdgeInsets.only(bottom: Tokens.md), child: TextFormField(key: key, initialValue: value,
-      decoration: InputDecoration(labelText: label, helperText: hint, errorText: _errors[name]),
-      onChanged: (v) { update(v); _changed(); }));
+    padding: const EdgeInsets.only(bottom: Tokens.md), child: FieldLabel(label: label, child: TextFormField(key: key, initialValue: value,
+      decoration: InputDecoration(helperText: hint, errorText: _errors[name]),
+      onChanged: (v) { update(v); _changed(); })));
   Future<void> _use() async {
     final result = widget.controller.resolve(widget.candidate.candidateId);
     if (result.resolved == null) { setState(() => _errors = result.errors); return; }
@@ -32,14 +33,14 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
     body: ListView(padding: const EdgeInsets.all(Tokens.md), children: [
       const Text('Check the source. Missing year, date order, time zone and duration are not guessed.'),
       const SizedBox(height: Tokens.sm),
-      SelectableText(widget.candidate.sourceLine.text),
+      ExpansionTile(title: const Text('Source text'), children: [SelectableText(widget.candidate.sourceLine.text)]),
       const SizedBox(height: Tokens.md),
       field('title','Title',_edits.title,(v)=>_edits.title=v),
-      DropdownButtonFormField<CandidateTimeKind>(initialValue:_edits.kind,
-        decoration: InputDecoration(labelText:'Schedule type',errorText:_errors['kind']),
+      FieldLabel(label:'Schedule type', child: DropdownButtonFormField<CandidateTimeKind>(initialValue:_edits.kind,
+        decoration: InputDecoration(errorText:_errors['kind']),
         items: const [DropdownMenuItem(value:CandidateTimeKind.timed,child:Text('Timed')),
           DropdownMenuItem(value:CandidateTimeKind.dateOnly,child:Text('All day'))],
-        onChanged:(v)=>setState(() { _edits.kind=v; _changed(); })),
+        onChanged:(v)=>setState(() { _edits.kind=v; _changed(); }))),
       const SizedBox(height:Tokens.md),
       field('date','Start date',_edits.date,(v)=>_edits.date=v,hint:'YYYY-MM-DD · choose the actual year',key:const Key('candidate-date')),
       if (_edits.kind == CandidateTimeKind.dateOnly)
@@ -47,12 +48,12 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
       if (_edits.kind == CandidateTimeKind.timed) ...[
         field('startTime','Start time',_edits.startTime,(v)=>_edits.startTime=v,hint:'24-hour HH:mm'),
         field('timeZone','Source time zone',_edits.timeZone,(v)=>_edits.timeZone=v,hint:'IANA name, for example Asia/Manila'),
-        DropdownButtonFormField<CandidateEndChoice>(initialValue:_edits.endChoice,
-          decoration:InputDecoration(labelText:'End time choice',errorText:_errors['endChoice']),
+        FieldLabel(label:'End time choice', child: DropdownButtonFormField<CandidateEndChoice>(initialValue:_edits.endChoice,
+          decoration:InputDecoration(errorText:_errors['endChoice']),
           items:const [DropdownMenuItem(value:CandidateEndChoice.noEnd,child:Text('No end time')),
             DropdownMenuItem(value:CandidateEndChoice.sameDay,child:Text('Ends on the same day')),
             DropdownMenuItem(value:CandidateEndChoice.nextDay,child:Text('Ends the next day'))],
-          onChanged:(v)=>setState(() { _edits.endChoice=v; _changed(); })),
+          onChanged:(v)=>setState(() { _edits.endChoice=v; _changed(); }))),
         const SizedBox(height:Tokens.md),
         if (_edits.endChoice != CandidateEndChoice.noEnd)
           field('endTime','End time',_edits.endTime,(v)=>_edits.endTime=v,hint:'24-hour HH:mm'),
@@ -72,6 +73,7 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
       ],
       field('details/location','Room or location (optional)',_edits.location,(v)=>_edits.location=v),
       field('details/professor','Professor or person (optional)',_edits.professor,(v)=>_edits.professor=v),
+      field('details/subtitle','Subtitle (course code)',_edits.subtitle,(v)=>_edits.subtitle=v),
       CheckboxListTile(key:const Key('confirm-association'),contentPadding:EdgeInsets.zero,
         title:const Text('I checked which title, date and time belong together against the source.'),
         subtitle:_errors['association']==null?null:Text(_errors['association']!),
@@ -82,9 +84,9 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
       FilledButton(onPressed:_use,child:const Text('Use draft values')),
     ]));
   Widget _fold(String name,String label,TimeResolution? value,ValueChanged<TimeResolution?> update) => Padding(
-    padding:const EdgeInsets.only(bottom:Tokens.md),child:DropdownButtonFormField<TimeResolution>(initialValue:value,
-      decoration:InputDecoration(labelText:label,errorText:_errors[name]),items:const[
+    padding:const EdgeInsets.only(bottom:Tokens.md),child:FieldLabel(label:label,child:DropdownButtonFormField<TimeResolution>(initialValue:value,
+      decoration:InputDecoration(errorText:_errors[name]),items:const[
         DropdownMenuItem(value:TimeResolution.earlier,child:Text('Earlier occurrence')),
         DropdownMenuItem(value:TimeResolution.later,child:Text('Later occurrence'))],
-      onChanged:(v)=>setState(() { update(v); _changed(); })));
+      onChanged:(v)=>setState(() { update(v); _changed(); }))));
 }

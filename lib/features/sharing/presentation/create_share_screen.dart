@@ -7,6 +7,7 @@ import '../../../app/format.dart';
 import '../../../app/icons.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/labeled_field.dart';
 import '../../../app/widgets/common.dart';
 import '../../../core/schedule/models.dart';
 import '../../../core/time/local_date.dart';
@@ -182,10 +183,10 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
           if (payload != null) ExpansionTile(title: const Text('Preview'), children: [
             for (final item in payload.items) _payloadRow(item),
           ]),
-          if (enabled) DropdownButtonFormField<Duration>(initialValue: _validity, decoration: const InputDecoration(labelText: 'Link validity'),
+          if (enabled) FieldLabel(label: 'Link validity', child: DropdownButtonFormField<Duration>(initialValue: _validity,
             items: const [DropdownMenuItem(value: Duration(days: 1), child: Text('1 day')),
               DropdownMenuItem(value: Duration(days: 7), child: Text('7 days'))],
-            onChanged: _creating ? null : (v) => setState(() => _validity = v!)),
+            onChanged: _creating ? null : (v) => setState(() => _validity = v!))),
           const SizedBox(height: Tokens.md),
           Text(enabled
               ? 'Online links can expire. Imported copies remain.'

@@ -38,7 +38,7 @@ void main() {
   });
   appTest('new late-night defaults keep an explicit next-day end', (h) async {
     await h.tapText('Create schedule');
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Fixture overnight');
+    await h.tester.enterText(textField('Title'), 'Fixture overnight');
     await h.tapText('Next');
     await h.tapText('Next');
     await h.tapText('Save');
@@ -67,7 +67,7 @@ void main() {
   });
   appTest('alert timing uses a single grouped selector and keeps the chosen offset', (h) async {
     await h.tapText('Create schedule');
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Fixture alert');
+    await h.tester.enterText(textField('Title'), 'Fixture alert');
     await h.tapText('Next');
     await h.tapText('Next');
     await h.tapText('Notification');
@@ -87,7 +87,7 @@ void main() {
     await h.tapText('Create schedule');
     final context = h.tester.element(find.byType(ScheduleEditorScreen));
     expect(ModalRoute.of(context), isA<ModalBottomSheetRoute<dynamic>>());
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Fixture draft');
+    await h.tester.enterText(textField('Title'), 'Fixture draft');
     await h.tester.tapAt(const Offset(2, 2));
     await h.settle();
     expect(find.text('New schedule'), findsOneWidget);
@@ -97,23 +97,25 @@ void main() {
     await h.tapText('Cancel');
     expect(find.text('Fixture draft'), findsOneWidget);
   });
-  appTest('editor labels stay inside the filled field above its value', (h) async {
+  appTest('editor labels stay above the textbox and outside its outline', (h) async {
     await h.tapText('Create schedule');
-    final field = h.tester.widget<TextField>(find.widgetWithText(TextField, 'Title'));
-    expect(field.decoration!.floatingLabelBehavior, FloatingLabelBehavior.always);
+    final field = h.tester.widget<TextField>(textField('Title'));
+    expect(field.decoration!.labelText, isNull);
+    expect(h.tester.getBottomLeft(find.text('Title')).dy,
+      lessThan(h.tester.getTopLeft(textField('Title')).dy));
     expect(field.decoration!.border, InputBorder.none);
     expect(field.decoration!.filled, isTrue);
   });
   appTest('staged editor keeps a draft and saves only from its final step', (h) async {
     await h.tapText('Create schedule');
     expect(find.bySemanticsLabel('Step 1 of 3, Details'), findsOneWidget);
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Fixture staged');
+    await h.tester.enterText(textField('Title'), 'Fixture staged');
     await h.tapText('Next');
     expect(find.bySemanticsLabel('Step 2 of 3, Time'), findsOneWidget);
     expect(h.tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'End time')).value, isTrue);
     expect(h.read(allSeriesProvider).value, isEmpty);
     await h.tapText('Back');
-    expect(h.tester.widget<TextField>(find.widgetWithText(TextField, 'Title')).controller!.text, 'Fixture staged');
+    expect(h.tester.widget<TextField>(textField('Title')).controller!.text, 'Fixture staged');
     await h.tapText('Next');
     await h.tapText('Next');
     expect(find.bySemanticsLabel('Step 3 of 3, Alerts'), findsOneWidget);

@@ -59,7 +59,7 @@ void main() {
     openReview();
     await h.settle();
     await h.tapText('Edit');
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Edited poster');
+    await h.tester.enterText(textField('Title'), 'Edited poster');
     await h.tapText('Next');
     await h.tapText('Next');
     await h.tapText('Use changes');
@@ -95,7 +95,7 @@ void main() {
         )
         .then((v) => result = v);
     await h.settle();
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Renamed fixture');
+    await h.tester.enterText(textField('Title'), 'Renamed fixture');
     await h.tapText('Next');
     await h.tapText('Next');
     await h.tapText('Use changes');
@@ -107,7 +107,7 @@ void main() {
     openReview();
     await h.settle();
     await h.tapText('Edit');
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Changed draft');
+    await h.tester.enterText(textField('Title'), 'Changed draft');
     await h.tapText('Next');
     await h.tapText('Next');
     await h.tapText('Use changes');

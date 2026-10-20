@@ -35,7 +35,7 @@ void main() {
     await h.tester.tap(find.byTooltip('Add'));
     await h.settle();
     await h.tapText('Create schedule');
-    await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Pending fixture');
+    await h.tester.enterText(textField('Title'), 'Pending fixture');
     await h.tapText('Next');
     await h.tapText('Next');
     await h.tapText('Save');

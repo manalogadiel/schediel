@@ -17,12 +17,13 @@ void main() {
     await h.tapText('Image scanning details');
     expect(find.textContaining('Cloud AI scanning is disabled'), findsOneWidget);
   });
-  appTest('profile uses an inside label and still saves a local name', (h) async {
+  appTest('profile places its label above the input and still saves a local name', (h) async {
     await h.tapText('Settings');
     await h.tapText('Profile');
-    final name = find.widgetWithText(TextField, 'Name');
+    final name = textField('Name');
     final field = h.tester.widget<TextField>(name);
-    expect(field.decoration!.floatingLabelBehavior, FloatingLabelBehavior.always);
+    expect(field.decoration!.labelText, isNull);
+    expect(h.tester.getBottomLeft(find.text('Name').last).dy, lessThan(h.tester.getTopLeft(name).dy));
     expect(field.decoration!.border, InputBorder.none);
     await h.tester.enterText(name, 'Fixture name');
     await h.settle();

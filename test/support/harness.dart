@@ -8,12 +8,17 @@ import 'package:schediel/app/app.dart';
 import 'package:schediel/app/lifecycle.dart';
 import 'package:schediel/app/providers.dart';
 import 'package:schediel/app/router.dart';
+import 'package:schediel/app/widgets/labeled_field.dart';
 import 'package:schediel/core/time/zone_resolver.dart';
 import 'package:schediel/data/local/database.dart';
 import 'package:schediel/features/appearance/appearance.dart';
 import 'package:schediel/features/reminders/application/capabilities.dart';
 import 'package:schediel/features/reminders/data/notification_gateway.dart';
 import 'package:schediel/integrations/native/native_bridge.dart';
+
+/// Locate the input associated with a label drawn above its control.
+Finder textField(String label) => find.descendant(
+  of: find.widgetWithText(FieldLabel, label), matching: find.byType(TextField));
 
 /// Records requests instead of talking to the OS.
 class FakeNotificationGateway implements NotificationGateway {

@@ -125,7 +125,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Center(child: ThemedAvatar(profile: current, size: 112)),
           const SizedBox(height: Tokens.lg),
           SectionGroup(
-            header: 'Name',
             children: [
               Padding(
                 padding: const EdgeInsets.all(Tokens.md),

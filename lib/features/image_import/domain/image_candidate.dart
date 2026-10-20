@@ -23,12 +23,14 @@ class ImageCandidate {
     this.timeZone = const CandidateField(), this.timeKind = const CandidateField(),
     this.weekdays = const CandidateField(), this.termEnd = const CandidateField(),
     this.location = const CandidateField(), this.professor = const CandidateField(),
+    this.subtitle = const CandidateField(), this.universityTimetable = false,
     this.associationConfirmed = false, this.noEndConfirmed = false, this.endDayOffset,
     this.warnings = const [], this.selected = true});
   final String candidateId;
   final int sourceRevision;
   final OcrSpan sourceLine;
-  final CandidateField<String> title, timeZone, location, professor;
+  final CandidateField<String> title, timeZone, location, professor, subtitle;
+  final bool universityTimetable;
   final CandidateField<LocalDate> date, termEnd;
   final CandidateField<LocalTime> startTime, endTime;
   final CandidateField<CandidateTimeKind> timeKind;
@@ -41,5 +43,8 @@ class ImageCandidate {
 class CandidateParseResult {
   const CandidateParseResult(this.candidates);
   final List<ImageCandidate> candidates;
-  String get layoutNotice => 'Partial interpretation only. Check every entry against the image; complex timetable rows and columns may not be associated correctly.';
+  bool get universityTimetable => candidates.any((c) => c.universityTimetable);
+  String get layoutNotice => universityTimetable
+    ? 'Check the classes, then set your term dates.'
+    : 'Partial interpretation only. Check every entry against the image; complex timetable rows and columns may not be associated correctly.';
 }

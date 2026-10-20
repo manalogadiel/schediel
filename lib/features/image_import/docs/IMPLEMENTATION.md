@@ -2,6 +2,14 @@
 
 Goal: bounded local JPEG/PNG preparation → on-device OCR → conservative, evidence-backed candidates → explicit resolution → shared transactional review. Implements SCHEDULER_SPEC.md §§8,16 and CONTRACTS.md §4. No cloud path, database writes, alerts, router or permission configuration in this feature.
 
+## University table support (October 20)
+
+The local adapter recognizes the six-column university format using validated OCR regions, independent of OCR reading order. It joins wrapped code/title/instructor/time/room lines, separates merged Code + Description text and emits one weekly candidate per meeting. Units/Section never become Notes. Character geometry distinguishes a narrow, separated slash misread as T/I/1 from real leading room characters; without that geometry no such character is removed. Missing course anchors cannot absorb a neighboring course's description.
+
+Description → Title; Instructor → Professor; Code → Subtitle; schedule suffix → Room/location. Notes and alerts remain absent. A shared, explicit term form aligns each first occurrence to its own weekday and requires real term boundaries, confirmation of the source zone and an association check. Existing edits are preserved. The review selects the existing School category and still permits changes before the transactional Add command. Generic posters and unknown layouts retain the conservative unresolved-field flow. Textbox labels are drawn above their control, outside its fill/border, with accessible input labels.
+
+The provided image was recognized on the Android phone, then checked locally against all fourteen meeting mappings. Its source image/OCR diagnostics remain untracked/ignored and are never uploaded or bundled into the normal app. OCR can still misread instructor spelling/punctuation; review against the source remains required. No model retraining or cloud processing is claimed.
+
 ## Tracer bullets (test first, observe RED, implement, GREEN)
 
 1. `domain/image_preparation.dart`, `data/local_image_preparer.dart`: actual-signature admission (10 MiB/40Mpx before decode), static JPEG/PNG only; isolate orientation/crop/rotation, pixel-only output ≤5 MiB/12Mpx/4096 per dimension. Tests: spoofed/corrupt/animated/bomb inputs, orientation, exact crop/rotate, stripped metadata, normalization limits.

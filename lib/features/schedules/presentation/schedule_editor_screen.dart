@@ -1007,11 +1007,10 @@ class _ZonePickerSheetState extends State<ZonePickerSheet> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.sm),
-            child: TextField(
+            child: FieldLabel(label: 'Search time zones', child: TextField(
               autofocus: true,
-              decoration: const InputDecoration(labelText: 'Search time zones'),
               onChanged: (v) => setState(() => _query = v),
-            ),
+            )),
           ),
           Expanded(
             child: ListView.builder(

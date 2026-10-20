@@ -8,6 +8,7 @@ import '../../../app/icons.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/bottom_sheet_page.dart';
+import '../../../app/widgets/labeled_field.dart';
 
 import '../../../core/schedule/models.dart';
 import '../../schedules/presentation/schedule_editor_screen.dart';
@@ -284,10 +285,9 @@ class _ImportReviewScreenState extends ConsumerState<ImportReviewScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<String>(
+                    child: FieldLabel(label: 'Category', child: DropdownButtonFormField<String>(
                       key: ValueKey('${e.candidateId}:${d.categoryId}'),
                       initialValue: categories.any((c) => c.id == d.categoryId) ? d.categoryId : '',
-                      decoration: const InputDecoration(labelText: 'Category'),
                       isExpanded: true,
                       items: [
                         const DropdownMenuItem(value: '', child: Text('Uncategorized')),
@@ -299,7 +299,7 @@ class _ImportReviewScreenState extends ConsumerState<ImportReviewScreen> {
                               _dirty = true;
                               _entries[index] = e.copyWith(draft: d.copyWith(categoryId: () => value == '' ? null : value));
                             }),
-                    ),
+                    )),
                   ),
                   const SizedBox(width: Tokens.md),
                   TextButton(onPressed: _saving ? null : () => _edit(index), child: const Text('Edit')),

@@ -8,6 +8,7 @@ import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/schediel_theme.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/labeled_field.dart';
 import '../../../app/widgets/common.dart';
 import '../../../core/schedule/limits.dart';
 import '../data/category_repository.dart';
@@ -156,12 +157,12 @@ class CategoriesScreen extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setState) => AlertDialog(
             title: Text(existing == null ? 'New category' : 'Rename category'),
-            content: TextField(
+            content: FieldLabel(label: 'Name', child: TextField(
               controller: controller,
               autofocus: true,
               textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(labelText: 'Name', errorText: error),
-            ),
+              decoration: InputDecoration(errorText: error),
+            )),
             actions: [
               TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancel')),
               TextButton(

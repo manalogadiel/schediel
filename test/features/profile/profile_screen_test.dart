@@ -52,11 +52,11 @@ void main() {
 
   appTest('name is limited to 40 characters and appears on Today once saved', (h) async {
     await openProfile(h);
-    await h.tester.enterText(find.widgetWithText(TextField, 'Name'), 'x' * 41);
+    await h.tester.enterText(textField('Name'), 'x' * 41);
     await h.tester.pump();
     expect(find.text('Use 40 characters or fewer'), findsOneWidget);
     expect(h.tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save name')).onPressed, isNull);
-    await h.tester.enterText(find.widgetWithText(TextField, 'Name'), '  Diel  ');
+    await h.tester.enterText(textField('Name'), '  Diel  ');
     await h.tester.pump();
     await h.tapText('Save name');
     expect((await h.run(() => ProfileRepository(h.db, directory: () async => dir, clock: DateTime.now).load())).name, 'Diel');

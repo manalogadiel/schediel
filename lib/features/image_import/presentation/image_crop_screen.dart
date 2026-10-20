@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../app/icons.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/labeled_field.dart';
 import '../data/local_image_preparer.dart';
 import '../domain/image_services.dart';
 
@@ -42,8 +43,8 @@ class _ImageCropScreenState extends State<ImageCropScreen> {
           ]))))))),
         const SizedBox(height:Tokens.md),
         for(final (label,controller) in [('Left',_left),('Top',_top),('Right',_right),('Bottom',_bottom)])
-          Padding(padding:const EdgeInsets.only(bottom:Tokens.sm),child:TextField(key:Key('crop-${label.toLowerCase()}'),controller:controller,
-            keyboardType:TextInputType.number,decoration:InputDecoration(labelText:'$label pixel'),onChanged:(_)=>setState((){}))),
+          Padding(padding:const EdgeInsets.only(bottom:Tokens.sm),child:FieldLabel(label:'$label pixel',child:TextField(key:Key('crop-${label.toLowerCase()}'),controller:controller,
+            keyboardType:TextInputType.number,onChanged:(_)=>setState((){})))),
         Text('Rotation: ${_turns*90}° clockwise'),
         if(_error!=null) Text(_error!),
         FilledButton(onPressed:() {

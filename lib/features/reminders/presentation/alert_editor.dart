@@ -7,6 +7,7 @@ import '../../../app/icons.dart';
 import '../../schedules/presentation/schedule_time_picker.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/labeled_field.dart';
 import '../../../core/time/local_time.dart';
 import '../domain/alert_rule.dart';
 import '../../../integrations/native/native_bridge.dart';
@@ -234,13 +235,13 @@ class _AlertBlock extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) => AlertDialog(
             title: const Text('Minutes before'),
-            content: TextField(
+            content: FieldLabel(label: 'Minutes', child: TextField(
               controller: controller,
               autofocus: true,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(labelText: 'Minutes', errorText: error),
-            ),
+              decoration: InputDecoration(errorText: error),
+            )),
             actions: [
               TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
               TextButton(

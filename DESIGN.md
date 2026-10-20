@@ -262,7 +262,7 @@ If multiple entries overlap, show the simultaneous entries and an overlap indica
 
 Progressively disclose **Details**, **Repeats** and **Reminders and alarms**. The title and date/time status are clear. Optional fields remain genuinely optional. Notification and alarm controls have independent desired settings and visible actual permission/scheduling states.
 
-Use a single reading column, persistent field labels and explicit optional-field labels; placeholders are hints, not labels or stored values. Collapsed groups summarize actual choices and retain warnings. Reveal an invalid group and bring its labelled error into view on submission. Preserve entered values on failure; a transient message alone is not sufficient recovery. Visible manual-entry defaults are editable choices, never evidence for filling an unresolved import.
+Use a single reading column, persistent field labels above each control and explicit optional-field labels. Labels stay outside textbox fills and outlines in empty, focused and filled states; placeholders are hints, not labels or stored values. Collapsed groups summarize actual choices and retain warnings. Reveal an invalid group and bring its labelled error into view on submission. Preserve entered values on failure; a transient message alone is not sufficient recovery. Visible manual-entry defaults are editable choices, never evidence for filling an unresolved import.
 
 ### Image import review
 

@@ -93,6 +93,8 @@ Gallery/camera selection is explicit. JPEG/PNG admission, metadata removal, crop
 
 This conservative parser does not claim to understand every timetable or every script. Dense/unsupported content must be cropped or entered manually. Camera/gallery/OCR behavior, memory and accuracy need mobile-device testing. **Cloud AI scanning is disabled**; there is no upload fallback or provider key in the app.
 
+University tables with **Code, Description, Units, Section, Instructor, Schedules** headers have a dedicated local parser. Description becomes Title, Instructor becomes Professor and Code becomes Subtitle; Notes stays blank. Different day/time/room combinations become separate weekly schedules. Set the term dates once, confirm the school time zone and check the class details, then continue to review with **School** preselected. All values remain editable before Add. Missing headers or ambiguous row structure fall back to unresolved review rather than borrowing another course's fields.
+
 ## Release signing
 
 Personal updates on this PC keep the existing debug key. Release builds read git-ignored `android/key.properties` when present; without it they use that debug key. No release key is needed for this sharing setup or its verified Android links.

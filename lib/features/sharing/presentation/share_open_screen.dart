@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/icons.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/labeled_field.dart';
 import '../../../app/widgets/common.dart';
 import '../../imports/domain/import_entry.dart';
 import '../../imports/presentation/import_review_screen.dart';
@@ -122,9 +123,9 @@ class _ShareOpenScreenState extends ConsumerState<ShareOpenScreen> {
             icon: const AppIcon(AppIcons.copy, size: 18), label: const Text('Open copied link')),
         ],
         const SizedBox(height: Tokens.md),
-        TextField(controller: _text, enabled: !_loading, autocorrect: false, enableSuggestions: false,
-          keyboardType: TextInputType.url, decoration: const InputDecoration(labelText: 'Shared link'),
-          onSubmitted: (_) => _open()),
+        FieldLabel(label: 'Shared link', child: TextField(controller: _text, enabled: !_loading, autocorrect: false, enableSuggestions: false,
+          keyboardType: TextInputType.url,
+          onSubmitted: (_) => _open())),
         const SizedBox(height: Tokens.md),
         FilledButton(onPressed: _loading ? null : _open, child: const Text('Open preview')),
         if (_loading) const Padding(padding: EdgeInsets.all(Tokens.lg), child: Center(child: CircularProgressIndicator.adaptive())),

@@ -16,7 +16,7 @@ void main() {
       for (final e in h.tester.widgetList<EditableText>(fields)) {
         expect(e.style.fontFamily, isNot(anyOf('Silkscreen', 'Caveat')));
       }
-      await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Fixture title');
+      await h.tester.enterText(textField('Title'), 'Fixture title');
       await h.tester.pump();
       expect(find.text('Fixture title'), findsOneWidget);
     });
