@@ -121,7 +121,7 @@ class TimelineRow extends ConsumerWidget {
         if (category != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: _CategoryTag(name: category.name, ink: ink),
+            child: _CategoryTag(name: category.name, ink: ink, colorKey: category.colorKey),
           ),
       ],
     );
@@ -246,25 +246,34 @@ class _RailNode extends StatelessWidget {
 }
 
 class _CategoryTag extends StatelessWidget {
-  const _CategoryTag({required this.name, required this.ink});
+  const _CategoryTag({required this.name, required this.ink, required this.colorKey});
 
   final String name;
   final Color ink;
+  final String? colorKey;
 
   @override
   Widget build(BuildContext context) {
-    final pixel = context.scheduleColors.style == StyleFamily.pixel;
+    final c = context.scheduleColors;
+    final pixel = c.style == StyleFamily.pixel;
+    final strong = CategoryColor.fromKey(colorKey)?.resolve(c.palette.brightness);
+    // A borderless pill tinted with the category's own color.
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      key: const ValueKey('category-tag'),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(pixel ? 0 : Tokens.radiusPill),
-        color: ink.withValues(alpha: .08),
+        color: strong?.withValues(alpha: .18) ?? ink.withValues(alpha: .08),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AppIcon(AppIcons.category, size: 12, color: ink),
-          const SizedBox(width: 4),
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: strong ?? ink.withValues(alpha: .5), shape: pixel ? BoxShape.rectangle : BoxShape.circle),
+          ),
+          const SizedBox(width: 5),
           Flexible(
             child: Text(
               name,

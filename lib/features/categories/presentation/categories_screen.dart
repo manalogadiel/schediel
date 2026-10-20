@@ -209,7 +209,8 @@ class _FolderCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final pixel = colors.style == StyleFamily.pixel;
     final strong = CategoryColor.fromKey(category.colorKey)?.resolve(p.brightness);
-    final body = colors.categoryFill(category.colorKey);
+    // A normal card; only the folder tab carries the category color.
+    final body = colors.surface;
     final tab = strong ?? colors.secondaryInk.withValues(alpha: .35);
     final shape = _FolderShape(
       radius: pixel ? 0 : 20,
@@ -221,54 +222,55 @@ class _FolderCard extends StatelessWidget {
       button: true,
       label: '${category.name}, $label',
       excludeSemantics: true,
-      child: CustomPaint(
-        painter: _FolderPainter(
-          shape: shape,
-          tab: tab,
-          body: body,
-          shadow: colors.style == StyleFamily.soft && p.brightness == Brightness.light,
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          shape: shape,
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, _FolderShape.tab + 16, 14, 16),
-              child: Row(
-                children: [
-                  Container(
-                    key: ValueKey('category-icon-${category.id}'),
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: p.brightness == Brightness.dark ? .10 : .55),
-                      borderRadius: BorderRadius.circular(pixel ? 0 : 12),
-                    ),
-                    child: Center(child: AppIcon(AppIcons.folder, color: strong ?? p.cardInk)),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          category.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: text.titleMedium?.copyWith(color: p.cardInk, fontWeight: FontWeight.w700),
+      child: Stack(
+        children: [
+          CustomPaint(
+            painter: _FolderPainter(
+              shape: shape,
+              tab: tab,
+              body: body,
+              shadow: colors.style == StyleFamily.soft && p.brightness == Brightness.light,
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              shape: shape,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, _FolderShape.tab + 16, 14, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              category.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: text.titleMedium?.copyWith(color: colors.ink, fontWeight: FontWeight.w700),
+                            ),
+                            Text(label, style: text.bodySmall?.copyWith(color: colors.secondaryInk)),
+                          ],
                         ),
-                        Text(label, style: text.bodySmall?.copyWith(color: p.cardInk.withValues(alpha: .7))),
-                      ],
-                    ),
+                      ),
+                      AppIcon(AppIcons.next, size: 18, color: colors.secondaryInk),
+                    ],
                   ),
-                  AppIcon(AppIcons.next, size: 18, color: p.cardInk.withValues(alpha: .6)),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+          // Marks the colored tab (tests and future affordances find it here).
+          Positioned(
+            left: 0,
+            top: 0,
+            width: 60,
+            height: _FolderShape.tab,
+            child: SizedBox(key: ValueKey('category-icon-${category.id}')),
+          ),
+        ],
       ),
     );
   }
