@@ -31,10 +31,12 @@ void main() {
     expect(region.value.systemNavigationBarIconBrightness, Brightness.dark);
     expect(region.value.statusBarIconBrightness, Brightness.dark);
   });
-  appTest('a low-contrast selected date gets a visible boundary in soft themes', (h) async {
+  appTest('a low-contrast selected date rings its orb in soft themes', (h) async {
     await customize(h);
     final date = h.read(effectiveDateProvider);
     final material = h.tester.widget<Material>(find.byKey(ValueKey('day-${date.toIso()}')));
-    expect((material.shape! as OutlinedBorder).side.style, BorderStyle.solid);
+    expect((material.shape! as OutlinedBorder).side, BorderSide.none, reason: 'no box around the whole column');
+    final orb = h.tester.widget<AnimatedContainer>(find.byKey(ValueKey('day-orb-${date.toIso()}')));
+    expect((orb.decoration! as BoxDecoration).border, isNotNull, reason: 'the orb carries the visible ring');
   });
 }

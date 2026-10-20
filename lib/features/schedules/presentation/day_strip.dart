@@ -70,18 +70,44 @@ class DayStripView extends StatelessWidget {
   /// How far the outermost days sit below the middle one.
   static const archDepth = 14.0;
 
+  /// Half the band's height around the number row (orb radius + margin).
+  static const bandHalf = 23.0;
+
+  /// Fixed weekday-label box, so the number row (and the band behind it)
+  /// sits at a predictable height.
+  static double labelHeightFor(double textScale) => (12 * 1.3 * textScale).ceilToDouble();
+
+  /// Centre of the number row in an unshifted cell: padding, label, gap,
+  /// orb radius.
+  static double numberCenter(double labelHeight) => 6 + labelHeight + 6 + 19;
+
+  /// Arc offset at [x] across a strip [width] wide; matches the per-cell
+  /// translation at each cell centre.
+  static double archAt(double x, double width) {
+    final u = ((x / width) * 7 - 3.5) / 3;
+    return archDepth * u * u;
+  }
+
+  /// Top edge of the glass band at [x].
+  static double bandTop(double x, double width, double labelHeight) => numberCenter(labelHeight) - bandHalf + archAt(x, width);
+
   @override
   Widget build(BuildContext context) {
     final f = Formats.of(context);
     final c = context.scheduleColors;
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    // Large text flattens the arc so nothing clips.
+    final arch = arched && scale < 1.5;
+    final labelHeight = labelHeightFor(scale);
     void week(int delta) => onSelect(selected.addDays(7 * delta));
     final row = Row(
       children: [
         for (var i = 0; i < 7; i++)
           Expanded(
             child: Transform.translate(
-              offset: Offset(0, arched ? archDepth * ((i - 3) / 3) * ((i - 3) / 3) : 0),
+              offset: Offset(0, arch ? archDepth * ((i - 3) / 3) * ((i - 3) / 3) : 0),
               child: _DayCell(
+                labelHeight: arch ? labelHeight : null,
                 date: start.addDays(i),
                 weekday: f.weekdayShort(start.addDays(i).weekday),
                 title: f.dayTitle(start.addDays(i)),
@@ -106,10 +132,18 @@ class DayStripView extends StatelessWidget {
           if (v.abs() < 200) return;
           week(v < 0 ? 1 : -1);
         },
-        child: arched
+        child: arch
             ? CustomPaint(
-                painter: _ArcPainter(c.ink.withValues(alpha: .09), archDepth),
-                child: Padding(padding: const EdgeInsets.only(bottom: archDepth), child: row),
+                painter: _BandPainter(
+                  fill: c.palette.brightness == Brightness.dark ? Colors.white.withValues(alpha: .06) : c.surface.withValues(alpha: .55),
+                  highlight: Colors.white.withValues(alpha: c.palette.brightness == Brightness.dark ? .14 : .7),
+                  shadow: c.ink.withValues(alpha: .08),
+                  labelHeight: labelHeight,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: archDepth),
+                  child: row,
+                ),
               )
             : row,
       ),
@@ -117,32 +151,50 @@ class DayStripView extends StatelessWidget {
   }
 }
 
-/// Two faint arcs framing the numbers, echoing the curved strip.
-class _ArcPainter extends CustomPainter {
-  const _ArcPainter(this.color, this.depth);
-  final Color color;
-  final double depth;
+/// A curved glass band behind the number row: soft shadow beneath, a
+/// translucent fill and a bright top edge. Labels stay above it.
+class _BandPainter extends CustomPainter {
+  const _BandPainter({required this.fill, required this.highlight, required this.shadow, required this.labelHeight});
+  final Color fill, highlight, shadow;
+  final double labelHeight;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    for (final y in [depth - 2, size.height - 2]) {
-      final path = Path()
-        ..moveTo(0, y)
-        ..quadraticBezierTo(size.width / 2, y - 2 * depth, size.width, y);
-      canvas.drawPath(path, paint);
+    const steps = 28;
+    final top = <Offset>[];
+    final bottom = <Offset>[];
+    for (var k = 0; k <= steps; k++) {
+      final x = size.width * k / steps;
+      final y = DayStripView.bandTop(x, size.width, labelHeight);
+      top.add(Offset(x, y));
+      bottom.add(Offset(x, y + 2 * DayStripView.bandHalf));
     }
+    final band = Path()..addPolygon([...top, ...bottom.reversed], true);
+    canvas
+      ..drawPath(
+        band.shift(const Offset(0, 6)),
+        Paint()
+          ..color = shadow
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
+      )
+      ..drawPath(band, Paint()..color = fill)
+      ..drawPath(
+        Path()..addPolygon(top, false),
+        Paint()
+          ..color = highlight
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
   }
 
   @override
-  bool shouldRepaint(_ArcPainter old) => old.color != color || old.depth != depth;
+  bool shouldRepaint(_BandPainter old) =>
+      old.fill != fill || old.highlight != highlight || old.shadow != shadow || old.labelHeight != labelHeight;
 }
 
 class _DayCell extends StatelessWidget {
   const _DayCell({
+    required this.labelHeight,
     required this.date,
     required this.weekday,
     required this.title,
@@ -152,6 +204,8 @@ class _DayCell extends StatelessWidget {
     required this.onTap,
   });
 
+  /// Fixed label box when the strip draws its band; null lets it size itself.
+  final double? labelHeight;
   final LocalDate date;
   final String weekday;
   final String title;
@@ -168,12 +222,8 @@ class _DayCell extends StatelessWidget {
     final soft = c.style == StyleFamily.soft;
     // Low-contrast accents (customized or outlined themes) get a boundary.
     final needsEdge = selected && (c.outlined || contrastRatio(p.accent, c.canvas) < 3 || contrastRatio(p.accent, c.surface) < 3);
-    final shape = pixel
-        ? RoundedRectangleBorder(side: needsEdge || (isToday && !selected) ? BorderSide(color: p.outline, width: 2) : BorderSide.none)
-        : RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Tokens.radiusControl),
-            side: needsEdge ? BorderSide(color: p.outline, width: 2) : BorderSide.none,
-          );
+    // The column is never outlined; the orb carries any boundary.
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(pixel ? 0 : Tokens.radiusControl));
     final label = [title, if (isToday) 'today', if (hasSchedules) 'has schedules'].join(', ');
     final duration = AppMotion.control(context) * 1.5;
     final numberStyle = TextStyle(
@@ -204,18 +254,22 @@ class _DayCell extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      weekday,
-                      maxLines: 1,
-                      overflow: TextOverflow.clip,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                        color: selected ? c.accentText : c.secondaryInk,
+                    SizedBox(
+                      height: labelHeight,
+                      child: Text(
+                        weekday,
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                          color: selected ? c.accentText : c.secondaryInk,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),
                     AnimatedContainer(
+                      key: ValueKey('day-orb-${date.toIso()}'),
                       duration: duration,
                       curve: Curves.easeOutCubic,
                       width: 38,
@@ -231,7 +285,11 @@ class _DayCell extends StatelessWidget {
                                 colors: [p.accent, Color.lerp(p.accent, const Color(0xFFFF7A59), .45)!],
                               )
                             : null,
-                        border: isToday && !selected ? Border.all(color: c.accentText, width: 1.5) : null,
+                        border: needsEdge
+                            ? Border.all(color: p.outline, width: 2)
+                            : isToday && !selected
+                            ? Border.all(color: c.accentText, width: 1.5)
+                            : null,
                         boxShadow: selected && soft
                             ? [BoxShadow(color: p.accent.withValues(alpha: .4), blurRadius: 12, offset: const Offset(0, 4))]
                             : null,
