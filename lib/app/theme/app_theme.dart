@@ -21,6 +21,7 @@ class ScheduleColors extends ThemeExtension<ScheduleColors> {
     required this.nextHolder,
     required this.density,
     required this.showCategoryColors,
+    this.texture = ThemeTexture.none,
   });
 
   final ThemePalette palette;
@@ -40,6 +41,9 @@ class ScheduleColors extends ThemeExtension<ScheduleColors> {
   final Color nextHolder;
   final Density density;
   final bool showCategoryColors;
+
+  /// The chosen surface texture; cards repeat it more faintly.
+  final ThemeTexture texture;
 
   Color get canvas => palette.canvas;
   Color get surface => palette.surface;
@@ -66,6 +70,7 @@ class ScheduleColors extends ThemeExtension<ScheduleColors> {
     nextHolder: nextHolder,
     density: density ?? this.density,
     showCategoryColors: showCategoryColors ?? this.showCategoryColors,
+    texture: texture,
   );
 
   @override
@@ -378,6 +383,7 @@ ThemeData buildTheme({
         nextHolder: outlined ? p.accent : p.accent.withValues(alpha: dark ? 0.20 : 0.10),
         density: density,
         showCategoryColors: showCategoryColors,
+        texture: texture,
       ),
     ],
   );

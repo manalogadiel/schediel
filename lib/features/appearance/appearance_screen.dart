@@ -185,24 +185,36 @@ class _AppearanceScreenState extends ConsumerState<AppearanceScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(Tokens.md),
+                padding: const EdgeInsets.only(top: Tokens.md, bottom: Tokens.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('Texture'),
-                    DropdownButton<ThemeTexture>(
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: Tokens.md),
+                      child: Text('Texture', style: TextStyle(color: c.secondaryInk, fontSize: 13, fontWeight: FontWeight.w600)),
+                    ),
+                    const SizedBox(height: Tokens.sm),
+                    SingleChildScrollView(
                       key: const ValueKey('texture-selector'),
-                      isExpanded: true,
-                      value: choice.texture,
-                      underline: const SizedBox.shrink(),
-                      items: [for (final t in ThemeTexture.values) DropdownMenuItem(value: t, child: Text(t.label))],
-                      onChanged: (v) {
-                        if (v != null) {
-                          final next = choice.copyWith(texture: v);
-                          change(next);
-                          _save(s.theme, next);
-                        }
-                      },
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: Tokens.md),
+                      child: Row(
+                        children: [
+                          for (final t in ThemeTexture.values)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 10),
+                              child: _TextureSwatch(
+                                texture: t,
+                                selected: choice.texture == t,
+                                onTap: () {
+                                  final next = choice.copyWith(texture: t);
+                                  change(next);
+                                  _save(s.theme, next);
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -960,6 +972,64 @@ class _DensityCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Texture
+
+/// A live sample of one texture on the current canvas.
+class _TextureSwatch extends StatelessWidget {
+  const _TextureSwatch({required this.texture, required this.selected, required this.onTap});
+  final ThemeTexture texture;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.scheduleColors;
+    final pixel = c.style == StyleFamily.pixel;
+    final r = BorderRadius.circular(pixel ? 0 : 16);
+    // Swatches exaggerate the pattern slightly so it reads at a small size.
+    final base = textureOverlay(c);
+    final shade = base.withValues(alpha: (base.a * 1.6).clamp(0, .14));
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '${texture.label} texture',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: AppMotion.control(context),
+              padding: const EdgeInsets.all(2.5),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(pixel ? 0 : 19),
+                border: Border.all(color: selected ? c.palette.accent : Colors.transparent, width: 2.5),
+              ),
+              child: ClipRRect(
+                borderRadius: r,
+                child: SizedBox(
+                  width: 62,
+                  height: 62,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(border: Border.all(color: c.ink.withValues(alpha: .08)), borderRadius: r),
+                    child: CustomPaint(painter: TexturePainter(texture, shade: shade, background: c.canvas, accent: c.palette.accent)),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              texture.label,
+              style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? c.ink : c.secondaryInk),
+            ),
+          ],
         ),
       ),
     );

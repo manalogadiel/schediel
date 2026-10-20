@@ -6,8 +6,15 @@ import 'schediel_theme.dart';
 
 enum ThemeTexture {
   none('None'),
-  stripes('Stripes'),
   paper('Paper'),
+  dots('Dots'),
+  grid('Grid'),
+  stripes('Stripes'),
+  carbon('Carbon'),
+  graphite('Graphite'),
+  flow('Flow'),
+  topo('Topo'),
+  mesh('Mesh'),
   gradient('Gradient');
 
   const ThemeTexture(this.label);

@@ -7,7 +7,9 @@ import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/schediel_theme.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/theme/theme_customization.dart';
 import '../../../app/widgets/art.dart';
+import '../../../app/widgets/theme_texture.dart';
 import '../../../app/widgets/themed.dart';
 import '../../../core/schedule/occurrence.dart';
 import '../../../core/time/local_date.dart';
@@ -215,6 +217,12 @@ class _GlowCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (context.scheduleColors.texture != ThemeTexture.none)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(painter: TexturePainter(context.scheduleColors.texture, shade: Colors.white.withValues(alpha: .07), accent: accent)),
+                ),
+              ),
             Material(
               type: MaterialType.transparency,
               child: InkWell(
