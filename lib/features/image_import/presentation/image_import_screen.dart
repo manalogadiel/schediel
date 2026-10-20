@@ -64,7 +64,7 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
       onPopInvokedWithResult:(didPop,_) { if(!didPop) _close(c); },child:Scaffold(
         appBar:AppBar(title:const Text('Import image'),leading:IconButton(tooltip:'Close',onPressed:()=>_close(c),icon:const AppIcon(AppIcons.close))),
         body:ListView(padding:const EdgeInsets.all(Tokens.md),children:[
-          const Text('Choose a JPEG or PNG. Scan on this device, resolve missing fields, then review before adding.'),
+          const Text('Choose a schedule image. Scan on device, then review before adding.'),
           const SizedBox(height:Tokens.md),
           Wrap(spacing:Tokens.sm,children:[
             FilledButton(onPressed:c.busy?null:()=>c.pick(ImagePickKind.gallery),child:const Text('Choose photo')),

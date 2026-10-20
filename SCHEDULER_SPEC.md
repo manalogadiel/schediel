@@ -437,7 +437,7 @@ Use repeating notification triggers only when they faithfully represent the enti
 
 Support broad **content types**: posters, publication materials, photographs, screenshots and school timetable images. This is not a claim to decode every file format or read every image accurately.
 
-Proposed first-version input support: JPEG and PNG; WebP and HEIC/HEIF only after native decode/conversion is verified on supported devices. Animated formats, arbitrary SVGs and PDFs are not silently treated as supported images. Give a precise error or a separately approved conversion path.
+Local input supports still JPEG, PNG, WebP, GIF, BMP and single-page TIFF through bounded byte-based admission and decoding. HEIC/HEIF and AVIF use an optional Android 9+ native conversion path with header dimension checks and bounded target allocation; actual codec availability varies by device and needs device verification. Animated formats, multi-page TIFFs, arbitrary SVGs and PDFs are rejected explicitly. Transparent input is composited onto white before OCR. Every accepted format still passes metadata removal, normalization limits and explicit review.
 
 Use a system photo picker where possible. Camera capture asks for permission only when invoked. Allow crop/rotation and show the exact region about to be scanned.
 

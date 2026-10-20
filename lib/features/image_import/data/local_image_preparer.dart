@@ -26,16 +26,30 @@ Future<PreparedImage> normalizeImage(Uint8List bytes, {PixelCrop? crop, int quar
 PreparedImage _normalize(Uint8List bytes, PixelCrop? crop, int quarterTurns) {
   try {
     final header = ImageAdmission.inspect(bytes);
-    final decoder = header.format == AdmittedImageFormat.png
-        ? img.PngDecoder(maxPixels: ImageImportLimits.sourcePixels)
-        : img.JpegDecoder(maxPixels: ImageImportLimits.sourcePixels);
+    final img.Decoder decoder = switch (header.format) {
+      AdmittedImageFormat.png => img.PngDecoder(maxPixels: ImageImportLimits.sourcePixels),
+      AdmittedImageFormat.jpeg => img.JpegDecoder(maxPixels: ImageImportLimits.sourcePixels),
+      AdmittedImageFormat.webp => img.WebPDecoder()..maxPixels = ImageImportLimits.sourcePixels,
+      AdmittedImageFormat.gif => img.GifDecoder()..maxPixels = ImageImportLimits.sourcePixels,
+      AdmittedImageFormat.bmp => img.BmpDecoder(maxPixels: ImageImportLimits.sourcePixels),
+      AdmittedImageFormat.tiff => img.TiffDecoder(maxPixels: ImageImportLimits.sourcePixels),
+    };
     final decoded = decoder.decode(bytes, frame: 0);
     if (decoded == null ||
         !((decoded.width == header.width && decoded.height == header.height) ||
           (header.format == AdmittedImageFormat.jpeg && decoded.width == header.height && decoded.height == header.width))) {
       throw const ImageImportFailure(ImageFailureCode.unreadable);
     }
-    var image = img.bakeOrientation(decoded);
+    return _finish(img.bakeOrientation(decoded), crop, quarterTurns);
+  } on ImageImportFailure {
+    rethrow;
+  } catch (_) {
+    throw const ImageImportFailure(ImageFailureCode.unreadable);
+  }
+}
+
+PreparedImage _finish(img.Image image, PixelCrop? crop, int quarterTurns) {
+  try {
     if (crop != null) {
       if (crop.left < 0 || crop.top < 0 || crop.right > image.width || crop.bottom > image.height || crop.width < 1 || crop.height < 1) {
         throw const ImageImportFailure(ImageFailureCode.invalidCrop);
@@ -56,8 +70,11 @@ PreparedImage _normalize(Uint8List bytes, PixelCrop? crop, int quarterTurns) {
     }
     // A fresh pixel-only container drops EXIF/GPS/ICC/text metadata, including
     // metadata that resize/crop helpers might otherwise copy to the output.
-    image = img.Image.fromBytes(width: image.width, height: image.height,
+    final pixels = img.Image.fromBytes(width: image.width, height: image.height,
       bytes: image.getBytes(order: img.ChannelOrder.rgba).buffer, numChannels: 4);
+    image = img.Image(width: pixels.width, height: pixels.height, numChannels: 3);
+    img.fill(image, color: img.ColorRgb8(255, 255, 255));
+    img.compositeImage(image, pixels);
     while (true) {
       final output = img.encodePng(image);
       if (output.length <= ImageImportLimits.normalizedBytes) {

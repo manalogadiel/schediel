@@ -7,6 +7,7 @@ import 'package:schediel/features/image_import/data/local_image_preparer.dart';
 import 'package:schediel/features/image_import/data/mlkit_ocr.dart';
 import 'package:schediel/features/image_import/domain/conservative_parser.dart';
 import 'package:schediel/features/image_import/domain/image_services.dart';
+import 'package:schediel/features/image_import/domain/image_preparation.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -43,4 +44,43 @@ void main() {
     expect(document.text.substring(candidate.date.span!.start, candidate.date.span!.end), '2027-03-05');
     expect(calls, ['vision#startTextRecognizer', 'vision#closeTextRecognizer']);
   });
+  test('missing optional native rectangles do not discard recognized text', () async {
+    var closed = false;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'vision#closeTextRecognizer') { closed = true; return null; }
+      Map<String, Object?> node(String text, Object? rect) => {
+        'text': text, 'rect': rect, 'points': <Object>[], 'recognizedLanguages': <String>[],
+      };
+      return {'text': 'Exam | 2027-03-05 | 1 PM', 'blocks': [
+        {...node('Exam | 2027-03-05 | 1 PM', null), 'lines': [
+          {...node('Exam | 2027-03-05 | 1 PM', {'left': 10, 'top': 20, 'right': 190, 'bottom': 50}), 'elements': [
+            {...node('Exam', null), 'symbols': [node('E', null)]}
+          ]},
+          {...node('optional unlocated text', null), 'elements': <Object>[]}
+        ]}
+      ]};
+    });
+    final document = await MlKitOnDeviceOcr(isSupported: () => true).recognize(source);
+    final candidate = ConservativeCandidateParser().parse(document).candidates.single;
+    expect(candidate.title.value, 'Exam');
+    expect(candidate.title.region, isNotNull);
+    expect(document.lines.last.region, isNull);
+    expect(document.lines.first.glyphs, isEmpty);
+    expect(closed, isTrue);
+  });
+
+  test('recognizer closes after a native failure and a retry can succeed', () async {
+    var closes = 0, attempts = 0;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'vision#closeTextRecognizer') { closes++; return null; }
+      if (++attempts == 1) throw PlatformException(code: 'TextRecognizerError');
+      return {'text': 'Exam | 2027-03-05 | 1 PM', 'blocks': <Object>[]};
+    });
+    final adapter = MlKitOnDeviceOcr(isSupported: () => true);
+    await expectLater(adapter.recognize(source), throwsA(isA<ImageImportFailure>()));
+    expect(closes, 1);
+    expect((await adapter.recognize(source)).text, contains('Exam'));
+    expect(closes, 2);
+  });
+
 }

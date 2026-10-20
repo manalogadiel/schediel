@@ -89,7 +89,7 @@ UPDATE_FIXTURES=1 flutter test test/contracts/widget_snapshot_v1_1_fixture_test.
 
 ## Image import
 
-Gallery/camera selection is explicit. JPEG/PNG admission, metadata removal, crop/rotation and bounded normalization precede on-device OCR. Extracted fields remain inactive drafts; unknown year, date order, AM/PM, time zone, semester bounds and row associations must be resolved, not guessed. Selected entries remain editable before one explicit local import transaction. Notifications and alarms start off.
+Gallery/camera selection is explicit. Still JPEG, PNG, WebP, GIF, BMP and single-page TIFF images are accepted by their actual bytes. HEIC/HEIF and AVIF use local codecs on supported Android devices (Android 9+; codec availability varies). Animated/multi-page files, SVGs and PDFs are rejected explicitly. Metadata removal, a white background for transparent images, crop/rotation and bounded normalization precede on-device OCR. Extracted fields remain inactive drafts; unknown year, date order, AM/PM, time zone, semester bounds and row associations must be resolved, not guessed. Selected entries remain editable before one explicit local import transaction. Notifications and alarms start off.
 
 This conservative parser does not claim to understand every timetable or every script. Dense/unsupported content must be cropped or entered manually. Camera/gallery/OCR behavior, memory and accuracy need mobile-device testing. **Cloud AI scanning is disabled**; there is no upload fallback or provider key in the app.
 

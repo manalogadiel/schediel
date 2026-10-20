@@ -439,7 +439,7 @@ Use repeating notification triggers only when they faithfully represent the enti
 
 Support broad **content types**: posters, publication materials, photographs, screenshots and school timetable images. This is not a claim to decode every file format or read every image accurately.
 
-Proposed first-version input support: JPEG and PNG; WebP and HEIC/HEIF only after native decode/conversion is verified on supported devices. Animated formats, arbitrary SVGs and PDFs are not silently treated as supported images. Give a precise error or a separately approved conversion path.
+Local input supports still JPEG, PNG, WebP, GIF, BMP and single-page TIFF through bounded byte-based admission and decoding. HEIC/HEIF and AVIF use an optional Android 9+ native conversion path with header dimension checks and bounded target allocation; actual codec availability varies by device and needs device verification. Animated formats, multi-page TIFFs, arbitrary SVGs and PDFs are rejected explicitly. Transparent input is composited onto white before OCR. Every accepted format still passes metadata removal, normalization limits and explicit review.
 
 Use a system photo picker where possible. Camera capture asks for permission only when invoked. Allow crop/rotation and show the exact region about to be scanned.
 
@@ -1912,6 +1912,16 @@ Two independent planning reviews were integrated. The parent also retrieved the 
 Schediel now has a Flutter implementation, Android native code, iOS source, a locally tested optional sharing backend and a static browser preview. **This is a development build, not a production or real-device certification.** The optional sharing backend and HTTPS domains were deployed on October 20; the live checks below are distinct from production certification. Cloud scanning stays off. No schedule data, credentials or signing identities were invented to make a test look deployed.
 
 Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
+
+## October 21: resilient image scanning and compact occurrence modals
+
+The ML Kit native plugin can return null rectangles for blocks, elements or symbols, while its Dart factory requires maps. A regression reproduced `ocrFailed` from otherwise valid recognized text with missing optional geometry. The adapter now uses the same native recognizer channel with nullable, validated geometry, preserves text without inventing coordinates, and closes each recognizer after success or failure. This reproduces a concrete failure path; the phone was disconnected and the user's exact failing source image was not supplied, so its individual failure is not yet device-verified.
+
+Still WebP, BMP, GIF and single-page TIFF inputs now join JPEG/PNG through actual byte/header admission and bounded decoding. Transparent screenshots are composited onto white before OCR. Android 9+ HEIC/HEIF and AVIF conversion runs on a serial background task queue, rejects oversized or animated headers before bitmap allocation, requests at most 4096 pixels per dimension/12 million pixels, and caps its PNG output before the shared metadata/crop pipeline. Codec availability varies by device. Synthetic fixtures contain solid colors only; AVIF tests verify the native-channel contract, not a Windows or Android codec. Animated files, multi-page TIFF, SVG and PDF remain explicit unsupported inputs.
+
+Occurrence modals still use the root navigator above the floating navigation bar. They now shrink to their contents up to a bounded height instead of reserving 75% of the screen. Short Today/Week details leave only normal bottom padding; long notes scroll to Edit/Remove at 200% text on a small viewport. No schedule storage, scanner review/confirmation rule, signing key or texture caching behavior was changed.
+
+The full Flutter suite passed **403 tests** and whole-project analysis reported **no issues**. Android compilation and all **45 JVM tests passed**, including header size/overflow checks and bounded decode target tests; `:app:lintDebug` also completed successfully. Release split APKs built; the arm64 APK reports version code **4006** and retains the existing debug certificate. Personal probe images and test fixtures were confirmed absent from the APK. Physical scan/codec checks and installation remain pending while the phone is disconnected.
 
 ## October 21: texture coverage behind widget detail headers
 

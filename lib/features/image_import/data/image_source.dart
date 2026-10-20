@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import '../domain/image_preparation.dart';
 import '../domain/image_services.dart';
 import 'local_image_preparer.dart';
+import 'platform_image_preparer.dart';
 
 class SystemImageSourcePicker implements ImageSourcePicker {
   SystemImageSourcePicker({ImagePicker? picker}) : _picker = picker ?? ImagePicker();
@@ -29,8 +30,12 @@ class SystemImageSourcePicker implements ImageSourcePicker {
 }
 
 class LocalImageFilePreparer implements ImageFilePreparer {
-  LocalImageFilePreparer({Future<Directory> Function()? temporaryDirectory}) : _temporaryDirectory = temporaryDirectory ?? getTemporaryDirectory;
+  LocalImageFilePreparer({Future<Directory> Function()? temporaryDirectory,
+    Future<PreparedImage> Function(Uint8List, PixelCrop?, int)? platformNormalizer})
+      : _temporaryDirectory = temporaryDirectory ?? getTemporaryDirectory,
+        _platformNormalizer = platformNormalizer ?? normalizePlatformImage;
   final Future<Directory> Function() _temporaryDirectory;
+  final Future<PreparedImage> Function(Uint8List, PixelCrop?, int) _platformNormalizer;
   @override
   Future<PreparedImageFile> prepare(String path, {required int sourceRevision, PixelCrop? crop, int quarterTurns = 0}) async {
     Directory? owned;
@@ -43,7 +48,10 @@ class LocalImageFilePreparer implements ImageFilePreparer {
         if (builder.length + chunk.length > ImageImportLimits.sourceBytes) throw const ImageImportFailure(ImageFailureCode.tooLarge);
         builder.add(chunk);
       }
-      final normalized = await normalizeImage(builder.takeBytes(), crop: crop, quarterTurns: quarterTurns);
+      final bytes = builder.takeBytes();
+      final normalized = ImageAdmission.needsPlatformDecoder(bytes)
+          ? await _platformNormalizer(bytes, crop, quarterTurns)
+          : await normalizeImage(bytes, crop: crop, quarterTurns: quarterTurns);
       owned = await (await _temporaryDirectory()).createTemp('schediel-image-');
       final output = await File('${owned.path}/normalized.png').writeAsBytes(normalized.bytes, flush: true);
       return PreparedImageFile(path: output.path, width: normalized.width, height: normalized.height,

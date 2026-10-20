@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -6,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:schediel/features/image_import/data/image_source.dart';
 import 'package:schediel/features/image_import/domain/image_services.dart';
 import 'package:schediel/features/image_import/domain/image_preparation.dart';
+import 'package:schediel/features/image_import/data/local_image_preparer.dart';
+import 'package:schediel/features/image_import/data/platform_image_preparer.dart';
 
 class PickerProbe extends ImagePicker {
   int calls = 0;
@@ -21,6 +24,7 @@ class PickerProbe extends ImagePicker {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test('system picker is invoked only by action, handles cancel and avoids full metadata request', () async {
     final probe = PickerProbe();
     final picker = SystemImageSourcePicker(picker: probe);
@@ -51,4 +55,36 @@ void main() {
     await expectLater(preparer.prepare('${root.path}/oversize.png', sourceRevision: 13),
       throwsA(isA<ImageImportFailure>().having((e) => e.code, 'code', ImageFailureCode.tooLarge)));
   });
+  test('HEIC byte signature dispatches to platform decoder and owns only normalized output', () async {
+    final root = await Directory.systemTemp.createTemp('schediel-heic-');
+    addTearDown(() => root.delete(recursive: true));
+    final bytes = Uint8List.fromList([0, 0, 0, 20, ...'ftypheic'.codeUnits, 0, 0, 0, 0, ...'mif1'.codeUnits]);
+    final source = await File('${root.path}/source.wrong-extension').writeAsBytes(bytes);
+    var calls = 0;
+    final preparer = LocalImageFilePreparer(temporaryDirectory: () async => root, platformNormalizer: (actual, crop, turns) async {
+      calls++;
+      expect(actual, bytes);
+      return normalizeImage(img.encodePng(img.Image(width: 4, height: 3)), crop: crop, quarterTurns: turns);
+    });
+    final result = await preparer.prepare(source.path, sourceRevision: 2);
+    expect(calls, 1);
+    expect((result.width, result.height), (4, 3));
+    await result.remove();
+    expect(await source.readAsBytes(), bytes);
+    expect(await File(result.path).exists(), isFalse);
+  });
+
+  test('platform decoder failures remain precise and never accept invalid output', () async {
+    const channel = MethodChannel('schediel/image_decode');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final bytes = Uint8List.fromList([0, 0, 0, 20, ...'ftypheic'.codeUnits, 0, 0, 0, 0, ...'mif1'.codeUnits]);
+    for (final code in ['tooLarge', 'unsupported', 'unreadable']) {
+      messenger.setMockMethodCallHandler(channel, (_) async => throw PlatformException(code: code));
+      await expectLater(normalizePlatformImage(bytes, null, 0), throwsA(isA<ImageImportFailure>().having((e) => e.code.name, 'code', code)));
+    }
+    messenger.setMockMethodCallHandler(channel, (_) async => Uint8List(0));
+    await expectLater(normalizePlatformImage(bytes, null, 0), throwsA(isA<ImageImportFailure>()));
+  });
+
 }

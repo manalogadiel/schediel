@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:image/image.dart' as img;
+
 abstract final class ImageImportLimits {
   static const sourceBytes = 10 * 1024 * 1024;
   static const sourcePixels = 40000000;
@@ -18,8 +20,8 @@ class ImageImportFailure implements Exception {
   final ImageFailureCode code;
 
   String get message => switch (code) {
-    ImageFailureCode.unsupported => 'Choose a static JPEG or PNG image. Other formats and animated images are not supported.',
-    ImageFailureCode.unreadable => 'Unable to read this image. Choose another JPEG or PNG.',
+    ImageFailureCode.unsupported => 'Use a still JPEG, PNG, WebP, GIF, BMP or single-page TIFF. HEIC/AVIF need device support.',
+    ImageFailureCode.unreadable => 'Unable to read this image. Try another photo or export it again.',
     ImageFailureCode.tooLarge => 'Image exceeds the safe size limit (10 MiB or 40 million pixels). Export a smaller image or crop it first.',
     ImageFailureCode.invalidCrop => 'Choose a nonempty region inside the image.',
     ImageFailureCode.noText => 'No readable text found. Try a clearer image or a smaller crop.',
@@ -34,7 +36,7 @@ class ImageImportFailure implements Exception {
   String toString() => 'ImageImportFailure(${code.name})';
 }
 
-enum AdmittedImageFormat { jpeg, png }
+enum AdmittedImageFormat { jpeg, png, webp, gif, bmp, tiff }
 
 class ImageHeader {
   const ImageHeader(this.format, this.width, this.height);
@@ -49,7 +51,46 @@ abstract final class ImageAdmission {
     if (bytes.length > ImageImportLimits.sourceBytes) throw const ImageImportFailure(ImageFailureCode.tooLarge);
     if (bytes.length >= 8 && _same(bytes, 0, const [137, 80, 78, 71, 13, 10, 26, 10])) return _png(bytes);
     if (bytes.length >= 2 && bytes[0] == 255 && bytes[1] == 216) return _jpeg(bytes);
-    throw const ImageImportFailure(ImageFailureCode.unsupported);
+    AdmittedImageFormat? format;
+    img.Decoder? decoder;
+    if (_same(bytes, 0, 'RIFF'.codeUnits) && _same(bytes, 8, 'WEBP'.codeUnits)) {
+      format = AdmittedImageFormat.webp;
+      decoder = img.WebPDecoder()..maxPixels = ImageImportLimits.sourcePixels;
+    } else if (_same(bytes, 0, 'GIF87a'.codeUnits) || _same(bytes, 0, 'GIF89a'.codeUnits)) {
+      format = AdmittedImageFormat.gif;
+      decoder = img.GifDecoder()..maxPixels = ImageImportLimits.sourcePixels;
+    } else if (_same(bytes, 0, 'BM'.codeUnits)) {
+      format = AdmittedImageFormat.bmp;
+      decoder = img.BmpDecoder(maxPixels: ImageImportLimits.sourcePixels);
+    } else if (_same(bytes, 0, const [73, 73, 42, 0]) || _same(bytes, 0, const [77, 77, 0, 42])) {
+      format = AdmittedImageFormat.tiff;
+      decoder = img.TiffDecoder(maxPixels: ImageImportLimits.sourcePixels);
+    }
+    if (decoder == null || format == null) throw const ImageImportFailure(ImageFailureCode.unsupported);
+    try {
+      final info = decoder.startDecode(bytes);
+      if (info == null) throw const ImageImportFailure(ImageFailureCode.unreadable);
+      _dimensions(info.width, info.height);
+      if (info.numFrames > 1) throw const ImageImportFailure(ImageFailureCode.unsupported);
+      return ImageHeader(format, info.width, info.height);
+    } on ImageImportFailure {
+      rethrow;
+    } catch (_) {
+      throw const ImageImportFailure(ImageFailureCode.unreadable);
+    }
+  }
+
+  /// ISO BMFF image containers only, never arbitrary files by their extension.
+  static bool needsPlatformDecoder(Uint8List bytes) {
+    if (bytes.length > ImageImportLimits.sourceBytes) throw const ImageImportFailure(ImageFailureCode.tooLarge);
+    if (!_same(bytes, 4, 'ftyp'.codeUnits) || bytes.length < 16) return false;
+    final size = _u32(bytes, 0);
+    if (size < 16 || size > bytes.length || size > 1024 || size % 4 != 0) return false;
+    const brands = {'heic', 'heix', 'hevc', 'hevx', 'mif1', 'msf1', 'avif', 'avis'};
+    for (var at = 8; at + 4 <= size; at += 4) {
+      if (at != 12 && brands.contains(String.fromCharCodes(bytes.sublist(at, at + 4)))) return true;
+    }
+    return false;
   }
 
   static ImageHeader _png(Uint8List bytes) {

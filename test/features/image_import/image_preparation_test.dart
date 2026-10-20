@@ -27,10 +27,10 @@ void main() {
     expect(() => ImageAdmission.inspect(Uint8List.fromList([255, 216, 255])),
       throwsA(isA<ImageImportFailure>().having((e) => e.code, 'code', ImageFailureCode.unreadable)));
   });
-  test('admission rejects GIF bytes even when caller calls them PNG', () {
+  test('truncated GIF is unreadable regardless of its filename', () {
     expect(
       () => ImageAdmission.inspect(Uint8List.fromList('GIF89a'.codeUnits)),
-      throwsA(isA<ImageImportFailure>().having((e) => e.code, 'code', ImageFailureCode.unsupported)),
+      throwsA(isA<ImageImportFailure>().having((e) => e.code, 'code', ImageFailureCode.unreadable)),
     );
   });
 }

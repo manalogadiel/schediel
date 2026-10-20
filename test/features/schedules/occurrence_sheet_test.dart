@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:schediel/app/icons.dart';
 import 'package:schediel/app/providers.dart';
+import 'package:schediel/core/schedule/models.dart';
 import 'package:schediel/app/router.dart';
 import 'package:schediel/app/theme/app_theme.dart';
 import 'package:schediel/app/theme/schediel_theme.dart';
@@ -15,7 +16,7 @@ import 'schedule_screens_test.dart' show classDraft;
 
 void main() {
   for (final tab in ['Today', 'Week']) {
-    appTest('$tab details open higher on the root navigator above the floating bar', (h) async {
+    appTest('$tab details fit their content on the root navigator above the floating bar', (h) async {
       await h.run(() => h.read(scheduleRepositoryProvider).create(classDraft(title: 'Fixture visible actions', professor: 'Fixture person')));
       await h.settle();
       if (tab == 'Week') {
@@ -30,14 +31,37 @@ void main() {
       final details = find.byType(OccurrenceDetails);
       final route = ModalRoute.of(h.tester.element(details))!;
       expect(route.navigator, same(rootNavigatorKey.currentState));
-      expect(h.tester.widget<DraggableScrollableSheet>(find.byType(DraggableScrollableSheet)).initialChildSize, .75);
-      expect(h.tester.getSize(details).height, greaterThan(h.tester.view.physicalSize.height / h.tester.view.devicePixelRatio * .65));
+      final action = find.ancestor(of: find.text('Remove'), matching: find.byWidgetPredicate((w) => w is ButtonStyleButton));
+      final bottomGap = h.tester.getBottomRight(details).dy - h.tester.getBottomRight(action).dy;
+      expect(bottomGap, lessThanOrEqualTo(Tokens.xl + 2));
+      expect(h.tester.getSize(details).height, lessThan(h.tester.view.physicalSize.height / h.tester.view.devicePixelRatio * .65));
       expect(find.text('Edit').hitTestable(), findsOneWidget);
       expect(find.text('Remove').hitTestable(), findsOneWidget);
       expect(find.byKey(const ValueKey('nav-week')).hitTestable(), findsNothing);
       expect(h.tester.takeException(), isNull);
     });
   }
+
+  appTest('long notes scroll to actions in a bounded sheet at large text', (h) async {
+    final id = await h.run(() => h.read(scheduleRepositoryProvider).create(classDraft(title: 'Fixture long notes')
+      .copyWith(details: ScheduleDetails(notes: List.filled(40, 'Fixture note line').join('\n')))));
+    h.tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(h.tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await h.settle();
+    await h.tapText('Fixture long notes');
+    final details = find.byType(OccurrenceDetails);
+    expect(h.tester.getTopLeft(details).dy, greaterThanOrEqualTo(0));
+    expect(h.tester.getSize(details).height, lessThanOrEqualTo(640 * .9));
+    final scrollable = find.descendant(of: details, matching: find.byType(Scrollable)).first;
+    await h.tester.scrollUntilVisible(find.text('Remove'), 300, scrollable: scrollable, maxScrolls: 40);
+    await h.settle();
+    expect(find.text('Edit').hitTestable(), findsOneWidget);
+    expect(find.text('Remove').hitTestable(), findsOneWidget);
+    expect(find.byKey(const ValueKey('nav-week')).hitTestable(), findsNothing);
+    expect((await h.run(h.read(scheduleRepositoryProvider).loadAll)).single.id, id);
+    expect(h.tester.takeException(), isNull);
+  }, size: const Size(360, 640));
+
   test('soft filled buttons never draw an outline, even with a pale accent', () {
     final theme = buildTheme(
       theme: themeFor(ThemeId.lilac, customization: const ThemeCustomization(mainTone: 92)),

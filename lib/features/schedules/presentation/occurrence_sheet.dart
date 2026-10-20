@@ -24,16 +24,15 @@ Future<void> showOccurrenceSheet(BuildContext context, Occurrence occurrence) {
     useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.75,
-      minChildSize: 0.4,
-      maxChildSize: 0.95,
-      builder: (context, controller) => OccurrenceDetails(
-        seriesId: occurrence.seriesId,
-        originalKey: occurrence.originalKey,
-        scrollController: controller,
-        inSheet: true,
+    builder: (context) => ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .9),
+      child: SafeArea(
+        top: false,
+        child: OccurrenceDetails(
+          seriesId: occurrence.seriesId,
+          originalKey: occurrence.originalKey,
+          inSheet: true,
+        ),
       ),
     ),
   );
@@ -149,6 +148,7 @@ class _DetailsBody extends ConsumerWidget {
     if (details.subtitle != null) lines.add(DetailLine(icon: AppIcons.text, text: details.subtitle!, semanticPrefix: 'Subtitle'));
 
     return ListView(
+      shrinkWrap: inSheet,
       controller: controller,
       padding: EdgeInsets.fromLTRB(Tokens.lg, inSheet ? 0 : Tokens.md, Tokens.lg, Tokens.xl),
       children: [

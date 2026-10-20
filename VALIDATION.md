@@ -8,6 +8,16 @@ Schediel now has a Flutter implementation, Android native code, iOS source, a lo
 
 Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
 
+## October 21: resilient image scanning and compact occurrence modals
+
+The ML Kit native plugin can return null rectangles for blocks, elements or symbols, while its Dart factory requires maps. A regression reproduced `ocrFailed` from otherwise valid recognized text with missing optional geometry. The adapter now uses the same native recognizer channel with nullable, validated geometry, preserves text without inventing coordinates, and closes each recognizer after success or failure. This reproduces a concrete failure path; the phone was disconnected and the user's exact failing source image was not supplied, so its individual failure is not yet device-verified.
+
+Still WebP, BMP, GIF and single-page TIFF inputs now join JPEG/PNG through actual byte/header admission and bounded decoding. Transparent screenshots are composited onto white before OCR. Android 9+ HEIC/HEIF and AVIF conversion runs on a serial background task queue, rejects oversized or animated headers before bitmap allocation, requests at most 4096 pixels per dimension/12 million pixels, and caps its PNG output before the shared metadata/crop pipeline. Codec availability varies by device. Synthetic fixtures contain solid colors only; AVIF tests verify the native-channel contract, not a Windows or Android codec. Animated files, multi-page TIFF, SVG and PDF remain explicit unsupported inputs.
+
+Occurrence modals still use the root navigator above the floating navigation bar. They now shrink to their contents up to a bounded height instead of reserving 75% of the screen. Short Today/Week details leave only normal bottom padding; long notes scroll to Edit/Remove at 200% text on a small viewport. No schedule storage, scanner review/confirmation rule, signing key or texture caching behavior was changed.
+
+The full Flutter suite passed **403 tests** and whole-project analysis reported **no issues**. Android compilation and all **45 JVM tests passed**, including header size/overflow checks and bounded decode target tests; `:app:lintDebug` also completed successfully. Release split APKs built; the arm64 APK reports version code **4006** and retains the existing debug certificate. Personal probe images and test fixtures were confirmed absent from the APK. Physical scan/codec checks and installation remain pending while the phone is disconnected.
+
 ## October 21: texture coverage behind widget detail headers
 
 The widget deep link correctly opened the existing occurrence, but the shared AppBar painted an opaque canvas over the already full-screen texture. Textured themes now use a transparent app-bar surface and transparent status-bar color, with system-icon brightness chosen from the canvas contrast. Untextured app bars retain their existing solid surface. Existing zero elevation/tint prevents a solid strip after scrolling; the cached texture renderer was not changed.

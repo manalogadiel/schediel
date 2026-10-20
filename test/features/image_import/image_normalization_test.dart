@@ -1,9 +1,74 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:schediel/features/image_import/data/local_image_preparer.dart';
+import 'package:schediel/features/image_import/data/platform_image_preparer.dart';
 import 'package:schediel/features/image_import/domain/image_preparation.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  final formats = <String, Uint8List Function(img.Image)>{
+    'WebP': (i) => img.encodeWebP(i), 'BMP': (i) => img.encodeBmp(i),
+    'GIF': (i) => img.encodeGif(i), 'TIFF': (i) => img.encodeTiff(i),
+  };
+  for (final format in formats.entries) {
+    test('${format.key} normalizes real pixels and strips metadata', () async {
+      final input = img.Image(width: 4, height: 3, numChannels: 4);
+      img.fill(input, color: img.ColorRgba8(20, 70, 120, 255));
+      input.textData = {'private': 'remove this'};
+      final output = await normalizeImage(format.value(input), crop: const PixelCrop(1, 0, 4, 2), quarterTurns: 1);
+      expect((output.width, output.height), (2, 3));
+      final decoded = img.decodePng(output.bytes)!;
+      expect(decoded.getPixel(0, 0).r, closeTo(20, 3));
+      expect(decoded.getPixel(0, 0).g, closeTo(70, 3));
+      expect(decoded.textData ?? {}, isEmpty);
+      expect(decoded.exif.isEmpty, isTrue);
+    });
+  }
+
+  test('AVIF native-channel contract reuses pixel-only normalization', () async {
+    const channel = MethodChannel('schediel/image_decode');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final bytes = await File('test/fixtures/image_import/solid.avif').readAsBytes();
+    expect(ImageAdmission.needsPlatformDecoder(bytes), isTrue);
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      expect(call.method, 'normalize');
+      expect((call.arguments as Map)['bytes'], bytes);
+      final image = img.Image(width: 8, height: 6);
+      img.fill(image, color: img.ColorRgb8(20, 70, 120));
+      image.textData = {'private': 'remove me'};
+      return img.encodePng(image);
+    });
+    final result = await normalizePlatformImage(bytes, const PixelCrop(0, 0, 4, 6), 1);
+    expect((result.width, result.height), (6, 4));
+    final pixel = img.decodePng(result.bytes)!.getPixel(0, 0);
+    expect(pixel.r, closeTo(20, 3));
+    expect(pixel.g, closeTo(70, 3));
+  });
+
+  test('transparent screenshots are composited onto white for OCR', () async {
+    final image = img.Image(width: 3, height: 1, numChannels: 4);
+    image.setPixelRgba(0, 0, 0, 0, 0, 0);
+    image.setPixelRgba(1, 0, 0, 0, 0, 255);
+    image.setPixelRgba(2, 0, 0, 0, 0, 128);
+    final result = img.decodePng((await normalizeImage(img.encodePng(image))).bytes)!;
+    expect(result.getPixel(0, 0).r, 255);
+    expect(result.getPixel(1, 0).r, 0);
+    expect(result.getPixel(2, 0).r, closeTo(127, 1));
+  });
+
+  test('animated GIF and multi-page TIFF are never silently truncated', () async {
+    final image = img.Image(width: 2, height: 2);
+    image.addFrame(img.Image(width: 2, height: 2));
+    for (final bytes in [img.encodeGif(image), await File('test/fixtures/image_import/two-pages.tiff').readAsBytes()]) {
+      await expectLater(normalizeImage(bytes), throwsA(isA<ImageImportFailure>()
+        .having((e) => e.code, 'code', ImageFailureCode.unsupported)));
+    }
+  });
   test('JPEG EXIF orientation is applied before crop', () async {
     final source = img.Image(width: 4, height: 2);
     source.exif.imageIfd.orientation = 6;
