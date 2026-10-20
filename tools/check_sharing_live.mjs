@@ -17,9 +17,12 @@ const payload = fixtures.cases.find(c => c.name === 'valid-single-item-no-option
 const sessions = [];
 const deviceFlag = process.argv.indexOf('--device');
 const device = deviceFlag < 0 ? null : process.argv[deviceFlag + 1];
+const browserButton = process.argv.includes('--browser-button');
 class CheckFailure extends Error {}
 const check = (value, label) => { if (!value) throw new CheckFailure(label); };
+let requestStage = 'startup';
 async function api(path, {owner, body, key, origin, expected = 200, method = body ? 'POST' : 'GET'} = {}) {
+  requestStage = path.replace(/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}/g, '{id}');
   const headers = {apikey: settings.SCHEDIEL_SUPABASE_KEY, 'Content-Type': 'application/json'};
   if (owner) headers.Authorization = `Bearer ${owner.access_token}`;
   if (key) headers['Idempotency-Key'] = key;
@@ -28,6 +31,7 @@ async function api(path, {owner, body, key, origin, expected = 200, method = bod
     method, headers, body: body ? JSON.stringify(body) : undefined,
     redirect: 'error', signal: AbortSignal.timeout(20000),
   });
+  check(response.headers.get('Content-Type')?.includes('application/json'), `Unexpected response format (HTTP ${response.status})`);
   const data = await response.json();
   const code = typeof data.code === 'string' && /^[a-z_]+$/.test(data.code) ? data.code : 'unknown';
   if (response.status !== expected && Array.isArray(data.fieldErrors)) {
@@ -55,24 +59,52 @@ async function create(owner) {
   return fixture;
 }
 async function checkDevice(fixture) {
+  requestStage = 'phone browser handoff';
   check(device && /^[A-Za-z0-9][A-Za-z0-9:_-]*$/.test(device), 'A device serial is required');
   const adb = (...args) => execFileSync('adb', ['-s', device, ...args], {encoding: 'utf8', timeout: 20000});
+  const screen = () => {
+    adb('shell', 'uiautomator', 'dump', '/sdcard/schediel-review-check.xml');
+    return adb('exec-out', 'cat', '/sdcard/schediel-review-check.xml');
+  };
+  function buttonCenter(xml, label) {
+    for (const match of xml.matchAll(/<node\b[^>]*>/g)) {
+      const node = match[0];
+      if (!node.includes(`text="${label}"`) && !node.includes(`content-desc="${label}"`)) continue;
+      const bounds = /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
+      if (bounds) return [String(Math.round((+bounds[1] + +bounds[3]) / 2)), String(Math.round((+bounds[2] + +bounds[4]) / 2))];
+    }
+    return null;
+  }
   let opened = 0;
   try {
     for (const host of [settings.SCHEDIEL_SHARE_HOST, settings.SCHEDIEL_APP_LINK_HOST].filter(Boolean)) {
-      const launch = adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-c', 'android.intent.category.BROWSABLE', '-d', `https://${host}/s/#${fixture.token}`);
-      check(launch.includes('com.manalogadiel.schediel'), 'Android did not route the verified link to Schediel');
-      opened++;
+      const args = ['shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-c', 'android.intent.category.BROWSABLE'];
+      if (browserButton) args.push('-p', 'com.android.chrome');
+      const launch = adb(...args, '-d', `https://${host}/s/#${fixture.token}`);
+      if (browserButton) {
+        check(launch.includes('com.android.chrome'), 'Could not open the synthetic preview in Chrome');
+        let center;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          await delay(1000); center = buttonCenter(screen(), 'Open in Schediel');
+          if (center) break;
+        }
+        check(center, 'Chrome did not show the Open in Schediel button');
+        adb('shell', 'input', 'tap', ...center);
+      } else {
+        check(launch.includes('com.manalogadiel.schediel'), 'Android did not route the verified link to Schediel');
+        opened++;
+      }
       let ready = false;
       for (let attempt = 0; attempt < 5; attempt++) {
         await delay(1000);
-        adb('shell', 'uiautomator', 'dump', '/sdcard/schediel-review-check.xml');
-        const xml = adb('exec-out', 'cat', '/sdcard/schediel-review-check.xml');
+        const xml = screen();
         ready = ['Shared schedules', payload.items[0].title, 'Edit', 'Add selected schedules'].every(text => xml.includes(text));
         if (ready) break;
       }
       check(ready, 'Phone did not show the editable review and Add action');
-      console.log(`PASS phone ${opened === 1 ? 'first' : 'warm'} link opens editable review through Android verification`);
+      if (browserButton) opened++;
+      console.log(browserButton ? 'PASS real Chrome Open in Schediel button launches the native editable review'
+        : `PASS phone ${opened === 1 ? 'first' : 'warm'} link opens editable review through Android verification`);
     }
   } finally {
     // No Add or Edit action is tapped. Close only the unmodified test reviews.
@@ -123,7 +155,8 @@ try {
   console.log('PASS revocation, deletion readback, rejection of link replacement and preservation of another owner’s share');
 } catch (error) {
   // Only explicit fixed assertions are reported, never fetch details or bodies.
-  console.error('Live sharing verification failed: ' + (error instanceof CheckFailure ? error.message : 'request failure'));
+  const kind = /^[A-Za-z]+Error$/.test(error?.name) ? error.name : 'request failure';
+  console.error(`Live sharing verification failed at ${requestStage}: ` + (error instanceof CheckFailure ? error.message : kind));
   process.exitCode = 1;
 } finally {
   for (const session of sessions) {

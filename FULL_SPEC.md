@@ -1913,6 +1913,15 @@ Schediel now has a Flutter implementation, Android native code, iOS source, a lo
 
 Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
 
+## October 20: browser button handoff correction
+
+The user reported that Open in Schediel stayed in Messenger/browser previews despite verified Android domains. The old button navigated to another HTTPS page, which a browser can keep internally. Android now receives a package-scoped intent directly from the user click; the full fragment is preserved and the original HTTPS preview is its fallback. No automatic launch or import was introduced, and no bearer is placed in page markup.
+
+- Browser/jsdom suite: **142 passed**, covering compact/legacy links from both origins, user-gesture-only launch, explicit package, full fragment, fallback URL and no bearer in markup after the click.
+- Android's own intent parser confirmed that the target package and complete share fragment survive parsing.
+- The website-only update was deployed to both public production domains; no APK reinstall, signing change or local data operation was required.
+- On the connected Android 13 phone, the real Chrome Open in Schediel button was tapped for synthetic previews on both domains and opened the installed native review with Edit and Add selected schedules. No Add action was tapped; synthetic server copies were cleaned up. Messenger's private conversations were not opened or changed; a restrictive embedded browser may still require Open in browser before the button.
+
 ## October 20: compact online sharing and Android installation
 
 - `flutter analyze --no-pub`: no issues. Full `flutter test`: **376 passed**.

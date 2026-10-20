@@ -17,3 +17,13 @@ export function captureShareLink({ location, history }) {
   if (decoded.length !== 32 || canonical !== token) return null;
   return compact ? { token } : { shareId: match[1], token };
 }
+
+// Build only inside the explicit Open action. Android browsers can keep an
+// HTTPS-to-HTTPS handoff inside the browser even for verified App Links.
+// Package-scoped intents request the installed app and preserve the original
+// URI fragment; the HTTPS preview remains the fallback if the app is absent.
+export function appLaunchUrl(link, origin, userAgent) {
+  const url = link.shareId ? `${origin}/s/${link.shareId}#token=${link.token}` : `${origin}/s/#${link.token}`;
+  if (!/Android/i.test(userAgent)) return url;
+  return `intent:${url.slice('https:'.length)}#Intent;scheme=https;package=com.manalogadiel.schediel;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+}

@@ -38,7 +38,7 @@ With online sharing configured, **Send link** creates a short HTTPS link and ope
 
 ## Online sharing configuration
 
-This PC's share and handoff domains are `schediel-share.vercel.app` and `schediel-open.vercel.app`. Both are public production domains with the installed APK's Android signing association. Some messaging apps may retain links in their own browser; the fallback offers an explicit Open action. Recipients need a compatible installed Schediel APK.
+This PC's share and handoff domains are `schediel-share.vercel.app` and `schediel-open.vercel.app`. Both are public production domains with the installed APK's Android signing association. Some messaging apps may retain links in their own browser; the fallback offers an explicit Open action that requests the installed Android app directly. If an embedded browser blocks that action, open the original link in Chrome and tap Open in Schediel there. Recipients need a compatible installed Schediel APK.
 
 Keep these build-time defines absent for offline-only builds. For online builds, put only public configuration in git-ignored `env/sharing.json` (start from `env/sharing.example.json`):
 

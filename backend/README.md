@@ -70,7 +70,7 @@ The API never returns a bearer secret in owner metadata. The client stores the r
 
 ## Live verification
 
-From the repository root, `node tools/check_sharing_live.mjs --create-fixtures` opts into creating disposable anonymous identities and synthetic contract snapshots, then verifies creation/replay, two-owner isolation, public compact/legacy resolution, CORS, revocation and sharing-only deletion. It cleans up the snapshots and signs out test sessions. Credentials and bearer links stay in memory; no phone schedules are used. Add `--device SERIAL` with an unlocked Android phone to check verified URL routing and the Edit/Add review controls without importing. Anonymous test identities may remain in Auth; this is separate from deleting their snapshots.
+From the repository root, `node tools/check_sharing_live.mjs --create-fixtures` opts into creating disposable anonymous identities and synthetic contract snapshots, then verifies creation/replay, two-owner isolation, public compact/legacy resolution, CORS, revocation and sharing-only deletion. It cleans up the snapshots and signs out test sessions. Credentials and bearer links stay in memory; no phone schedules are used. Add `--device SERIAL` with an unlocked Android phone to check verified URL routing and the Edit/Add review controls without importing; add `--browser-button` to open the real Chrome preview and tap its Open in Schediel button instead. Anonymous test identities may remain in Auth; this is separate from deleting their snapshots.
 
 Hosted gateways forward `/health`, `/share-links` and similar paths after stripping `/functions/v1`; handlers accept both forms. JSON payloads are passed to the Postgres driver as objects so its JSONB serializer does not double-encode them.
 

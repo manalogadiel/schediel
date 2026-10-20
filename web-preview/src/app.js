@@ -1,4 +1,4 @@
-import { captureShareLink } from './link.js';
+import { captureShareLink, appLaunchUrl } from './link.js';
 import { readSettings } from './settings.js';
 import { validateResolvedShare } from './validate.js';
 import { renderPreview } from './render.js';
@@ -96,8 +96,7 @@ export async function startPreview({ window, config, locale = window.navigator.l
         // Never restore the bearer to the preview URL: that is a same-document
         // hash navigation, not an OS app handoff. Build the destination only here.
         const destination = window.location.origin === settings.appLinkOrigin ? settings.shareHost : settings.appLinkOrigin;
-        navigate(link.shareId ? `${destination}/s/${link.shareId}#token=${link.token}`
-          : `${destination}/s/#${link.token}`);
+        navigate(appLaunchUrl(link, destination, window.navigator.userAgent));
       }
     });
   } else {

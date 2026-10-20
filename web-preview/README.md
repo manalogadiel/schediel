@@ -18,7 +18,7 @@ Required environment values:
 - `SCHEDIEL_API_BASE`: actual HTTPS Supabase edge base ending `/functions/v1`.
 - `SCHEDIEL_SHARE_HOST`: actual owned HTTPS origin, including `https://`, with no path, query, credentials or fragment.
 - `SCHEDIEL_PUBLISHABLE_KEY`: optional public `sb_publishable_...` key. Never a secret/service key.
-- `SCHEDIEL_APP_LINK_ORIGIN`: optional second owned HTTPS origin (for example a different subdomain) used only by the **Open in Schediel** button. It must differ from the share origin: browsers treat a link to the page's own host as ordinary navigation and stay in the browser, so a same-host hand-off can never open the app. Without it, the preview shows no app button and tells the person to reopen the original link on a device with Schediel installed. Configure the same host in the app (`SCHEDIEL_APP_LINK_HOST` / Gradle `schediel.appLinkHost`) and serve the association files on it too.
+- `SCHEDIEL_APP_LINK_ORIGIN`: optional second owned HTTPS origin (for example a different subdomain) used only by the **Open in Schediel** button. It must differ from the share origin for ordinary HTTPS handoff. On Android, the explicit Open action uses a package-scoped intent instead of relying on a second webpage navigation; other platforms retain the HTTPS handoff. Without it, the preview shows no app button and tells the person to reopen the original link on a device with Schediel installed. Configure the same host in the app (`SCHEDIEL_APP_LINK_HOST` / Gradle `schediel.appLinkHost`) and serve the association files on it too.
 
 Then run:
 
@@ -45,3 +45,7 @@ The fragment is removed immediately from browser history before any resolution a
 On a real Android/iOS device, prove that opening the original HTTPS link preserves its fragment on cold and warm starts and opens **preview**, not automatic import. App association/signing and store distribution are separate release gates. Link expiry/revocation cannot recall already downloaded previews or imported copies.
 
 Both share and handoff hosts must be public production domains. A Vercel alias alone can remain behind preview authentication, preventing Android from reading its association file; attach the alias to the project as a production domain. The preview accepts either configured origin and hands off to the other only after the Open action.
+
+## Android browser-to-app button
+
+The Android Open action constructs a package-scoped HTTPS intent synchronously inside the user click, preserving the full original fragment. Chrome can then launch the installed Schediel activity instead of treating another HTTPS URL as a webpage. The encoded original preview URL is the fallback when the app cannot open. No launch occurs automatically, and the bearer is never written into page markup, storage or logs. See [Chrome Android intents](https://developer.chrome.com/docs/android/intents). Some embedded browsers can still block external apps; open the original message link in Chrome and use the button there. Reopening the original link is required because the preview scrubs its fragment.
