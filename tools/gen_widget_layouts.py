@@ -27,6 +27,10 @@ STYLES = {
 HOLDERS = 4
 # Styles whose title font is bundled (not a system font).
 BITMAP_TITLES = {'pixel', 'sketch'}
+# Borders, shadow insets and taller display fonts use part of the same
+# vertical budget. At normal text size every style needs 76dp per detailed
+# holder, so choosing a design does not lose a card on the same grid.
+VERTICAL_PADDING = {'soft': (8, 8), 'pop': (4, 4), 'pixel': (5, 6), 'sketch': (4, 5)}
 
 
 def rounded(radius: float) -> str:
@@ -106,6 +110,7 @@ def text(view_id: str, size: int, *, font: str = 'sans-serif-medium', gone: bool
 
 def holder(i: int, style: str) -> str:
     radius, outline, shadow, font, title_size = STYLES[style]
+    top, bottom = VERTICAL_PADDING[style]
     shadow_shape = f'@drawable/widget_shape_{style}_shadow'
     ring_shape = f'@drawable/widget_shape_{style}_ring'
     fill_shape = f'@drawable/widget_shape_{style}_fill'
@@ -159,9 +164,9 @@ def holder(i: int, style: str) -> str:
         f'{ind}    android:layout_height="wrap_content"\n'
         f'{ind}    android:orientation="vertical"\n'
         f'{ind}    android:paddingStart="12dp"\n'
-        f'{ind}    android:paddingTop="8dp"\n'
+        f'{ind}    android:paddingTop="{top}dp"\n'
         f'{ind}    android:paddingEnd="{12 + shadow}dp"\n'
-        f'{ind}    android:paddingBottom="{8 + shadow}dp">\n')
+        f'{ind}    android:paddingBottom="{bottom + shadow}dp">\n')
     parts.append(text(f'holder_{i}_time', 12, indent=ind + '    '))
     parts.append(text(f'holder_{i}_title', title_size, font=font, indent=ind + '    '))
     if style in BITMAP_TITLES:

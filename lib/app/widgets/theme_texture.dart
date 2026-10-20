@@ -14,10 +14,16 @@ Color textureOverlay(ScheduleColors c) {
     return [c.ink, c.secondaryInk, c.accentText].map((ink) => contrastRatio(ink, background)).reduce((a, b) => a < b ? a : b);
   }
 
-  for (var alpha = .09; alpha >= .0025; alpha *= .7) {
-    final black = Colors.black.withValues(alpha: alpha), white = Colors.white.withValues(alpha: alpha);
-    final best = minimum(black) >= minimum(white) ? black : white;
-    if (minimum(best) >= 4.5) return best;
+  // Prefer marks that contrast with the canvas. Maximizing text contrast
+  // first picked white on near-white canvases, making the texture invisible.
+  final shades = c.canvas.computeLuminance() > .5
+      ? [Colors.black, Colors.white]
+      : [Colors.white, Colors.black];
+  for (final color in shades) {
+    for (var alpha = .12; alpha >= .0025; alpha *= .7) {
+      final shade = color.withValues(alpha: alpha);
+      if (minimum(shade) >= 4.5) return shade;
+    }
   }
   return Colors.transparent;
 }

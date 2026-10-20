@@ -9,8 +9,8 @@ data class WidgetPlan(val allDay: List<SnapshotEntry>, val holders: List<HolderR
 /**
  * Chooses what a widget instance shows (SCHEDULER_SPEC.md 5.2-5.3):
  * Now, then Next, then Upcoming, then one "needs review" entry; at most two
- * All day captions. Large text hides details before entries; a short widget
- * shows fewer entries, and the next schedule wins over captions.
+ * All day captions. Optional details and captions give way before schedules;
+ * even the smallest size has a readable Open Schediel fallback.
  */
 object WidgetPlanner {
     const val MAX_EXPANDED = 4
@@ -46,45 +46,26 @@ object WidgetPlanner {
             result.upcoming.forEach { add(row(it, RowStatus.UPCOMING, false, settings, showDetails)) }
             result.needsReview.take(1).forEach { add(row(it, RowStatus.REVIEW, false, settings, showDetails)) }
         }.take(if (compact) MAX_COMPACT else MAX_EXPANDED)
-        var captions = result.allDay.take(MAX_ALL_DAY)
+        val captions = result.allDay.take(MAX_ALL_DAY)
         if (heightDp == null || heightDp <= 0f) return WidgetPlan(captions, candidates)
-
-        val available = heightDp - ROOT_PADDING_DP
-        val captionHeight = SMALL_LINE_SP * fontScale + CAPTION_MARGIN_DP
-        fun holderHeight(row: HolderRow) = holderHeight(row, fontScale, holderChromeDp, titleLineSp)
-
-        fun fitting(captionCount: Int): List<HolderRow> {
-            var used = captionCount * captionHeight
-            val shown = mutableListOf<HolderRow>()
-            for (row in candidates) {
-                used += holderHeight(row)
-                if (used > available) break
-                shown += row
-            }
-            return shown
+        if (candidates.isEmpty()) {
+            val captionHeight = SMALL_LINE_SP * fontScale + CAPTION_MARGIN_DP
+            val count = ((heightDp - ROOT_PADDING_DP) / captionHeight).toInt().coerceAtLeast(0)
+            return WidgetPlan(captions.take(count), emptyList())
         }
-
-        var holders = fitting(captions.size)
-        while (holders.isEmpty() && captions.isNotEmpty() && candidates.isNotEmpty()) {
-            captions = captions.dropLast(1)
-            holders = fitting(captions.size)
-        }
-        if (holders.isEmpty() && candidates.isNotEmpty()) {
-            // Too short for a full holder: keep the essential title and time.
-            holders = listOf(candidates.first().copy(details = null))
-        }
-        return WidgetPlan(captions, holders)
+        return sized(result, fontScale, holderChromeDp, titleLineSp)
+            .lastOrNull { it.first <= heightDp }?.second ?: WidgetPlan(emptyList(), emptyList())
     }
 
     private fun holderHeight(row: HolderRow, fontScale: Float, chrome: Float, title: Float) =
         chrome + (SMALL_LINE_SP + title + if (row.details != null) SMALL_LINE_SP else 0f) * fontScale
 
     /**
-     * One plan per holder count (1..n) with the height it needs, ascending,
-     * led by a bare variant (the next item's title and time, no captions).
-     * Android 12+ hosts pick the largest layout that fits the widget's real
-     * size, so the container fills even when the reported size is
-     * conservative.
+     * A size frontier: each row count has a title/time-only variant before
+     * captions/details are added. A taller variant must never show fewer
+     * schedules than a shorter one. Android 12+ picks the largest fitting
+     * RemoteViews size; older hosts use the same frontier in plan().
+     * At most 13 variants (three per count plus the tiny-widget fallback).
      */
     fun sized(
         result: ReadResult,
@@ -93,18 +74,31 @@ object WidgetPlanner {
         titleLineSp: Float = TITLE_LINE_SP,
     ): List<Pair<Float, WidgetPlan>> {
         val full = plan(result, null, fontScale, holderChromeDp, titleLineSp)
-        val captions = SMALL_LINE_SP * fontScale + CAPTION_MARGIN_DP
-        var height = ROOT_PADDING_DP + full.allDay.size * captions
-        val variants = full.holders.mapIndexed { i, row ->
-            height += holderHeight(row, fontScale, holderChromeDp, titleLineSp)
-            height to WidgetPlan(full.allDay, full.holders.take(i + 1))
+        if (full.holders.isEmpty()) return emptyList()
+        val captionHeight = SMALL_LINE_SP * fontScale + CAPTION_MARGIN_DP
+        fun height(plan: WidgetPlan): Float = ROOT_PADDING_DP + plan.allDay.size * captionHeight +
+            plan.holders.sumOf { holderHeight(it, fontScale, holderChromeDp, titleLineSp).toDouble() }.toFloat()
+        fun quality(a: WidgetPlan, b: WidgetPlan): Int = compareValuesBy(a, b,
+            { it.holders.size }, { it.allDay.size }, { it.holders.count { row -> row.details != null } })
+        val variants = buildList {
+            add(1f to WidgetPlan(emptyList(), emptyList()))
+            for (count in 1..full.holders.size) {
+                val rows = full.holders.take(count)
+                val bare = rows.map { it.copy(details = null) }
+                for (plan in listOf(WidgetPlan(emptyList(), bare), WidgetPlan(full.allDay, bare), WidgetPlan(full.allDay, rows))) {
+                    add(height(plan) to plan)
+                }
+            }
         }
-        if (variants.isEmpty()) return variants
-        // The smallest size: just the next item's title and time, no captions.
-        val bare = (full.holders.firstOrNull { it.status == RowStatus.NEXT } ?: full.holders.first()).copy(details = null)
-        val bareHeight = ROOT_PADDING_DP + holderHeight(bare, fontScale, holderChromeDp, titleLineSp)
-        if (bareHeight >= variants.first().first) return variants
-        return listOf(bareHeight to WidgetPlan(emptyList(), listOf(bare))) + variants
+        val frontier = mutableListOf<Pair<Float, WidgetPlan>>()
+        for (variant in variants.sortedWith(compareBy<Pair<Float, WidgetPlan>> { it.first }
+            .thenComparator { a, b -> quality(a.second, b.second) })) {
+            val previous = frontier.lastOrNull()
+            if (previous != null && quality(variant.second, previous.second) <= 0) continue
+            if (previous?.first == variant.first) frontier.removeAt(frontier.lastIndex)
+            frontier += variant
+        }
+        return frontier
     }
 
     private fun row(entry: SnapshotEntry, status: RowStatus, emphasized: Boolean, settings: WidgetSettings, showDetails: Boolean): HolderRow {

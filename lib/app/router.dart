@@ -14,6 +14,7 @@ import '../features/schedules/presentation/schedule_editor_screen.dart';
 import '../features/schedules/presentation/today_screen.dart';
 import '../features/schedules/presentation/week_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/settings/licenses_screen.dart';
 import '../features/sharing/presentation/direct_import_screen.dart';
 import '../features/sharing/presentation/sharing_screens.dart';
 import '../features/sharing/domain/share_link.dart';
@@ -79,6 +80,7 @@ GoRouter buildRouter({String initialLocation = '/today', List<RouteBase> extraRo
       ),
     ),
     GoRoute(path: '/settings/profile', parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const ProfileScreen()),
+    GoRoute(path: '/settings/licenses', parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const LicensesScreen()),
     GoRoute(path: '/settings/appearance', parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const AppearanceScreen()),
     GoRoute(path: '/settings/categories', parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const CategoriesScreen()),
     GoRoute(path: '/settings/widgets', parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const WidgetSettingsScreen()),

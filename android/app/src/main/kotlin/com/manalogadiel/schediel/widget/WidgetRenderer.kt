@@ -86,7 +86,7 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
         val fontScale = context.resources.configuration.fontScale
         val chrome = ThemeStyle.holderChromeDp(style)
         val title = ThemeStyle.titleLineSp(style)
-        // Android 12+: one layout per row count, keyed by the height it needs;
+        // Android 12+: title/time and detailed layouts, keyed by their height;
         // the host picks the largest that fits the widget's real size, so the
         // container fills even when the reported size is conservative.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && result.state == ReadState.ENTRIES && result.settings != null) {
@@ -113,6 +113,15 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
         if (result.state != ReadState.ENTRIES) {
             views.setViewVisibility(R.id.widget_message, View.VISIBLE)
             views.setTextViewText(R.id.widget_message, context.getString(messageText(result.message)))
+            views.setTextColor(R.id.widget_message, primary)
+            return views
+        }
+        if (plan.holders.isEmpty() && plan.allDay.isEmpty()) {
+            // The host can resize below even one complete card. Keep a
+            // readable launch action instead of cutting off title/time.
+            views.setViewVisibility(R.id.widget_message, View.VISIBLE)
+            views.setTextViewText(R.id.widget_message, context.getString(R.string.widget_open_app))
+            views.setInt(R.id.widget_message, "setMaxLines", 1)
             views.setTextColor(R.id.widget_message, primary)
             return views
         }

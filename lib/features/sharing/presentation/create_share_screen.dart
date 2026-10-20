@@ -9,6 +9,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
 import '../../../core/schedule/models.dart';
 import '../../../core/time/local_date.dart';
+import '../../categories/domain/category.dart';
 import '../../imports/presentation/import_review_screen.dart';
 import '../application/share_sender.dart';
 import '../application/sharing_config.dart';
@@ -25,7 +26,7 @@ class CreateShareScreen extends ConsumerStatefulWidget {
 class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
   List<ScheduleSeries>? _all;
   final _selected = <String>{};
-  bool _allScope = false;
+  CategoryFilter _shareFilter = const CategoryFilter.all();
   bool _location = false, _professor = false, _subtitle = false, _notes = false;
   Duration _validity = const Duration(days: 7);
   bool _creating = false;
@@ -40,15 +41,26 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
       final pending = ref.read(sharingConfigProvider).isConfigured
           ? await ref.read(shareSenderProvider).pending() : const [];
       if (!mounted) return;
-      setState(() { _all = saved; _uncertain = pending.isNotEmpty; _selectScope(); });
+      setState(() { _all = saved; _uncertain = pending.isNotEmpty;
+        _shareFilter = ref.read(effectiveFilterProvider); _selectScope(); });
     } on Object {
       if (mounted) setState(() => _error = 'Could not load saved schedules. Try again.');
     }
   }
   void _selectScope() {
-    final filter = ref.read(effectiveFilterProvider);
-    _selected..clear()..addAll((_all ?? []).where((s) => _allScope || filter.matches(s.categoryId)).map((s) => s.id));
+    _selected..clear()..addAll((_all ?? []).where((s) => _shareFilter.matches(s.categoryId)).map((s) => s.id));
   }
+  void _category(String? id, bool on) => setState(() {
+    final previous = _shareFilter;
+    final ids = _shareFilter.isAll ? <String>{} : {..._shareFilter.categoryIds};
+    if (id != null) { on ? ids.add(id) : ids.remove(id); }
+    _shareFilter = CategoryFilter.only(ids,
+      includeUncategorized: id == null ? on : !_shareFilter.isAll && _shareFilter.includeUncategorized);
+    // Adding a category must not restore individually excluded schedules.
+    _selected.retainAll({for (final s in _all ?? <ScheduleSeries>[]) if (_shareFilter.matches(s.categoryId)) s.id});
+    _selected.addAll([for (final s in _all ?? <ScheduleSeries>[])
+      if (_shareFilter.matches(s.categoryId) && !previous.matches(s.categoryId)) s.id]);
+  });
   SharedFieldPolicy get _policy => SharedFieldPolicy(location: _location, professor: _professor, subtitle: _subtitle, notes: _notes);
 
   Future<void> _create(SharePayload payload) async {
@@ -94,21 +106,32 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
         : all == null ? (_error == null ? const Center(child: CircularProgressIndicator.adaptive())
           : EmptyState(title: _error!, action: TextButton(onPressed: _load, child: const Text('Try again'))))
         : ListView(padding: const EdgeInsets.all(Tokens.md), children: [
-          SegmentedButton<bool>(showSelectedIcon: false, segments: const [
-            ButtonSegment(value: false, label: Text('Current filter')), ButtonSegment(value: true, label: Text('All saved')),
-          ], selected: {_allScope}, onSelectionChanged: _creating ? null : (s) => setState(() { _allScope = s.first; _selectScope(); })),
+          const Text('Categories to share', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: Tokens.sm),
+          Wrap(spacing: Tokens.sm, runSpacing: Tokens.xs, children: [
+            FilterChip(label: const Text('All'), selected: _shareFilter.isAll,
+              onSelected: _creating ? null : (_) => setState(() { _shareFilter = const CategoryFilter.all(); _selectScope(); })),
+            for (final category in categories)
+              FilterChip(key: ValueKey('share-category-${category.id}'), label: Text(category.name),
+                selected: !_shareFilter.isAll && _shareFilter.categoryIds.contains(category.id),
+                onSelected: _creating ? null : (on) => _category(category.id, on)),
+            FilterChip(key: const ValueKey('share-category-uncategorized'), label: const Text('Uncategorized'),
+              selected: !_shareFilter.isAll && _shareFilter.includeUncategorized,
+              onSelected: _creating ? null : (on) => _category(null, on)),
+          ]),
+          const Text('Choose categories, then deselect any schedules you do not want to send.'),
           const SizedBox(height: Tokens.md),
           const Text('Past and ended entries are included unless you deselect them. Recurring schedules share their rules and exceptions, not an infinite list of dates.'),
           const SizedBox(height: Tokens.md),
-          SectionGroup(header: 'Optional details to share', children: [
+          ExpansionTile(title: const Text('Optional details to share'), children: [
             _toggle('Room or location', _location, (v) => _location = v),
             _toggle('Professor or person', _professor, (v) => _professor = v),
             _toggle('Subtitle', _subtitle, (v) => _subtitle = v),
             _toggle('Notes', _notes, (v) => _notes = v),
           ]),
           const Text('Included schedules', style: TextStyle(fontWeight: FontWeight.w600)),
-          for (final s in all) CheckboxListTile(value: _selected.contains(s.id), title: Text(s.title),
-            subtitle: Text(scheduleTimeLabel(s.time, Formats.of(context))), controlAffinity: ListTileControlAffinity.leading,
+          for (final s in all.where((s) => _shareFilter.matches(s.categoryId))) CheckboxListTile(value: _selected.contains(s.id), title: Text(s.title),
+            subtitle: Text('${categories.where((c) => c.id == s.categoryId).firstOrNull?.name ?? 'Uncategorized'} · ${scheduleTimeLabel(s.time, Formats.of(context))}'), controlAffinity: ListTileControlAffinity.leading,
             onChanged: _creating ? null : (on) => setState(() { on == true ? _selected.add(s.id) : _selected.remove(s.id); })),
           if (payload != null) ExpansionTile(title: const Text('Review exact included data'), children: [
             for (final item in payload.items) _payloadRow(item),

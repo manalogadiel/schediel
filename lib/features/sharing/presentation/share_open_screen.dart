@@ -116,7 +116,6 @@ class _ShareOpenScreenState extends ConsumerState<ShareOpenScreen> {
           onSubmitted: (_) => _open()),
         const SizedBox(height: Tokens.md),
         FilledButton(onPressed: _loading ? null : _open, child: const Text('Open preview')),
-        if (!config.isConfigured) const Padding(padding: EdgeInsets.only(top: Tokens.md), child: SharingUnavailable()),
         if (_loading) const Padding(padding: EdgeInsets.all(Tokens.lg), child: Center(child: CircularProgressIndicator.adaptive())),
         if (_error != null) Semantics(liveRegion: true, child: EmptyState(title: shareErrorLabel(_error!),
           message: _error == 'rate_limited' ? 'Wait a moment before trying again.' : null,
@@ -124,12 +123,6 @@ class _ShareOpenScreenState extends ConsumerState<ShareOpenScreen> {
               ? TextButton(onPressed: () => _resolve(_link!), child: const Text('Try again')) : null)),
       ]));
   }
-}
-
-class SharingUnavailable extends StatelessWidget {
-  const SharingUnavailable({super.key});
-  @override Widget build(BuildContext context) => Text('Online links are not set up on this device. Links sent from Schediel work offline.',
-    style: Theme.of(context).textTheme.bodySmall);
 }
 
 String shareErrorLabel(String code) => switch (code) {

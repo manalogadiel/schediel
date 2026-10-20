@@ -63,7 +63,8 @@ void main() {
   appTest('online links stay off until a backend is configured; offline links can still be pasted', (h) async {
     rootNavigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const ShareOpenScreen()));
     await h.settle();
-    expect(find.textContaining('Online links are not set up'), findsOneWidget);
+    expect(find.textContaining('Online links are not set up'), findsNothing);
+    expect(find.textContaining('Paste a link or the whole message'), findsOneWidget);
     expect(find.text('Open preview'), findsOneWidget);
     expect(find.text('Add selected schedules'), findsNothing);
   });

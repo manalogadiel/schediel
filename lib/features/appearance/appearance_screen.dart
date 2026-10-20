@@ -569,7 +569,8 @@ class ModeToggle extends StatelessWidget {
                 ),
               ),
             ),
-            Row(
+            Positioned.fill(child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (final (mode, icon, label) in _modes)
                   Expanded(
@@ -592,7 +593,7 @@ class ModeToggle extends StatelessWidget {
                     ),
                   ),
               ],
-            ),
+            )),
           ],
         ),
       ),
@@ -994,8 +995,9 @@ class _TextureSwatch extends StatelessWidget {
     final pixel = c.style == StyleFamily.pixel;
     final r = BorderRadius.circular(pixel ? 0 : 16);
     // Swatches exaggerate the pattern slightly so it reads at a small size.
-    final base = textureOverlay(c);
-    final shade = base.withValues(alpha: (base.a * 1.6).clamp(0, .14));
+    // No text sits inside a swatch, so show its pattern even before a
+    // texture is selected for the app.
+    final shade = (c.canvas.computeLuminance() > .5 ? Colors.black : Colors.white).withValues(alpha: .14);
     return Semantics(
       button: true,
       selected: selected,

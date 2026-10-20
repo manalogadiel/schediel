@@ -107,8 +107,9 @@ object ThemeStyle {
      */
     fun holderChromeDp(style: String?): Float = when (style) {
         "soft" -> 24f
-        "pop", "pixel" -> 32f
-        "sketch" -> 26f
+        "pop" -> 24f
+        "pixel" -> 27f
+        "sketch" -> 19f
         else -> WidgetPlanner.DEFAULT_HOLDER_CHROME_DP
     }
 

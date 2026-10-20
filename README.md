@@ -26,9 +26,15 @@ Android JVM tests and lint (from `android/`; Windows uses `cmd.exe /c "gradlew.b
 
 The pinned `home_widget` plugin currently emits a Kotlin Gradle Plugin deprecation warning. The debug APK is for testing and uses debug signing; production signing, permissions/store eligibility and dependency updates must be reviewed before release. Do not distribute it as a signed production release.
 
+## Send link — offline sharing
+
+Tap **Share**, choose **School**, **Personal**, or any other categories, then tap **Send link**. Only the checked schedules and optional details you select go into the link. Android's share menu lets you send it through your messaging app; no server or account is needed.
+
+The recipient opens the link in Schediel and reviews it before confirming the import. If a chat app does not make the link tappable, copy the whole message and use **Open shared link**; Schediel offers the copied link automatically. **Settings → Shared links** has shortcuts for sending and opening these links. Sent links contain independent copies, do not expire, and cannot be revoked.
+
 ## Link sharing — optional deployment
 
-Keep these build-time defines absent for offline development; the app then explains that sharing is not configured. When the approved Supabase backend and owned domain are ready:
+Keep these build-time defines absent for offline sharing; **Send link** and copied-message review work without them. When the approved Supabase backend and owned domain are ready:
 
 - `SCHEDIEL_SUPABASE_URL`: actual HTTPS Supabase project origin.
 - `SCHEDIEL_SUPABASE_KEY`: public project publishable key, never a service/provider secret.
@@ -75,6 +81,10 @@ No real project, domain, certificate fingerprint, Apple team ID, region, credent
 Settings → Appearance switches the theme at once; Custom color has one hue slider and is contrast-checked. Settings → Profile holds an optional name and photo, stored only on the device. Pixel and Sketch use two bundled display fonts (Silkscreen, Caveat; SIL Open Font License, see `assets/fonts/`) for headings only.
 
 To place the widget on Android: open the app once, long-press the home screen → Widgets → Schediel → Schedules. Per-widget settings, including **Use app theme**, are under Settings → Home screen widgets. The widget sits on your wallpaper; it never replaces it.
+
+Expanded widgets fit up to four schedule cards to the space available; Compact shows up to two. All four styles offer title/time-only cards before omitting schedules, then restore all-day captions and optional details when there is room. Very small widgets show **Open Schediel** instead of clipping a card. Large text keeps its size and hides optional details first.
+
+**Settings → Open source licenses** starts with short credits. Tap a font or icon name for its complete notice, or **All library licenses** for the full dependency list.
 
 The themed widget layouts and shapes are generated; after editing `tools/gen_widget_layouts.py` run:
 
