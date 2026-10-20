@@ -15,7 +15,7 @@ class LaunchIntro extends StatefulWidget {
   static const overlayKey = ValueKey('launch-intro');
   static const paper = Color(0xFFFCF8F1); // android @color/brand_paper
   static const logoAsset = 'assets/branding/splash_logo.png';
-  static const logoSize = 160.0; // matches the native splash logo (dp)
+  static const logoSize = 154.0; // measured to match the Android 12+ system splash icon (dp)
   static const duration = Duration(milliseconds: 900);
 
   @override
@@ -48,9 +48,10 @@ class _LaunchIntroState extends State<LaunchIntro> with SingleTickerProviderStat
       return;
     }
     // Never hold the first frame for long: a slow or failed decode still plays the intro.
-    precacheImage(const AssetImage(LaunchIntro.logoAsset), context)
-        .timeout(const Duration(milliseconds: 400), onTimeout: () {})
-        .whenComplete(() {
+    precacheImage(
+      const AssetImage(LaunchIntro.logoAsset),
+      context,
+    ).timeout(const Duration(milliseconds: 400), onTimeout: () {}).whenComplete(() {
       _release();
       if (!mounted) return;
       _c.forward().whenComplete(() {
@@ -75,8 +76,14 @@ class _LaunchIntroState extends State<LaunchIntro> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     if (!_show) return widget.child;
-    final lift = CurvedAnimation(parent: _c, curve: const Interval(0, 0.5, curve: Curves.easeOutCubic));
-    final fade = CurvedAnimation(parent: _c, curve: const Interval(0.35, 1, curve: Curves.easeInCubic));
+    final lift = CurvedAnimation(
+      parent: _c,
+      curve: const Interval(0, 0.5, curve: Curves.easeOutCubic),
+    );
+    final fade = CurvedAnimation(
+      parent: _c,
+      curve: const Interval(0.35, 1, curve: Curves.easeInCubic),
+    );
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -90,16 +97,21 @@ class _LaunchIntroState extends State<LaunchIntro> with SingleTickerProviderStat
                 opacity: 1 - fade.value,
                 child: ColoredBox(
                   color: LaunchIntro.paper,
-                  child: Center(
-                    child: Transform.translate(
-                      offset: Offset(0, -6 * lift.value),
-                      child: Transform.scale(
-                        scale: 1 + 0.04 * lift.value + 0.06 * fade.value,
-                        child: const Image(
-                          image: AssetImage(LaunchIntro.logoAsset),
-                          width: LaunchIntro.logoSize,
-                          height: LaunchIntro.logoSize,
-                          gaplessPlayback: true,
+                  // The system splash centres its icon below the status bar; match it so
+                  // the hand-off doesn't jump.
+                  child: Padding(
+                    padding: EdgeInsets.only(top: MediaQuery.viewPaddingOf(context).top),
+                    child: Center(
+                      child: Transform.translate(
+                        offset: Offset(0, -6 * lift.value),
+                        child: Transform.scale(
+                          scale: 1 + 0.04 * lift.value + 0.06 * fade.value,
+                          child: const Image(
+                            image: AssetImage(LaunchIntro.logoAsset),
+                            width: LaunchIntro.logoSize,
+                            height: LaunchIntro.logoSize,
+                            gaplessPlayback: true,
+                          ),
                         ),
                       ),
                     ),
