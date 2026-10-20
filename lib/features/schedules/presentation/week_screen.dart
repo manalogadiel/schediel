@@ -484,7 +484,9 @@ class _Block extends ConsumerWidget {
     final category = ref.watch(categoryByIdProvider(occurrence.categoryId));
     final fill = colors.categoryFill(category?.colorKey);
     final ink = colors.palette.cardInk;
-    final strong = CategoryColor.fromKey(category?.colorKey)?.resolve(colors.palette.brightness) ?? colors.accentText;
+    final strong =
+        (colors.showCategoryColors ? CategoryColor.fromKey(category?.colorKey)?.resolve(colors.palette.brightness) : null) ??
+        colors.accentText;
     final pixel = colors.style == StyleFamily.pixel;
     final zones = ref.watch(zoneResolverProvider);
     final zone = ref.watch(deviceZoneProvider);
@@ -493,6 +495,62 @@ class _Block extends ConsumerWidget {
     final time = t is TimedTiming
         ? OccurrenceTimeText.of(t, zones, zone, f).range
         : (t is DateOnlyTiming ? 'All day' : 'Needs time review');
+    final scaler = MediaQuery.textScalerOf(context);
+    final titleLine = scaler.scale(11.5) * 1.17;
+    final timeLine = scaler.scale(10.5) * 1.2;
+    final titleStyle = TextStyle(fontSize: 11.5, height: 1.17, fontWeight: FontWeight.w600, color: ink);
+    Text line(String value, TextStyle style) => Text(value, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: style);
+    // The all-day strip gives compact blocks unbounded height, so they size to
+    // one title line instead of stretching.
+    final Widget body = compact
+        ? Row(
+            children: [
+              if (!colors.outlined) Container(width: 3, height: titleLine, color: strong),
+              Expanded(
+                child: Padding(padding: const EdgeInsets.fromLTRB(4, 3, 3, 2), child: line(occurrence.title, titleStyle)),
+              ),
+            ],
+          )
+        : Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!colors.outlined) Container(width: 3, color: strong),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 3, 3, 2),
+                  child: LayoutBuilder(
+                    builder: (context, box) {
+                      final showTime = t is TimedTiming && box.maxHeight >= titleLine + timeLine;
+                      final room = box.maxHeight - (showTime ? timeLine : 0);
+                      final lines = (room / titleLine).floor().clamp(1, 3);
+                      final words = occurrence.title.trim().split(RegExp(r'\s+'));
+                      final shown = [
+                        for (var k = 0; k < lines && k < words.length; k++) k == lines - 1 ? words.sublist(k).join(' ') : words[k],
+                      ];
+                      return ClipRect(
+                        child: OverflowBox(
+                          alignment: Alignment.topLeft,
+                          maxHeight: double.infinity,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (final w in shown) line(w, titleStyle),
+                              if (showTime)
+                                line(
+                                  OccurrenceTimeText.of(t, zones, zone, f).start,
+                                  TextStyle(fontSize: 10.5, height: 1.2, color: ink.withValues(alpha: .72)),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          );
     return Semantics(
       button: true,
       label: '${occurrence.title}, $time${overlaps ? ', overlaps another schedule' : ''}',
@@ -509,45 +567,7 @@ class _Block extends ConsumerWidget {
                 : (warn || overlaps ? BorderSide(color: colors.inputBoundary) : BorderSide.none),
           ),
           clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => showOccurrenceSheet(context, occurrence),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (!colors.outlined) Container(width: 3, color: strong),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 3, 3, 2),
-                    child: LayoutBuilder(
-                      builder: (context, box) {
-                        final showTime = !compact && t is TimedTiming && box.maxHeight >= 40;
-                        final room = box.maxHeight.isFinite ? box.maxHeight - (showTime ? 13 : 0) : 14.0;
-                        final lines = compact ? 1 : (room / 13.5).floor().clamp(1, 3);
-                        final words = occurrence.title.trim().split(RegExp(r'\s+'));
-                        final shown = [
-                          for (var k = 0; k < lines && k < words.length; k++) k == lines - 1 ? words.sublist(k).join(' ') : words[k],
-                        ];
-                        Text line(String value, TextStyle style) =>
-                            Text(value, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: style);
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (final w in shown)
-                              line(w, TextStyle(fontSize: 11.5, height: 1.17, fontWeight: FontWeight.w600, color: ink)),
-                            if (showTime)
-                              line(
-                                OccurrenceTimeText.of(t, zones, zone, f).start,
-                                TextStyle(fontSize: 10.5, height: 1.2, color: ink.withValues(alpha: .72)),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          child: InkWell(onTap: () => showOccurrenceSheet(context, occurrence), child: body),
         ),
       ),
     );
@@ -585,7 +605,7 @@ class _WeekHeader extends StatelessWidget {
           width: gutter,
           child: Center(
             child: Text(
-              'W${isoWeek(days.first.date)}',
+              'W${isoWeek(days.firstWhere((d) => d.date.weekday == 4, orElse: () => days.first).date)}',
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .4, color: c.secondaryInk),
             ),
           ),

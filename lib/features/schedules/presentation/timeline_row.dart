@@ -256,7 +256,7 @@ class _CategoryTag extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.scheduleColors;
     final pixel = c.style == StyleFamily.pixel;
-    final strong = CategoryColor.fromKey(colorKey)?.resolve(c.palette.brightness);
+    final strong = c.showCategoryColors ? CategoryColor.fromKey(colorKey)?.resolve(c.palette.brightness) : null;
     // A borderless pill tinted with the category's own color.
     return Container(
       key: const ValueKey('category-tag'),

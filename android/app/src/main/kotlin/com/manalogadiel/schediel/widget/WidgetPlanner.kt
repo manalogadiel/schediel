@@ -80,7 +80,8 @@ object WidgetPlanner {
         chrome + (SMALL_LINE_SP + title + if (row.details != null) SMALL_LINE_SP else 0f) * fontScale
 
     /**
-     * One plan per holder count (1..n) with the height it needs, ascending.
+     * One plan per holder count (1..n) with the height it needs, ascending,
+     * led by a bare variant (the next item's title and time, no captions).
      * Android 12+ hosts pick the largest layout that fits the widget's real
      * size, so the container fills even when the reported size is
      * conservative.
@@ -94,10 +95,16 @@ object WidgetPlanner {
         val full = plan(result, null, fontScale, holderChromeDp, titleLineSp)
         val captions = SMALL_LINE_SP * fontScale + CAPTION_MARGIN_DP
         var height = ROOT_PADDING_DP + full.allDay.size * captions
-        return full.holders.mapIndexed { i, row ->
+        val variants = full.holders.mapIndexed { i, row ->
             height += holderHeight(row, fontScale, holderChromeDp, titleLineSp)
             height to WidgetPlan(full.allDay, full.holders.take(i + 1))
         }
+        if (variants.isEmpty()) return variants
+        // The smallest size: just the next item's title and time, no captions.
+        val bare = (full.holders.firstOrNull { it.status == RowStatus.NEXT } ?: full.holders.first()).copy(details = null)
+        val bareHeight = ROOT_PADDING_DP + holderHeight(bare, fontScale, holderChromeDp, titleLineSp)
+        if (bareHeight >= variants.first().first) return variants
+        return listOf(bareHeight to WidgetPlan(emptyList(), listOf(bare))) + variants
     }
 
     private fun row(entry: SnapshotEntry, status: RowStatus, emphasized: Boolean, settings: WidgetSettings, showDetails: Boolean): HolderRow {

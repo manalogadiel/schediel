@@ -41,7 +41,7 @@ class WidgetPlannerTest {
             val chrome = ThemeStyle.holderChromeDp(style)
             val title = ThemeStyle.titleLineSp(style)
             val sized = WidgetPlanner.sized(result(upcoming = listOf(entry(2), entry(3))), 1f, holderChromeDp = chrome, titleLineSp = title)
-            assertEquals(style, listOf(1, 2, 3), sized.map { it.second.holders.size })
+            assertEquals(style, listOf(1, 1, 2, 3), sized.map { it.second.holders.size })
             assertEquals(style, 16f + 3 * (chrome + 16f + title + 16f), sized.last().first, 0.01f)
             assertTrue(style, sized.zipWithNext().all { (a, b) -> a.first < b.first })
         }

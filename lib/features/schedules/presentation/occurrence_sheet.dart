@@ -174,7 +174,7 @@ class _DetailsBody extends ConsumerWidget {
           children: [
             Expanded(
               child: FilledButton.icon(
-                icon: AppIcon(AppIcons.edit, size: 18, color: Theme.of(context).colorScheme.onPrimary),
+                icon: const AppIcon(AppIcons.edit, size: 18),
                 label: const Text('Edit'),
                 onPressed: () => editOccurrence(context, occurrence),
               ),
