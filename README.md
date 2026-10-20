@@ -66,6 +66,23 @@ Gallery/camera selection is explicit. JPEG/PNG admission, metadata removal, crop
 
 This conservative parser does not claim to understand every timetable or every script. Dense/unsupported content must be cropped or entered manually. Camera/gallery/OCR behavior, memory and accuracy need mobile-device testing. **Cloud AI scanning is disabled**; there is no upload fallback or provider key in the app.
 
+## Release signing
+
+Release builds read `android/key.properties` (git-ignored) when present and otherwise fall back to the debug key.
+
+1. Create an upload key once and keep the passwords private:
+   `keytool -genkey -v -keystore %USERPROFILE%\schediel-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`
+2. Create `android/key.properties`:
+   ```
+   storeFile=C:/Users/<you>/schediel-upload.jks
+   storePassword=...
+   keyAlias=upload
+   keyPassword=...
+   ```
+3. `flutter build apk --release --split-per-abi` (phones: `app-arm64-v8a-release.apk`).
+
+A build signed with a new key cannot update one signed with the debug key: send your schedules to yourself with **Send link**, uninstall, install the release build, then open the link to re-import.
+
 ## Native limits and privacy
 
 - Widgets read committed snapshots; no wallpaper replacement, wallpaper access or screenshot transparency tricks. Clear rendering/readability and refresh opportunities differ by OS/launcher. Solid/stronger alternatives exist, but arbitrary wallpaper contrast is not certified.

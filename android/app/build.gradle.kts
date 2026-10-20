@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -12,6 +14,14 @@ val shareHost: String = (project.findProperty("schediel.shareHost") as String?) 
 // shareHost: on Android 11 and lower every autoVerify host must verify, so an
 // unresolvable placeholder would stop the real share host from opening the app.
 val appLinkHost: String = (project.findProperty("schediel.appLinkHost") as String?) ?: shareHost
+
+// Release signing comes from android/key.properties (git-ignored; see README
+// "Release signing"). Without it, release builds fall back to the debug key so
+// `flutter run --release` keeps working.
+val keyProperties = Properties().apply {
+    val file = rootProject.file("key.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
 
 android {
     namespace = "com.manalogadiel.schediel"
@@ -43,10 +53,21 @@ android {
         }
     }
 
+    signingConfigs {
+        if (keyProperties.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Release signing is a store-release task; debug keys keep `flutter run --release` usable.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }
