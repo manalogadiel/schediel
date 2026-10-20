@@ -133,20 +133,21 @@ class _WeekScreenState extends ConsumerState<WeekScreen> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.sm),
-              child: DayStripView(
-                start: start,
-                selected: selected,
-                today: today,
-                daysWithSchedules: {
-                  if (week.value != null)
-                    for (final d in week.value!.days)
-                      if (!d.isEmpty) d.date,
-                },
-                onSelect: ref.read(selectedDateProvider.notifier).select,
+            if (agenda)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.sm),
+                child: DayStripView(
+                  start: start,
+                  selected: selected,
+                  today: today,
+                  daysWithSchedules: {
+                    if (week.value != null)
+                      for (final d in week.value!.days)
+                        if (!d.isEmpty) d.date,
+                  },
+                  onSelect: ref.read(selectedDateProvider.notifier).select,
+                ),
               ),
-            ),
             Expanded(
               child: week.when(
                 loading: () => const Center(child: CircularProgressIndicator.adaptive()),
@@ -175,8 +176,7 @@ class _WeekScreenState extends ConsumerState<WeekScreen> {
                                     : 'No schedules this week',
                               ),
                             ),
-                            if (!any)
-                              TextButton(onPressed: () => context.push('/schedule/new'), child: const Text('Create schedule')),
+                            if (!any) TextButton(onPressed: () => context.push('/schedule/new'), child: const Text('Create schedule')),
                             if (any && filtered)
                               TextButton(
                                 onPressed: () => ref.read(appFilterProvider.notifier).set(const CategoryFilter.all()),
@@ -340,8 +340,16 @@ class _WeekGridState extends ConsumerState<_WeekGrid> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final colWidth = (constraints.maxWidth - _gutter - Tokens.md) / 7;
+        final selected = ref.watch(effectiveDateProvider);
         return Column(
           children: [
+            _WeekHeader(
+              days: week.days,
+              gutter: _gutter,
+              colWidth: colWidth,
+              selected: selected,
+              onSelect: ref.read(selectedDateProvider.notifier).select,
+            ),
             if (hasStrip)
               Padding(
                 padding: const EdgeInsets.only(left: _gutter, right: Tokens.md, top: Tokens.xs),
@@ -372,15 +380,25 @@ class _WeekGridState extends ConsumerState<_WeekGrid> {
                   height: hours * hourHeight + Tokens.sm,
                   child: Stack(
                     children: [
-                      for (var i = 0; i < 7; i++)
-                        if (week.days[i].date == ref.watch(effectiveDateProvider))
+                      for (var i = 0; i < 7; i++) ...[
+                        Positioned(
+                          left: _gutter + i * colWidth,
+                          top: 0,
+                          width: colWidth,
+                          height: 1,
+                          child: SizedBox(key: ValueKey('week-column-$i')),
+                        ),
+                        if (week.days[i].date == selected)
                           Positioned(
                             left: _gutter + i * colWidth,
                             top: 0,
                             bottom: 0,
                             width: colWidth,
-                            child: IgnorePointer(child: ColoredBox(color: colors.accentText.withValues(alpha: 0.04))),
+                            child: IgnorePointer(
+                              child: ColoredBox(key: const ValueKey('week-selected-column'), color: _WeekHeader.tint(colors)),
+                            ),
                           ),
+                      ],
                       for (var h = 0; h <= hours; h++)
                         Positioned(
                           top: h * hourHeight,
@@ -466,6 +484,7 @@ class _Block extends ConsumerWidget {
     final category = ref.watch(categoryByIdProvider(occurrence.categoryId));
     final fill = colors.categoryFill(category?.colorKey);
     final ink = colors.palette.cardInk;
+    final strong = CategoryColor.fromKey(category?.colorKey)?.resolve(colors.palette.brightness) ?? colors.accentText;
     final pixel = colors.style == StyleFamily.pixel;
     final zones = ref.watch(zoneResolverProvider);
     final zone = ref.watch(deviceZoneProvider);
@@ -492,19 +511,163 @@ class _Block extends ConsumerWidget {
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => showOccurrenceSheet(context, occurrence),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-              alignment: Alignment.topLeft,
-              child: Text(
-                occurrence.title,
-                maxLines: compact ? 1 : 3,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, height: 1.2, fontWeight: FontWeight.w600, color: ink),
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!colors.outlined) Container(width: 3, color: strong),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 3, 3, 2),
+                    child: LayoutBuilder(
+                      builder: (context, box) {
+                        final showTime = !compact && t is TimedTiming && box.maxHeight >= 40;
+                        final room = box.maxHeight.isFinite ? box.maxHeight - (showTime ? 13 : 0) : 14.0;
+                        final lines = compact ? 1 : (room / 13.5).floor().clamp(1, 3);
+                        final words = occurrence.title.trim().split(RegExp(r'\s+'));
+                        final shown = [
+                          for (var k = 0; k < lines && k < words.length; k++) k == lines - 1 ? words.sublist(k).join(' ') : words[k],
+                        ];
+                        Text line(String value, TextStyle style) =>
+                            Text(value, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: style);
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (final w in shown)
+                              line(w, TextStyle(fontSize: 11.5, height: 1.17, fontWeight: FontWeight.w600, color: ink)),
+                            if (showTime)
+                              line(
+                                OccurrenceTimeText.of(t, zones, zone, f).start,
+                                TextStyle(fontSize: 10.5, height: 1.2, color: ink.withValues(alpha: .72)),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The grid's header: an ISO week number over the hour gutter, then one cell
+/// per day built on the grid's own column width, so dates sit exactly above
+/// their columns. The selected day's tint continues down the grid.
+class _WeekHeader extends StatelessWidget {
+  const _WeekHeader({required this.days, required this.gutter, required this.colWidth, required this.selected, required this.onSelect});
+
+  final List<DayView> days;
+  final double gutter, colWidth;
+  final LocalDate selected;
+  final ValueChanged<LocalDate> onSelect;
+
+  static Color tint(ScheduleColors c) => c.palette.accent.withValues(alpha: c.palette.brightness == Brightness.dark ? .14 : .08);
+
+  static int isoWeek(LocalDate d) {
+    final thursday = d.addDays(4 - d.weekday);
+    return LocalDate(thursday.year, 1, 1).daysUntil(thursday) ~/ 7 + 1;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.scheduleColors;
+    final p = c.palette;
+    final f = Formats.of(context);
+    final pixel = c.style == StyleFamily.pixel;
+    final soft = c.style == StyleFamily.soft;
+    return Row(
+      children: [
+        SizedBox(
+          width: gutter,
+          child: Center(
+            child: Text(
+              'W${isoWeek(days.first.date)}',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .4, color: c.secondaryInk),
+            ),
+          ),
+        ),
+        for (final day in days)
+          SizedBox(
+            width: colWidth,
+            child: Semantics(
+              button: true,
+              selected: day.date == selected,
+              label: [f.dayTitle(day.date), if (day.isToday) 'today', if (!day.isEmpty) 'has schedules'].join(', '),
+              excludeSemantics: true,
+              child: Material(
+                key: ValueKey('day-${day.date.toIso()}'),
+                color: Colors.transparent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(pixel ? 0 : 14))),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => onSelect(day.date),
+                  child: Container(
+                    key: day.date == selected ? const ValueKey('week-selected-header') : null,
+                    color: day.date == selected ? tint(c) : Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          f.weekdayShort(day.date.weekday),
+                          maxLines: 1,
+                          overflow: TextOverflow.clip,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: day.date == selected ? FontWeight.w700 : FontWeight.w500,
+                            color: day.date == selected ? c.accentText : c.secondaryInk,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: pixel ? BoxShape.rectangle : BoxShape.circle,
+                            color: day.date == selected && !soft ? p.accent : null,
+                            gradient: day.date == selected && soft
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [p.accent, Color.lerp(p.accent, const Color(0xFFFF7A59), .45)!],
+                                  )
+                                : null,
+                            border: day.isToday && day.date != selected ? Border.all(color: c.accentText, width: 1.5) : null,
+                          ),
+                          child: FittedBox(
+                            child: Text(
+                              '${day.date.day}',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: day.date == selected ? p.onAccent : c.ink,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            shape: pixel ? BoxShape.rectangle : BoxShape.circle,
+                            color: day.isEmpty ? Colors.transparent : c.accentText.withValues(alpha: .7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -47,4 +47,31 @@ void main() {
       expect(h.tester.getBottomRight(label).dx - h.tester.getTopLeft(label).dx, lessThanOrEqualTo(44.5), reason: text);
     }
   }, size: const Size(360, 800));
+
+  appTest('week header days line up with their grid columns', (h) async {
+    await h.tapText('Week');
+    for (var i = 0; i < 7; i++) {
+      final header = h.tester.getCenter(find.byKey(ValueKey('day-2026-11-0${i + 1}')));
+      final column = h.tester.getCenter(find.byKey(ValueKey('week-column-$i')));
+      expect((header.dx - column.dx).abs(), lessThan(1), reason: 'day ${i + 1}');
+    }
+    final headTint = h.tester.getRect(find.byKey(const ValueKey('week-selected-header')));
+    final columnTint = h.tester.getRect(find.byKey(const ValueKey('week-selected-column')));
+    expect((headTint.left - columnTint.left).abs(), lessThan(1));
+    expect((headTint.right - columnTint.right).abs(), lessThan(1));
+  });
+
+  appTest('week block titles never split a word', (h) async {
+    await h.run(() => h.read(scheduleRepositoryProvider).create(classDraft(title: 'Automata Theory')));
+    await h.settle();
+    await h.tapText('Week');
+    final block = find.byKey(const ValueKey('week-block')).first;
+    final lines = h.tester.widgetList<Text>(find.descendant(of: block, matching: find.byType(Text))).toList();
+    expect(lines, isNotEmpty);
+    for (final line in lines) {
+      expect(line.softWrap, isFalse, reason: line.data);
+      expect(line.maxLines, 1, reason: line.data);
+    }
+    expect(lines.first.data, 'Automata');
+  });
 }

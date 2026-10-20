@@ -19,7 +19,8 @@ void main() {
       for (final cell in cells) {
         expect(cell, findsOneWidget);
       }
-      expect(h.tester.getTopLeft(cells.first).dx, inInclusiveRange(16.0, 20.0));
+      // Week cells start after the hour gutter so they line up with the grid.
+      expect(h.tester.getTopLeft(cells.first).dx, inInclusiveRange(44.0, 48.0));
       final widths = cells.map((c) => h.tester.getSize(c).width).toList();
       expect(widths.every((w) => (w - widths.first).abs() <= 1), isTrue);
       await h.tester.tap(cells[2]);
