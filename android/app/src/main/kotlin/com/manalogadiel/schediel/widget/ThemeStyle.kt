@@ -100,8 +100,17 @@ object ThemeStyle {
      */
     fun sharedAlpha(light: HolderColors, dark: HolderColors): Int = maxOf(light.fill ushr 24, dark.fill ushr 24)
 
-    /** Reserved layout padding, even when a translucent surface hides its shadow. */
-    fun extraChromeDp(style: String?): Float = if (style == "pop" || style == "pixel") 3f else 0f
+    /**
+     * A holder's non-text height in its layout: bottom margin 6 + fill inset
+     * + vertical padding (res/layout/widget_schedule_{style}.xml). Pop and
+     * Pixel reserve room for the offset shadow even when it is hidden.
+     */
+    fun holderChromeDp(style: String?): Float = when (style) {
+        "soft" -> 24f
+        "pop", "pixel" -> 32f
+        "sketch" -> 26f
+        else -> WidgetPlanner.DEFAULT_HOLDER_CHROME_DP
+    }
 
     /** Title line height (sp) for the style's title font; Caveat and Silkscreen differ from the system font. */
     fun titleLineSp(style: String?): Float = when (style) {
