@@ -11,6 +11,7 @@ import '../../../app/widgets/themed.dart';
 import '../../../core/time/local_date.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/profile.dart';
+import 'month_sheet.dart';
 
 /// "Good morning" 05:00–11:59, "Good afternoon" 12:00–17:59, otherwise
 /// "Good evening", from device-local wall time.
@@ -37,7 +38,7 @@ class TodayHeader extends ConsumerWidget {
     return Row(
       children: [
         if (!profile.isEmpty) ...[
-          ThemedAvatar(profile: profile, size: 48),
+          ThemedAvatar(profile: profile, size: 42),
           const SizedBox(width: 12),
         ],
         Expanded(
@@ -46,8 +47,9 @@ class TodayHeader extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(greeting, style: text.bodyMedium?.copyWith(color: c.secondaryInk)),
-                if (profile.name != null) Text(profile.name!, style: text.titleMedium),
+                Text(greeting, style: text.bodySmall?.copyWith(color: c.secondaryInk, fontSize: 13)),
+                if (profile.name != null)
+                  Text(profile.name!, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleMedium?.copyWith(fontSize: 16)),
               ],
             ),
           ),
@@ -58,8 +60,8 @@ class TodayHeader extends ConsumerWidget {
   }
 }
 
-/// The large date heading; tap to pick a date. Off today, a Today pill
-/// returns to today.
+/// The oversized date: a weekday overline above "October 20", month heavy
+/// and day light. Tap to pick a date; off today, a Today pill returns.
 class DateHeading extends ConsumerWidget {
   const DateHeading({super.key, required this.onPick});
 
@@ -89,8 +91,32 @@ class DateHeading extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(relative ?? '${date.year}', style: text.labelMedium?.copyWith(color: c.secondaryInk)),
-                    Text(f.dayTitle(date), style: text.headlineMedium),
+                    Text(
+                      [f.weekdayLong(date.weekday), relative ?? '${date.year}'].join('  ·  '),
+                      style: text.labelMedium?.copyWith(color: c.secondaryInk, letterSpacing: .2, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: f.monthName(date)),
+                            const TextSpan(text: ' '),
+                            TextSpan(
+                              text: '${date.day}',
+                              style: TextStyle(
+                                color: c.accentText,
+                                fontWeight: c.displayFont == null ? FontWeight.w300 : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                        maxLines: 1,
+                        style: text.displayLarge,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -117,13 +143,5 @@ class DateHeading extends ConsumerWidget {
   }
 }
 
-/// Picks a date with the platform date picker.
-Future<LocalDate?> pickDate(BuildContext context, LocalDate current) async {
-  final picked = await showDatePicker(
-    context: context,
-    initialDate: DateTime(current.year, current.month, current.day),
-    firstDate: DateTime(LocalDate.minYear),
-    lastDate: DateTime(LocalDate.maxYear, 12, 31),
-  );
-  return picked == null ? null : LocalDate.fromDateTime(picked);
-}
+/// Picks a date with the month calendar sheet.
+Future<LocalDate?> pickDate(BuildContext context, LocalDate current) => showMonthSheet(context, initial: current);

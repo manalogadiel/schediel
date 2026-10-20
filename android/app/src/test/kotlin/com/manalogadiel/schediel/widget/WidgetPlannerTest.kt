@@ -7,6 +7,46 @@ import org.junit.Test
 import java.time.LocalDate
 
 class WidgetPlannerTest {
+    @Test
+    fun expandedStylesFitThreeAtReferenceHeight() {
+        for (style in ThemeStyle.STYLES) {
+            val plan = WidgetPlanner.plan(result(upcoming = listOf(entry(2), entry(3))), 280f, 1f,
+                holderChromeDp = ThemeStyle.holderChromeDp(style), titleLineSp = ThemeStyle.titleLineSp(style))
+            assertEquals(style, 3, plan.holders.size)
+        }
+    }
+
+    @Test
+    fun onePixelBelowThreeRowBoundaryShowsTwo() {
+        for (style in ThemeStyle.STYLES) {
+            val required = 16f + 3 * (ThemeStyle.holderChromeDp(style) + 16f + ThemeStyle.titleLineSp(style) + 16f)
+            val plan = WidgetPlanner.plan(result(upcoming = listOf(entry(2), entry(3))), required - 1f, 1f,
+                holderChromeDp = ThemeStyle.holderChromeDp(style), titleLineSp = ThemeStyle.titleLineSp(style))
+            assertEquals(style, 2, plan.holders.size)
+        }
+    }
+
+    @Test
+    fun holderChromeMatchesTheMeasuredLayouts() {
+        // Margin + fill inset + padding from res/layout/widget_schedule_{style}.xml.
+        assertEquals(24f, ThemeStyle.holderChromeDp("soft"))
+        assertEquals(32f, ThemeStyle.holderChromeDp("pop"))
+        assertEquals(32f, ThemeStyle.holderChromeDp("pixel"))
+        assertEquals(26f, ThemeStyle.holderChromeDp("sketch"))
+    }
+
+    @Test
+    fun sizedOffersOneLayoutPerRowCountKeyedByItsHeight() {
+        for (style in ThemeStyle.STYLES) {
+            val chrome = ThemeStyle.holderChromeDp(style)
+            val title = ThemeStyle.titleLineSp(style)
+            val sized = WidgetPlanner.sized(result(upcoming = listOf(entry(2), entry(3))), 1f, holderChromeDp = chrome, titleLineSp = title)
+            assertEquals(style, listOf(1, 2, 3), sized.map { it.second.holders.size })
+            assertEquals(style, 16f + 3 * (chrome + 16f + title + 16f), sized.last().first, 0.01f)
+            assertTrue(style, sized.zipWithNext().all { (a, b) -> a.first < b.first })
+        }
+    }
+
     private fun entry(n: Int, location: String? = "Fixture room $n") = SnapshotEntry(
         id = "s$n/2026-11-02",
         title = "Fixture $n",
@@ -109,12 +149,24 @@ class WidgetPlannerTest {
         // Expanded holders with a location: 22 + (16 + title + 16) * scale.
         val system = WidgetPlanner.plan(result(), heightDp = 230f, fontScale = 1.3f)
         val sketch = WidgetPlanner.plan(
-            result(), heightDp = 230f, fontScale = 1.3f, extraChromeDp = 4f, titleLineSp = ThemeStyle.titleLineSp("sketch"),
+            result(), heightDp = 230f, fontScale = 1.3f, holderChromeDp = 26f, titleLineSp = ThemeStyle.titleLineSp("sketch"),
         )
         assertTrue("${sketch.holders.size} vs ${system.holders.size}", sketch.holders.size < system.holders.size)
         val used = 16f + sketch.holders.sumOf { (22.0 + 4 + (16 + 25 + if (it.details != null) 16 else 0) * 1.3) }
         assertTrue("used $used", used <= 230.0)
         assertEquals(WidgetPlanner.DEFAULT_TITLE_LINE_SP, ThemeStyle.titleLineSp(null))
         assertEquals(17f, ThemeStyle.titleLineSp("pixel"))
+    }
+
+    @Test
+    fun smallestSizedVariantIsTheBareNextItem() {
+        val withCaptions = result(allDay = listOf(entry(7), entry(8)))
+        val sized = WidgetPlanner.sized(withCaptions, 1f, holderChromeDp = 24f)
+        val (height, plan) = sized.first()
+        assertTrue(plan.allDay.isEmpty())
+        assertEquals(1, plan.holders.size)
+        assertNull(plan.holders.first().details)
+        assertEquals(RowStatus.NEXT, plan.holders.first().status)
+        assertEquals(16f + 24f + 16f + 20f, height, 0.01f)
     }
 }

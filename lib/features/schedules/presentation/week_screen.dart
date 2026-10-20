@@ -21,6 +21,8 @@ import '../../categories/domain/category.dart';
 import '../application/day_view.dart';
 import 'occurrence_sheet.dart';
 import 'timeline_row.dart';
+import 'day_strip.dart';
+import 'today_header.dart' show pickDate;
 
 /// Week: a time grid with an equivalent agenda (spec 4.4).
 class WeekScreen extends ConsumerStatefulWidget {
@@ -31,20 +33,13 @@ class WeekScreen extends ConsumerStatefulWidget {
 }
 
 class _WeekScreenState extends ConsumerState<WeekScreen> {
-  int _weekOffset = 0;
   bool? _agenda;
-
-  LocalDate _weekStart(BuildContext context, LocalDate today) {
-    final first = MaterialLocalizations.of(context).firstDayOfWeekIndex;
-    final isoStart = first == 0 ? 7 : first;
-    final back = (today.weekday - isoStart + 7) % 7;
-    return today.addDays(-back + 7 * _weekOffset);
-  }
 
   @override
   Widget build(BuildContext context) {
     final today = ref.watch(todayProvider);
-    final start = _weekStart(context, today);
+    final selected = ref.watch(effectiveDateProvider);
+    final start = weekStartOf(context, selected);
     final week = ref.watch(weekViewProvider(start));
     final f = Formats.of(context);
     final text = Theme.of(context).textTheme;
@@ -68,18 +63,39 @@ class _WeekScreenState extends ConsumerState<WeekScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Week', style: text.labelMedium?.copyWith(color: context.scheduleColors.secondaryInk)),
-                        Semantics(header: true, child: Text(f.range(start, start.addDays(6)), style: text.headlineMedium)),
+                        Tooltip(
+                          message: 'Choose date',
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(Tokens.radiusControl),
+                            onTap: () async {
+                              final picked = await pickDate(context, selected);
+                              if (picked != null && mounted) ref.read(selectedDateProvider.notifier).select(picked);
+                            },
+                            child: Semantics(
+                              button: true,
+                              header: true,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(child: Text(f.range(start, start.addDays(6)), style: text.headlineMedium)),
+                                  const SizedBox(width: Tokens.xs),
+                                  const AppIcon(AppIcons.expand, size: 18),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  if (_weekOffset != 0)
+                  if (start != weekStartOf(context, today))
                     Semantics(
                       button: true,
                       label: 'This week',
                       excludeSemantics: true,
                       child: InkWell(
                         customBorder: const StadiumBorder(),
-                        onTap: () => setState(() => _weekOffset = 0),
+                        onTap: () => ref.read(selectedDateProvider.notifier).today(),
                         child: const Padding(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                           child: ThemedPill(label: 'This week', emphasized: true),
@@ -97,13 +113,13 @@ class _WeekScreenState extends ConsumerState<WeekScreen> {
                     icon: AppIcons.previous,
                     tooltip: 'Previous week',
                     size: 40,
-                    onPressed: () => setState(() => _weekOffset--),
+                    onPressed: () => ref.read(selectedDateProvider.notifier).select(selected.addDays(-7)),
                   ),
                   ThemedIconButton(
                     icon: AppIcons.next,
                     tooltip: 'Next week',
                     size: 40,
-                    onPressed: () => setState(() => _weekOffset++),
+                    onPressed: () => ref.read(selectedDateProvider.notifier).select(selected.addDays(7)),
                   ),
                   const Spacer(),
                   ThemedIconButton(
@@ -117,6 +133,21 @@ class _WeekScreenState extends ConsumerState<WeekScreen> {
                 ],
               ),
             ),
+            if (agenda)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.sm),
+                child: DayStripView(
+                  start: start,
+                  selected: selected,
+                  today: today,
+                  daysWithSchedules: {
+                    if (week.value != null)
+                      for (final d in week.value!.days)
+                        if (!d.isEmpty) d.date,
+                  },
+                  onSelect: ref.read(selectedDateProvider.notifier).select,
+                ),
+              ),
             Expanded(
               child: week.when(
                 loading: () => const Center(child: CircularProgressIndicator.adaptive()),
@@ -126,31 +157,37 @@ class _WeekScreenState extends ConsumerState<WeekScreen> {
                 ),
                 data: (w) {
                   final empty = w.days.every((d) => d.isEmpty);
-                  if (empty) {
-                    final any = w.days.first.hasAnySchedules;
-                    final filtered = w.days.first.filterActive;
-                    return ListView(
-                      padding: EdgeInsets.only(bottom: AppShell.bottomInset(context)),
-                      children: [
-                        EmptyState(
-                          title: !any
-                              ? 'No schedules yet'
-                              : filtered
-                              ? 'No schedules in this filter'
-                              : 'No schedules this week',
-                          action: !any
-                              ? FilledButton(onPressed: () => context.push('/schedule/new'), child: const Text('Create schedule'))
-                              : filtered
-                              ? TextButton(
-                                  onPressed: () => ref.read(appFilterProvider.notifier).set(const CategoryFilter.all()),
-                                  child: const Text('Show all'),
-                                )
-                              : null,
+                  final content = agenda ? _WeekAgenda(week: w) : _WeekGrid(week: w);
+                  if (!empty) return content;
+                  final any = w.days.first.hasAnySchedules;
+                  final filtered = w.days.first.filterActive;
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.sm),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                !any
+                                    ? 'No schedules yet'
+                                    : filtered
+                                    ? 'No schedules in this filter'
+                                    : 'No schedules this week',
+                              ),
+                            ),
+                            if (!any) TextButton(onPressed: () => context.push('/schedule/new'), child: const Text('Create schedule')),
+                            if (any && filtered)
+                              TextButton(
+                                onPressed: () => ref.read(appFilterProvider.notifier).set(const CategoryFilter.all()),
+                                child: const Text('Show all'),
+                              ),
+                          ],
                         ),
-                      ],
-                    );
-                  }
-                  return agenda ? _WeekAgenda(week: w) : _WeekGrid(week: w);
+                      ),
+                      Expanded(child: content),
+                    ],
+                  );
                 },
               ),
             ),
@@ -205,22 +242,41 @@ class _Segment {
   int columns = 1;
 }
 
-class _WeekGrid extends ConsumerWidget {
+class _WeekGrid extends ConsumerStatefulWidget {
   const _WeekGrid({required this.week});
 
   final WeekView week;
 
+  @override
+  ConsumerState<_WeekGrid> createState() => _WeekGridState();
+}
+
+class _WeekGridState extends ConsumerState<_WeekGrid> {
+  WeekView get week => widget.week;
+  final _scroll = ScrollController();
+  LocalDate? _scrolledWeek;
   static const _gutter = 44.0;
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   List<_Segment> _segments(DayView day, ZoneResolver zones, String zone) {
     final (dayStart, dayEnd) = (zones.startOfDay(day.date, zone), zones.startOfDay(day.date.addDays(1), zone));
-    final dayMinutes = dayEnd.difference(dayStart).inMinutes;
+
     final result = <_Segment>[];
     for (final o in day.all) {
       final t = o.timing;
       if (t is! TimedTiming) continue;
-      final start = math.max(0, t.startUtc.difference(dayStart).inMinutes);
-      final end = t.endUtc == null ? start + 30 : math.min(dayMinutes, t.endUtc!.difference(dayStart).inMinutes);
+      // The ruler is local wall time, not elapsed UTC minutes on DST days.
+      final start = t.startUtc.isBefore(dayStart) ? 0 : zones.toLocal(t.startUtc, zone).time.minutesOfDay;
+      final end = t.endUtc == null
+          ? math.min(1440, start + 30)
+          : !t.endUtc!.isBefore(dayEnd)
+          ? 1440
+          : zones.toLocal(t.endUtc!, zone).time.minutesOfDay;
       result.add(_Segment(o, start, math.max(end, start + 20), t.endUtc == null));
     }
     result.sort((a, b) => a.startMin.compareTo(b.startMin));
@@ -254,7 +310,7 @@ class _WeekGrid extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final zones = ref.watch(zoneResolverProvider);
     final zone = ref.watch(deviceZoneProvider);
     final now = ref.watch(nowProvider);
@@ -264,63 +320,35 @@ class _WeekGrid extends ConsumerWidget {
     final hourHeight = colors.density == Density.compact ? 40.0 : 48.0;
 
     final perDay = [for (final d in week.days) _segments(d, zones, zone)];
-    var firstHour = 8;
-    var lastHour = 18;
-    for (final segs in perDay) {
-      for (final s in segs) {
-        firstHour = math.min(firstHour, s.startMin ~/ 60);
-        lastHour = math.max(lastHour, ((s.endMin + 59) ~/ 60).clamp(0, 24));
-      }
+    const firstHour = 0;
+    const lastHour = 24;
+    const hours = lastHour - firstHour;
+    if (_scrolledWeek != week.days.first.date) {
+      _scrolledWeek = week.days.first.date;
+      final local = zones.toLocal(now, zone);
+      final isCurrentWeek = week.days.any((d) => d.date == local.date);
+      final starts = perDay.expand((s) => s).map((s) => s.startMin).toList()..sort();
+      final minute = isCurrentWeek ? local.time.minutesOfDay : (starts.firstOrNull ?? 0);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scroll.hasClients) {
+          _scroll.jumpTo(((minute / 60 - 1) * hourHeight).clamp(0, _scroll.position.maxScrollExtent));
+        }
+      });
     }
-    final hours = lastHour - firstHour;
     final hasStrip = week.days.any((d) => d.agenda.dateOnly.isNotEmpty || d.agenda.needsReview.isNotEmpty);
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final colWidth = (constraints.maxWidth - _gutter - Tokens.md) / 7;
+        final selected = ref.watch(effectiveDateProvider);
         return Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: _gutter, right: Tokens.md),
-              child: Row(
-                children: [
-                  for (final d in week.days)
-                    SizedBox(
-                      width: colWidth,
-                      child: Semantics(
-                        label: '${f.dayTitle(d.date)}${d.isToday ? ', today' : ''}',
-                        excludeSemantics: true,
-                        child: Column(
-                          children: [
-                            Text(f.weekdayShort(d.date.weekday), style: TextStyle(fontSize: 12, color: colors.secondaryInk)),
-                            const SizedBox(height: 2),
-                            Container(
-                              width: 30,
-                              height: 30,
-                              alignment: Alignment.center,
-                              decoration: d.isToday
-                                  ? BoxDecoration(
-                                      color: scheme.primary,
-                                      shape: colors.style == StyleFamily.pixel ? BoxShape.rectangle : BoxShape.circle,
-                                      border: colors.outlined ? Border.all(color: colors.palette.outline, width: 1.5) : null,
-                                    )
-                                  : null,
-                              child: Text(
-                                '${d.date.day}',
-                                style: TextStyle(
-                                  fontFamily: colors.displayFont,
-                                  fontSize: colors.displayFont == 'Caveat' ? 19 : (colors.displayFont == 'Silkscreen' ? 12 : 15),
-                                  fontWeight: FontWeight.w600,
-                                  color: d.isToday ? scheme.onPrimary : colors.ink,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+            _WeekHeader(
+              days: week.days,
+              gutter: _gutter,
+              colWidth: colWidth,
+              selected: selected,
+              onSelect: ref.read(selectedDateProvider.notifier).select,
             ),
             if (hasStrip)
               Padding(
@@ -345,11 +373,32 @@ class _WeekGrid extends ConsumerWidget {
             Divider(color: colors.divider),
             Expanded(
               child: SingleChildScrollView(
+                key: const ValueKey('week-timeline'),
+                controller: _scroll,
                 padding: EdgeInsets.only(bottom: AppShell.bottomInset(context)),
                 child: SizedBox(
                   height: hours * hourHeight + Tokens.sm,
                   child: Stack(
                     children: [
+                      for (var i = 0; i < 7; i++) ...[
+                        Positioned(
+                          left: _gutter + i * colWidth,
+                          top: 0,
+                          width: colWidth,
+                          height: 1,
+                          child: SizedBox(key: ValueKey('week-column-$i')),
+                        ),
+                        if (week.days[i].date == selected)
+                          Positioned(
+                            left: _gutter + i * colWidth,
+                            top: 0,
+                            bottom: 0,
+                            width: colWidth,
+                            child: IgnorePointer(
+                              child: ColoredBox(key: const ValueKey('week-selected-column'), color: _WeekHeader.tint(colors)),
+                            ),
+                          ),
+                      ],
                       for (var h = 0; h <= hours; h++)
                         Positioned(
                           top: h * hourHeight,
@@ -362,17 +411,19 @@ class _WeekGrid extends ConsumerWidget {
                                 child: ExcludeSemantics(
                                   // "10:00 AM" can be wider than the column: shrink
                                   // slightly rather than wrap the AM/PM marker.
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      f.clock(LocalTime((firstHour + h) % 24, 0)),
-                                      key: const ValueKey('week-hour-label'),
-                                      maxLines: 1,
-                                      softWrap: false,
-                                      style: TextStyle(fontSize: 11, color: colors.secondaryInk),
-                                    ),
-                                  ),
+                                  child: h == hours
+                                      ? const SizedBox.shrink()
+                                      : FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            f.clock(LocalTime((firstHour + h) % 24, 0)),
+                                            key: const ValueKey('week-hour-label'),
+                                            maxLines: 1,
+                                            softWrap: false,
+                                            style: TextStyle(fontSize: 11, color: colors.secondaryInk),
+                                          ),
+                                        ),
                                 ),
                               ),
                               Expanded(child: Divider(color: colors.divider.withValues(alpha: 0.6))),
@@ -396,7 +447,7 @@ class _WeekGrid extends ConsumerWidget {
                         if (week.days[i].isToday)
                           Builder(
                             builder: (context) {
-                              final minutes = now.toUtc().difference(zones.startOfDay(week.days[i].date, zone)).inMinutes;
+                              final minutes = zones.toLocal(now, zone).time.minutesOfDay;
                               if (minutes < firstHour * 60 || minutes > lastHour * 60) return const SizedBox.shrink();
                               return Positioned(
                                 left: _gutter + i * colWidth,
@@ -433,6 +484,7 @@ class _Block extends ConsumerWidget {
     final category = ref.watch(categoryByIdProvider(occurrence.categoryId));
     final fill = colors.categoryFill(category?.colorKey);
     final ink = colors.palette.cardInk;
+    final strong = CategoryColor.fromKey(category?.colorKey)?.resolve(colors.palette.brightness) ?? colors.accentText;
     final pixel = colors.style == StyleFamily.pixel;
     final zones = ref.watch(zoneResolverProvider);
     final zone = ref.watch(deviceZoneProvider);
@@ -459,19 +511,163 @@ class _Block extends ConsumerWidget {
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => showOccurrenceSheet(context, occurrence),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-              alignment: Alignment.topLeft,
-              child: Text(
-                occurrence.title,
-                maxLines: compact ? 1 : 3,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, height: 1.2, fontWeight: FontWeight.w600, color: ink),
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!colors.outlined) Container(width: 3, color: strong),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 3, 3, 2),
+                    child: LayoutBuilder(
+                      builder: (context, box) {
+                        final showTime = !compact && t is TimedTiming && box.maxHeight >= 40;
+                        final room = box.maxHeight.isFinite ? box.maxHeight - (showTime ? 13 : 0) : 14.0;
+                        final lines = compact ? 1 : (room / 13.5).floor().clamp(1, 3);
+                        final words = occurrence.title.trim().split(RegExp(r'\s+'));
+                        final shown = [
+                          for (var k = 0; k < lines && k < words.length; k++) k == lines - 1 ? words.sublist(k).join(' ') : words[k],
+                        ];
+                        Text line(String value, TextStyle style) =>
+                            Text(value, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: style);
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (final w in shown)
+                              line(w, TextStyle(fontSize: 11.5, height: 1.17, fontWeight: FontWeight.w600, color: ink)),
+                            if (showTime)
+                              line(
+                                OccurrenceTimeText.of(t, zones, zone, f).start,
+                                TextStyle(fontSize: 10.5, height: 1.2, color: ink.withValues(alpha: .72)),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The grid's header: an ISO week number over the hour gutter, then one cell
+/// per day built on the grid's own column width, so dates sit exactly above
+/// their columns. The selected day's tint continues down the grid.
+class _WeekHeader extends StatelessWidget {
+  const _WeekHeader({required this.days, required this.gutter, required this.colWidth, required this.selected, required this.onSelect});
+
+  final List<DayView> days;
+  final double gutter, colWidth;
+  final LocalDate selected;
+  final ValueChanged<LocalDate> onSelect;
+
+  static Color tint(ScheduleColors c) => c.palette.accent.withValues(alpha: c.palette.brightness == Brightness.dark ? .14 : .08);
+
+  static int isoWeek(LocalDate d) {
+    final thursday = d.addDays(4 - d.weekday);
+    return LocalDate(thursday.year, 1, 1).daysUntil(thursday) ~/ 7 + 1;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.scheduleColors;
+    final p = c.palette;
+    final f = Formats.of(context);
+    final pixel = c.style == StyleFamily.pixel;
+    final soft = c.style == StyleFamily.soft;
+    return Row(
+      children: [
+        SizedBox(
+          width: gutter,
+          child: Center(
+            child: Text(
+              'W${isoWeek(days.first.date)}',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .4, color: c.secondaryInk),
+            ),
+          ),
+        ),
+        for (final day in days)
+          SizedBox(
+            width: colWidth,
+            child: Semantics(
+              button: true,
+              selected: day.date == selected,
+              label: [f.dayTitle(day.date), if (day.isToday) 'today', if (!day.isEmpty) 'has schedules'].join(', '),
+              excludeSemantics: true,
+              child: Material(
+                key: ValueKey('day-${day.date.toIso()}'),
+                color: Colors.transparent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(pixel ? 0 : 14))),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => onSelect(day.date),
+                  child: Container(
+                    key: day.date == selected ? const ValueKey('week-selected-header') : null,
+                    color: day.date == selected ? tint(c) : Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          f.weekdayShort(day.date.weekday),
+                          maxLines: 1,
+                          overflow: TextOverflow.clip,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: day.date == selected ? FontWeight.w700 : FontWeight.w500,
+                            color: day.date == selected ? c.accentText : c.secondaryInk,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: pixel ? BoxShape.rectangle : BoxShape.circle,
+                            color: day.date == selected && !soft ? p.accent : null,
+                            gradient: day.date == selected && soft
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [p.accent, Color.lerp(p.accent, const Color(0xFFFF7A59), .45)!],
+                                  )
+                                : null,
+                            border: day.isToday && day.date != selected ? Border.all(color: c.accentText, width: 1.5) : null,
+                          ),
+                          child: FittedBox(
+                            child: Text(
+                              '${day.date.day}',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: day.date == selected ? p.onAccent : c.ink,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            shape: pixel ? BoxShape.rectangle : BoxShape.circle,
+                            color: day.isEmpty ? Colors.transparent : c.accentText.withValues(alpha: .7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

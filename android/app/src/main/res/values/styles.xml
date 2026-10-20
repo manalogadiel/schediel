@@ -13,7 +13,7 @@
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowBackground">@color/brand_paper</item>
     </style>
     <!-- Native alarm screen (AlarmActivity): always dark, like the system alarm surfaces. -->
     <style name="AlarmTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">

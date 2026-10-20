@@ -13,6 +13,8 @@ import '../../imports/presentation/import_review_screen.dart';
 import '../application/share_sender.dart';
 import '../application/sharing_config.dart';
 import '../data/share_api.dart';
+import '../../reminders/application/capabilities.dart';
+import '../domain/direct_share.dart';
 import '../domain/share_payload.dart';
 import 'share_open_screen.dart';
 
@@ -70,15 +72,14 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
     final all = _all;
     final categories = ref.watch(categoriesProvider).value ?? const [];
     ShareBuild? build;
-    if (enabled && all != null) {
+    if (all != null) {
       build = ref.read(shareSenderProvider).build([for (final s in all) if (_selected.contains(s.id)) s],
         {for (final c in categories) c.id: c.name}, _policy);
     }
     final payload = build?.payload;
     return PopScope(canPop: !_creating, child: Scaffold(
       appBar: AppBar(title: const Text('Share schedules')),
-      body: !enabled ? const SharingUnavailable()
-        : created != null ? ListView(padding: const EdgeInsets.all(Tokens.md), children: [
+      body: created != null ? ListView(padding: const EdgeInsets.all(Tokens.md), children: [
           const Text('Link created', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: Tokens.md),
           SelectableText(created.link.toString()),
@@ -112,12 +113,14 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
           if (payload != null) ExpansionTile(title: const Text('Review exact included data'), children: [
             for (final item in payload.items) _payloadRow(item),
           ]),
-          DropdownButtonFormField<Duration>(initialValue: _validity, decoration: const InputDecoration(labelText: 'Link validity'),
+          if (enabled) DropdownButtonFormField<Duration>(initialValue: _validity, decoration: const InputDecoration(labelText: 'Link validity'),
             items: const [DropdownMenuItem(value: Duration(days: 1), child: Text('1 day')),
               DropdownMenuItem(value: Duration(days: 7), child: Text('7 days'))],
             onChanged: _creating ? null : (v) => setState(() => _validity = v!)),
           const SizedBox(height: Tokens.md),
-          const Text('Anyone with the link can view it. Losing this anonymous session or reinstalling may lose control of old links. Revoking a link does not erase downloaded or imported copies.'),
+          Text(enabled
+              ? 'Send link works offline: the schedules travel inside the link. Online links can expire and be revoked; revoking does not erase copies already added.'
+              : 'Send link works offline: the schedules travel inside the link. Anyone who has it can add these schedules.'),
           const SizedBox(height: Tokens.sm),
           if (build?.problem != null && build!.problem != ShareBuildProblem.nothingSelected)
             Text(switch (build.problem!) {
@@ -127,7 +130,7 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
             }),
           if (_error != null) Semantics(liveRegion: true, child: Text(_error!)),
         ]),
-      bottomNavigationBar: !enabled || created != null || all == null ? null : SafeArea(child: Padding(
+      bottomNavigationBar: created != null || all == null ? null : SafeArea(child: Padding(
         padding: const EdgeInsets.all(Tokens.md), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Semantics(liveRegion: true, child: Text('${_selected.length} selected')),
           if (_uncertain) TextButton(onPressed: _creating ? null : () async {
@@ -136,11 +139,36 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
             final pending = await ref.read(shareSenderProvider).pending();
             if (mounted) setState(() => _uncertain = pending.isNotEmpty);
           }, child: const Text('Check saved attempts')),
-          FilledButton(onPressed: !_creating && !_uncertain && payload != null ? () => _create(payload) : null,
-            child: Text(_creating ? 'Creating…' : 'Create link')),
+          Row(children: [
+            if (enabled) ...[
+              Expanded(child: FilledButton(onPressed: !_creating && !_uncertain && payload != null ? () => _create(payload) : null,
+                child: Text(_creating ? 'Creating…' : 'Create link'))),
+              const SizedBox(width: Tokens.sm),
+            ],
+            Expanded(child: enabled
+                ? FilledButton.tonal(key: const ValueKey('send-direct'), onPressed: !_creating && payload != null ? () => _sendDirect(payload) : null,
+                    child: const Text('Send link'))
+                : FilledButton(key: const ValueKey('send-direct'), onPressed: payload != null ? () => _sendDirect(payload) : null,
+                    child: const Text('Send link'))),
+          ]),
         ]))),
     ));
   }
+  /// Offline link through the system share sheet; copied when nothing can
+  /// receive it.
+  Future<void> _sendDirect(SharePayload payload) async {
+    final link = DirectShare.encode(payload).toString();
+    final titles = payload.items.map((i) => i.title).take(3).join(', ');
+    final more = payload.items.length > 3 ? ' +${payload.items.length - 3} more' : '';
+    final text = 'Schedules from Schediel: $titles$more\n\n'
+        'To add them, copy this message, open Schediel, tap + and choose Open shared link.\n\n$link';
+    final sent = await ref.read(nativeBridgeProvider).shareText(text, subject: 'Schediel schedules');
+    if (!sent) {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied')));
+    }
+  }
+
   Widget _toggle(String label, bool value, ValueChanged<bool> change) => SwitchListTile(title: Text(label), value: value,
     onChanged: _creating ? null : (v) => setState(() => change(v)));
   Widget _payloadRow(ShareItem item) {

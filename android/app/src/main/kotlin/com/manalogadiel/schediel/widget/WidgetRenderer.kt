@@ -13,6 +13,7 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.format.DateFormat
 import android.text.style.StyleSpan
+import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import com.manalogadiel.schediel.MainActivity
@@ -74,6 +75,23 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
         (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
     fun build(result: ReadResult, options: Bundle?, nowMs: Long): RemoteViews {
+        val style = result.theme?.takeIf { result.settings?.useAppTheme == true }?.style
+        val fontScale = context.resources.configuration.fontScale
+        val chrome = ThemeStyle.holderChromeDp(style)
+        val title = ThemeStyle.titleLineSp(style)
+        // Android 12+: one layout per row count, keyed by the height it needs;
+        // the host picks the largest that fits the widget's real size, so the
+        // container fills even when the reported size is conservative.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && result.state == ReadState.ENTRIES && result.settings != null) {
+            val sized = WidgetPlanner.sized(result, fontScale, chrome, title)
+            if (sized.isNotEmpty()) {
+                return RemoteViews(sized.associate { (height, plan) -> SizeF(1f, height) to buildFor(result, options, nowMs, plan) })
+            }
+        }
+        return buildFor(result, options, nowMs, WidgetPlanner.plan(result, heightDp(options), fontScale, chrome, title))
+    }
+
+    private fun buildFor(result: ReadResult, options: Bundle?, nowMs: Long, plan: WidgetPlan): RemoteViews {
         // Themed holders when this widget opted in and the snapshot carries a
         // valid theme; otherwise exactly the original look.
         val theme = result.theme?.takeIf { result.settings?.useAppTheme == true }
@@ -95,13 +113,6 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
 
         val settings = result.settings!!
         val today = Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
-        val plan = WidgetPlanner.plan(
-            result,
-            heightDp(options),
-            context.resources.configuration.fontScale,
-            extraChromeDp = if (theme != null) 4f else 0f,
-            titleLineSp = ThemeStyle.titleLineSp(theme?.style),
-        )
         plan.allDay.forEachIndexed { i, entry ->
             val id = captionIds[i]
             views.setViewVisibility(id, View.VISIBLE)

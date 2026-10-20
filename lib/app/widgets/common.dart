@@ -9,16 +9,15 @@ import '../providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/schediel_theme.dart';
 import '../theme/tokens.dart';
+import 'art.dart';
 import 'sketch_border.dart';
 import 'themed.dart';
 
 /// Motion durations that collapse to zero when the OS requests reduced motion.
 abstract final class AppMotion {
-  static Duration control(BuildContext context) =>
-      MediaQuery.disableAnimationsOf(context) ? Duration.zero : Tokens.controlMotion;
+  static Duration control(BuildContext context) => MediaQuery.disableAnimationsOf(context) ? Duration.zero : Tokens.controlMotion;
 
-  static Duration screen(BuildContext context) =>
-      MediaQuery.disableAnimationsOf(context) ? Duration.zero : Tokens.screenMotion;
+  static Duration screen(BuildContext context) => MediaQuery.disableAnimationsOf(context) ? Duration.zero : Tokens.screenMotion;
 }
 
 /// An optional header above a rounded surface group whose rows are separated
@@ -37,7 +36,14 @@ class SectionGroup extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
-      if (i > 0) rows.add(Padding(padding: const EdgeInsets.only(left: Tokens.md), child: Divider(color: colors.divider)));
+      if (i > 0) {
+        rows.add(
+          Padding(
+            padding: const EdgeInsets.only(left: Tokens.md),
+            child: Divider(color: colors.divider),
+          ),
+        );
+      }
       rows.add(children[i]);
     }
     return Padding(
@@ -61,7 +67,11 @@ class SectionGroup extends StatelessWidget {
                 ],
               ),
             ),
-          if (rows.isNotEmpty) _GroupSurface(seed: header, child: Column(children: rows)),
+          if (rows.isNotEmpty)
+            _GroupSurface(
+              seed: header,
+              child: Column(children: rows),
+            ),
         ],
       ),
     );
@@ -79,7 +89,10 @@ class _GroupSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.scheduleColors;
     final radius = BorderRadius.circular(c.style == StyleFamily.pixel ? 0 : math.min(c.radius, Tokens.radiusCard + 2));
-    final content = ClipRRect(borderRadius: radius, child: Material(type: MaterialType.transparency, child: child));
+    final content = ClipRRect(
+      borderRadius: radius,
+      child: Material(type: MaterialType.transparency, child: child),
+    );
     if (c.style == StyleFamily.sketch) {
       return CustomPaint(
         painter: SketchBorderPainter(seed: seed ?? 'group', fill: c.surface, ink: c.palette.outline, radius: radius.topLeft.x),
@@ -106,13 +119,42 @@ class _GroupSurface extends StatelessWidget {
   }
 }
 
-/// A genuine empty or problem state: one line of copy and an optional action.
+/// A named setting/category uses color as a secondary cue, never alone.
+class SoftIcon extends StatelessWidget {
+  const SoftIcon(this.icon, {super.key, this.colorKey});
+  final AppIcons icon;
+  final String? colorKey;
+  @override
+  Widget build(BuildContext context) {
+    final c = context.scheduleColors;
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: colorKey == null ? c.palette.accent.withValues(alpha: 0.10) : c.categoryFill(colorKey),
+        borderRadius: BorderRadius.circular(c.style == StyleFamily.pixel ? 0 : Tokens.radiusControl),
+      ),
+      child: Center(child: AppIcon(icon, color: colorKey == null ? c.accentText : c.palette.cardInk)),
+    );
+  }
+}
+
+/// Original empty-day illustration in the theme's colors.
+class ScheduleEmptyArt extends StatelessWidget {
+  const ScheduleEmptyArt({super.key});
+
+  @override
+  Widget build(BuildContext context) => const DayArt(key: ValueKey('schedule-empty-art'), width: 148, height: 113);
+}
+
+/// A genuine empty or problem state, optionally illustrated.
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.title, this.message, this.action});
+  const EmptyState({super.key, required this.title, this.message, this.action, this.illustration});
 
   final String title;
   final String? message;
   final Widget? action;
+  final Widget? illustration;
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +164,7 @@ class EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (illustration != null) ...[illustration!, const SizedBox(height: Tokens.md)],
           Text(title, style: text.titleMedium, textAlign: TextAlign.center),
           if (message != null) ...[
             const SizedBox(height: Tokens.sm),
@@ -231,7 +274,10 @@ class FilterPill extends ConsumerWidget {
     final colors = context.scheduleColors;
     final p = colors.palette;
     final fg = filter.isAll ? colors.ink : p.onAccent;
-    final side = BorderSide(color: colors.outlined ? p.outline : colors.inputBoundary.withValues(alpha: 0.6), width: colors.outlined ? 2 : 1);
+    final side = BorderSide(
+      color: colors.outlined ? p.outline : colors.inputBoundary.withValues(alpha: 0.6),
+      width: colors.outlined ? 2 : 1,
+    );
     final ShapeBorder shape = colors.style == StyleFamily.pixel ? RoundedRectangleBorder(side: side) : StadiumBorder(side: side);
     return Semantics(
       button: true,
@@ -254,7 +300,11 @@ class FilterPill extends ConsumerWidget {
                   const SizedBox(width: 6),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 160),
-                    child: Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: fg)),
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: fg),
+                    ),
                   ),
                 ],
               ),
@@ -303,9 +353,11 @@ class _CategoryFilterSheet extends ConsumerWidget {
       } else if (!selected.remove(id)) {
         selected.add(id);
       }
-      notifier.set(selected.isEmpty && !uncategorized
-          ? const CategoryFilter.all()
-          : CategoryFilter.only(selected, includeUncategorized: uncategorized));
+      notifier.set(
+        selected.isEmpty && !uncategorized
+            ? const CategoryFilter.all()
+            : CategoryFilter.only(selected, includeUncategorized: uncategorized),
+      );
     }
 
     return SafeArea(
@@ -332,7 +384,12 @@ class _CategoryFilterSheet extends ConsumerWidget {
                   for (final c in categories)
                     CheckboxListTile(
                       value: !filter.isAll && filter.categoryIds.contains(c.id),
-                      title: Row(children: [CategoryDot(colorKey: c.colorKey), Flexible(child: Text(c.name))]),
+                      title: Row(
+                        children: [
+                          CategoryDot(colorKey: c.colorKey),
+                          Flexible(child: Text(c.name)),
+                        ],
+                      ),
                       controlAffinity: ListTileControlAffinity.leading,
                       onChanged: (_) => toggle(c.id),
                     ),
