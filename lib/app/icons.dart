@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'theme/tokens.dart';
 
-/// The curated Lucide icon set (assets/icons, ISC license retained in
+/// Curated Lucide icons plus original Schediel marks (upstream ISC license in
 /// assets/icons/LICENSE-lucide.txt).
 enum AppIcons {
   calendar('calendar'),
@@ -11,7 +11,7 @@ enum AppIcons {
   settings('settings'),
   add('plus'),
   image('image'),
-  share('share-2'),
+  share('share-out'),
   filter('list-filter'),
   location('map-pin'),
   person('user'),
