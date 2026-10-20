@@ -129,7 +129,7 @@ class _ArcPainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
-    for (final y in [size.height * .30, size.height - 4]) {
+    for (final y in [depth - 2, size.height - 2]) {
       final path = Path()
         ..moveTo(0, y)
         ..quadraticBezierTo(size.width / 2, y - 2 * depth, size.width, y);

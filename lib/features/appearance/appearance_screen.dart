@@ -765,18 +765,22 @@ class _ColorSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.scheduleColors;
-    return Padding(
-      padding: const EdgeInsets.only(top: Tokens.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(label, style: TextStyle(color: c.secondaryInk, fontSize: 13, fontWeight: FontWeight.w600)),
-          SliderTheme(
+    final unit = max == 359 ? '°' : '';
+    // Lightroom-style row: label, a thin track painted in the real colors,
+    // and the value.
+    return Row(
+      children: [
+        SizedBox(
+          width: 78,
+          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.secondaryInk, fontSize: 13, fontWeight: FontWeight.w600)),
+        ),
+        Expanded(
+          child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              trackHeight: 14,
-              trackShape: _GradientTrackShape(track, c.ink.withValues(alpha: .12)),
+              trackHeight: 6,
+              trackShape: _GradientTrackShape(track, c.ink.withValues(alpha: .10)),
               thumbShape: _RingThumbShape(thumb),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
               overlayColor: thumb.withValues(alpha: .16),
               showValueIndicator: ShowValueIndicator.never,
             ),
@@ -791,8 +795,18 @@ class _ColorSlider extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
+        ),
+        SizedBox(
+          width: 42,
+          child: ExcludeSemantics(
+            child: Text(
+              '${value.round()}$unit',
+              textAlign: TextAlign.right,
+              style: TextStyle(color: c.ink, fontSize: 13, fontWeight: FontWeight.w600, fontFeatures: const [FontFeature.tabularFigures()]),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -834,7 +848,7 @@ class _RingThumbShape extends SliderComponentShape {
   final Color color;
 
   @override
-  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size.square(28);
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size.square(22);
 
   @override
   void paint(
@@ -855,13 +869,13 @@ class _RingThumbShape extends SliderComponentShape {
     context.canvas
       ..drawCircle(
         center.translate(0, 1.5),
-        13 * grow,
+        10 * grow,
         Paint()
           ..color = const Color(0x33000000)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
       )
-      ..drawCircle(center, 13 * grow, Paint()..color = Colors.white)
-      ..drawCircle(center, 9.5 * grow, Paint()..color = color);
+      ..drawCircle(center, 10 * grow, Paint()..color = Colors.white)
+      ..drawCircle(center, 7 * grow, Paint()..color = color);
   }
 }
 

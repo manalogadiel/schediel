@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'dart:ui' show lerpDouble;
+import 'dart:ui' show ImageFilter, lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -221,13 +221,14 @@ class _FloatingNavBarState extends State<FloatingNavBar> with SingleTickerProvid
             final open = [for (var i = 0; i < n; i++) lerpDouble(i == _from ? 1 : 0, i == to ? 1 : 0, t)!];
             final widths = [for (var i = 0; i < n; i++) _slot + open[i] * extras[i]];
             double leftOf(int k) => widths.take(k).fold(0.0, (a, b) => a + b);
-            return DecoratedBox(
+            final glass = c.style == StyleFamily.soft;
+            final box = DecoratedBox(
               decoration: BoxDecoration(
-                color: p.navBackground,
+                color: glass ? p.navBackground.withValues(alpha: .80) : p.navBackground,
                 borderRadius: radius,
                 border: c.outlined ? Border.all(color: p.outline, width: 2) : null,
                 boxShadow: switch (c.style) {
-                  StyleFamily.soft => [BoxShadow(color: const Color(0xFF000000).withValues(alpha: 0.14), blurRadius: 20, offset: const Offset(0, 6))],
+                  StyleFamily.soft => null,
                   StyleFamily.pop || StyleFamily.pixel => [BoxShadow(color: p.outline, offset: const Offset(3, 3))],
                   StyleFamily.sketch => null,
                 },
@@ -266,6 +267,18 @@ class _FloatingNavBarState extends State<FloatingNavBar> with SingleTickerProvid
                     ],
                   ),
                 ),
+              ),
+            );
+            if (!glass) return box;
+            // Frosted glass: blur whatever scrolls beneath the bar.
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                boxShadow: [BoxShadow(color: const Color(0xFF000000).withValues(alpha: 0.12), blurRadius: 22, offset: const Offset(0, 8))],
+              ),
+              child: ClipRRect(
+                borderRadius: radius,
+                child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18), child: box),
               ),
             );
           },

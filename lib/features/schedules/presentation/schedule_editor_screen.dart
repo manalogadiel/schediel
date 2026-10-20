@@ -5,6 +5,7 @@ import '../../../app/format.dart';
 import '../../../app/icons.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../app/theme/schediel_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
 import '../../../app/widgets/labeled_field.dart';
@@ -471,16 +472,13 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: Tokens.md, vertical: Tokens.sm),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${_step.index + 1} / 3 · ${switch (_step) {
-                          _EditorStep.details => 'Details',
-                          _EditorStep.time => 'Time',
-                          _EditorStep.alerts => 'Alerts',
-                        }}',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
+                    child: _StepIndicator(
+                      index: _step.index,
+                      label: switch (_step) {
+                        _EditorStep.details => 'Details',
+                        _EditorStep.time => 'Time',
+                        _EditorStep.alerts => 'Alerts',
+                      },
                     ),
                   ),
                   Expanded(
@@ -1027,6 +1025,57 @@ class _ZonePickerSheetState extends State<ZonePickerSheet> {
                 trailing: matches[i] == widget.current ? const AppIcon(AppIcons.confirm) : null,
                 onTap: () => Navigator.of(context).pop(matches[i]),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small segmented progress: the current step is a long accent pill, done
+/// steps are short accent pills, upcoming ones are faint dots.
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator({required this.index, required this.label});
+
+  final int index;
+  final String label;
+  static const count = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.scheduleColors;
+    final pixel = c.style == StyleFamily.pixel;
+    final duration = AppMotion.control(context) * 1.8;
+    return Semantics(
+      label: 'Step ${index + 1} of $count, $label',
+      excludeSemantics: true,
+      child: Row(
+        children: [
+          for (var i = 0; i < count; i++) ...[
+            if (i > 0) const SizedBox(width: 5),
+            AnimatedContainer(
+              duration: duration,
+              curve: const Cubic(0.2, 0.9, 0.1, 1),
+              width: i == index ? 26 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: i <= index ? c.palette.accent.withValues(alpha: i == index ? 1 : .45) : c.ink.withValues(alpha: .14),
+                borderRadius: BorderRadius.circular(pixel ? 0 : 4),
+              ),
+            ),
+          ],
+          const SizedBox(width: 10),
+          AnimatedSwitcher(
+            duration: duration,
+            transitionBuilder: (child, a) => FadeTransition(
+              opacity: a,
+              child: SlideTransition(position: Tween(begin: const Offset(0, .4), end: Offset.zero).animate(a), child: child),
+            ),
+            child: Text(
+              label,
+              key: ValueKey(label),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: c.secondaryInk, fontWeight: FontWeight.w600),
             ),
           ),
         ],

@@ -106,17 +106,17 @@ void main() {
   });
   appTest('staged editor keeps a draft and saves only from its final step', (h) async {
     await h.tapText('Create schedule');
-    expect(find.text('1 / 3 · Details'), findsOneWidget);
+    expect(find.bySemanticsLabel('Step 1 of 3, Details'), findsOneWidget);
     await h.tester.enterText(find.widgetWithText(TextField, 'Title'), 'Fixture staged');
     await h.tapText('Next');
-    expect(find.text('2 / 3 · Time'), findsOneWidget);
+    expect(find.bySemanticsLabel('Step 2 of 3, Time'), findsOneWidget);
     expect(h.tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'End time')).value, isTrue);
     expect(h.read(allSeriesProvider).value, isEmpty);
     await h.tapText('Back');
     expect(h.tester.widget<TextField>(find.widgetWithText(TextField, 'Title')).controller!.text, 'Fixture staged');
     await h.tapText('Next');
     await h.tapText('Next');
-    expect(find.text('3 / 3 · Alerts'), findsOneWidget);
+    expect(find.bySemanticsLabel('Step 3 of 3, Alerts'), findsOneWidget);
     expect(h.read(allSeriesProvider).value, isEmpty);
     await h.tapText('Save');
     expect(find.text('Fixture staged'), findsOneWidget);

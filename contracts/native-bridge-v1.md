@@ -76,3 +76,9 @@ Notification authorization is read and requested on the Dart side through `flutt
 - `schediel://occurrence/{seriesId}/{originalKey}` opens existing occurrence details or the honest "Schedule no longer available" state.
 - `schediel://today` opens Today.
 - These links never create schedules, enable alerts or import data.
+
+### `shareText` (added 2026-10-20)
+
+Arguments: `{text: String, subject?: String}`. Opens the Android share sheet with `ACTION_SEND` / `text/plain`.
+Returns `true` when the chooser opened, `false` when no activity can receive it. Used for offline (direct)
+schedule links; the native side never logs the text.
