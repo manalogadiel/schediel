@@ -27,8 +27,9 @@ GoRouter buildRouter({String initialLocation = '/today', List<RouteBase> extraRo
   navigatorKey: rootNavigatorKey,
   initialLocation: initialLocation,
   routes: [
-    StatefulShellRoute.indexedStack(
+    StatefulShellRoute(
       builder: (context, state, shell) => AppShell(navigationShell: shell),
+      navigatorContainerBuilder: (context, shell, children) => BranchSwitcher(index: shell.currentIndex, children: children),
       branches: [
         StatefulShellBranch(
           routes: [GoRoute(path: '/today', builder: (_, _) => const TodayScreen())],

@@ -7,8 +7,12 @@ import 'theme/tokens.dart';
 /// assets/icons/LICENSE-lucide.txt).
 enum AppIcons {
   calendar('calendar'),
-  week('calendar-days'),
+  today('today'),
+  todayFill('today-fill'),
+  week('week'),
+  weekFill('week-fill'),
   settings('settings'),
+  settingsFill('settings-fill'),
   add('plus'),
   image('image'),
   share('share-out'),

@@ -28,6 +28,8 @@ class SettingsScreen extends ConsumerWidget {
           AppIcons.category => 'blue',
           AppIcons.widget => 'green',
           AppIcons.notification => 'orange',
+          AppIcons.link => 'red',
+          AppIcons.privacy => 'gray',
           _ => null,
         },
       ),
@@ -63,7 +65,7 @@ class SettingsScreen extends ConsumerWidget {
             SectionGroup(
               children: [
                 ListTile(
-                  leading: const AppIcon(AppIcons.info),
+                  leading: const SoftIcon(AppIcons.info, key: ValueKey('settings-icon-info'), colorKey: 'gray'),
                   title: const Text('Open source licenses'),
                   onTap: () => showLicensePage(context: context, applicationName: 'Schediel'),
                 ),
