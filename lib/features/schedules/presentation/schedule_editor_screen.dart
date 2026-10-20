@@ -22,6 +22,7 @@ import '../../imports/domain/import_entry.dart';
 import '../../reminders/domain/alert_rule.dart';
 import '../../reminders/presentation/alert_editor.dart';
 import '../data/schedule_repository.dart';
+import 'month_sheet.dart';
 
 enum EditorScope { create, series, occurrence, review }
 
@@ -899,13 +900,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   Future<void> _pickDate(LocalDate current, void Function(LocalDate) apply) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(current.year, current.month, current.day),
-      firstDate: DateTime(LocalDate.minYear),
-      lastDate: DateTime(LocalDate.maxYear, 12, 31),
-    );
-    if (picked != null) _change(() => apply(LocalDate.fromDateTime(picked)));
+    final picked = await showMonthSheet(context, initial: current);
+    if (picked != null) _change(() => apply(picked));
   }
 
   Future<void> _pickTime(LocalTime current, void Function(LocalTime) apply) async {

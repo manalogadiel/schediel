@@ -11,9 +11,11 @@ void main() {
     expect(find.byTooltip('Choose date'), findsOneWidget);
     await h.tester.tap(find.byTooltip('Choose date'));
     await h.settle();
-    expect(find.byType(DatePickerDialog), findsOneWidget);
-    await h.tapText('15');
-    await h.tapText('OK');
+    expect(find.byKey(const ValueKey('month-done')), findsOneWidget);
+    await h.tester.tap(find.byKey(const ValueKey('month-day-2026-11-15')));
+    await h.settle();
+    await h.tester.tap(find.byKey(const ValueKey('month-done')));
+    await h.settle();
     expect(h.read(effectiveDateProvider), LocalDate(2026, 11, 15));
     expect(find.byKey(const ValueKey('day-2026-11-15')), findsOneWidget);
     expect(find.byTooltip('Choose date'), findsOneWidget);

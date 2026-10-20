@@ -11,6 +11,7 @@ import '../../../app/widgets/themed.dart';
 import '../../../core/time/local_date.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/profile.dart';
+import 'month_sheet.dart';
 
 /// "Good morning" 05:00–11:59, "Good afternoon" 12:00–17:59, otherwise
 /// "Good evening", from device-local wall time.
@@ -142,13 +143,5 @@ class DateHeading extends ConsumerWidget {
   }
 }
 
-/// Picks a date with the platform date picker.
-Future<LocalDate?> pickDate(BuildContext context, LocalDate current) async {
-  final picked = await showDatePicker(
-    context: context,
-    initialDate: DateTime(current.year, current.month, current.day),
-    firstDate: DateTime(LocalDate.minYear),
-    lastDate: DateTime(LocalDate.maxYear, 12, 31),
-  );
-  return picked == null ? null : LocalDate.fromDateTime(picked);
-}
+/// Picks a date with the month calendar sheet.
+Future<LocalDate?> pickDate(BuildContext context, LocalDate current) => showMonthSheet(context, initial: current);
