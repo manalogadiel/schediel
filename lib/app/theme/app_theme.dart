@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 import 'schediel_theme.dart';
+import 'theme_customization.dart';
 import 'tokens.dart';
 
 /// Theme-driven colors, shapes and type the screens need beyond ColorScheme.
@@ -55,17 +56,17 @@ class ScheduleColors extends ThemeExtension<ScheduleColors> {
 
   @override
   ScheduleColors copyWith({Density? density, bool? showCategoryColors}) => ScheduleColors(
-        palette: palette,
-        style: style,
-        radius: radius,
-        displayFont: displayFont,
-        displayWeight: displayWeight,
-        inputBoundary: inputBoundary,
-        accentText: accentText,
-        nextHolder: nextHolder,
-        density: density ?? this.density,
-        showCategoryColors: showCategoryColors ?? this.showCategoryColors,
-      );
+    palette: palette,
+    style: style,
+    radius: radius,
+    displayFont: displayFont,
+    displayWeight: displayWeight,
+    inputBoundary: inputBoundary,
+    accentText: accentText,
+    nextHolder: nextHolder,
+    density: density ?? this.density,
+    showCategoryColors: showCategoryColors ?? this.showCategoryColors,
+  );
 
   @override
   ScheduleColors lerp(ThemeExtension<ScheduleColors>? other, double t) {
@@ -91,16 +92,24 @@ ThemeMode effectiveThemeMode(SchedielTheme theme, ThemeMode mode) => theme.darkO
 TextTheme _textTheme(SchedielTheme theme, Color ink, Color secondaryInk) {
   final font = theme.displayFont;
   // Caveat runs small and Silkscreen wide; scale so headings keep their size.
-  final scale = switch (font) { 'Caveat' => 1.25, 'Silkscreen' => 0.82, _ => 1.0 };
-  final weight = switch (font) { null => theme.displayWeight, 'Caveat' => FontWeight.w700, _ => FontWeight.w400 };
+  final scale = switch (font) {
+    'Caveat' => 1.25,
+    'Silkscreen' => 0.82,
+    _ => 1.0,
+  };
+  final weight = switch (font) {
+    null => theme.displayWeight,
+    'Caveat' => FontWeight.w700,
+    _ => FontWeight.w400,
+  };
   TextStyle display(double size, double height, double tracking) => TextStyle(
-        fontFamily: font,
-        fontSize: size * scale,
-        fontWeight: weight,
-        height: height,
-        letterSpacing: font == null ? tracking : 0,
-        color: ink,
-      );
+    fontFamily: font,
+    fontSize: size * scale,
+    fontWeight: weight,
+    height: height,
+    letterSpacing: font == null ? tracking : 0,
+    color: ink,
+  );
   return TextTheme(
     headlineLarge: display(34, 1.1, -0.8),
     headlineMedium: display(30, 1.15, -0.6),
@@ -117,22 +126,22 @@ TextTheme _textTheme(SchedielTheme theme, Color ink, Color secondaryInk) {
 
 /// The schedule time style: 15/500 with tabular figures.
 TextStyle timeStyle(BuildContext context) => TextStyle(
-      fontSize: 15,
-      fontWeight: FontWeight.w500,
-      height: 1.35,
-      fontFeatures: const [FontFeature.tabularFigures()],
-      color: context.scheduleColors.ink,
-    );
+  fontSize: 15,
+  fontWeight: FontWeight.w500,
+  height: 1.35,
+  fontFeatures: const [FontFeature.tabularFigures()],
+  color: context.scheduleColors.ink,
+);
 
 /// Whichever of [a] or [b] reads better on [background].
-Color _readableOn(Color background, Color a, Color b) =>
-    contrastRatio(a, background) >= contrastRatio(b, background) ? a : b;
+Color _readableOn(Color background, Color a, Color b) => contrastRatio(a, background) >= contrastRatio(b, background) ? a : b;
 
 ThemeData buildTheme({
   required SchedielTheme theme,
   required Brightness brightness,
   required Density density,
   required bool showCategoryColors,
+  ThemeTexture texture = ThemeTexture.none,
 }) {
   final p = theme.palette(brightness);
   final dark = p.brightness == Brightness.dark;
@@ -145,11 +154,20 @@ ThemeData buildTheme({
   final softBoundary = Color.lerp(secondaryInk, surface, 0.3)!;
   final boundary = contrastRatio(softBoundary, surface) >= 3 ? softBoundary : secondaryInk;
   final accentText = contrastRatio(p.accent, surface) >= 4.5 && contrastRatio(p.accent, canvas) >= 4.5 ? p.accent : ink;
-  final accentMark = contrastRatio(p.accent, surface) >= 3 ? p.accent : ink;
-  final error = dark ? Tokens.darkError : Tokens.error;
+  final accentMark = contrastRatio(p.accent, surface) >= 3 && contrastRatio(p.accent, canvas) >= 3 ? p.accent : ink;
+  bool readableError(Color c) => contrastRatio(c, surface) >= 4.5 && contrastRatio(c, canvas) >= 4.5;
+  final preferredError = dark ? Tokens.darkError : Tokens.error;
+  final alternateError = dark ? Tokens.error : Tokens.darkError;
+  final error = readableError(preferredError)
+      ? preferredError
+      : readableError(alternateError)
+      ? alternateError
+      : ink;
+  final preferredOnError = dark ? const Color(0xFF410002) : Colors.white;
   final pixel = theme.style == StyleFamily.pixel;
   final controlRadius = pixel ? 0.0 : Tokens.radiusControl;
   final outlined = theme.style != StyleFamily.soft;
+  final lowAccentContrast = contrastRatio(p.accent, surface) < 3 || contrastRatio(p.accent, canvas) < 3;
   final outline = BorderSide(color: p.outline, width: 2);
   final side = outlined ? outline : BorderSide(color: boundary);
 
@@ -160,7 +178,7 @@ ThemeData buildTheme({
     secondary: p.accent,
     onSecondary: p.onAccent,
     error: error,
-    onError: dark ? const Color(0xFF410002) : Colors.white,
+    onError: contrastRatio(preferredOnError, error) >= 4.5 ? preferredOnError : _readableOn(error, Colors.black, Colors.white),
     surface: surface,
     onSurface: ink,
     onSurfaceVariant: secondaryInk,
@@ -175,13 +193,18 @@ ThemeData buildTheme({
   final text = _textTheme(theme, ink, secondaryInk);
   final controlShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(controlRadius));
   final selectedWash = outlined ? p.accent : p.accent.withValues(alpha: dark ? 0.26 : 0.14);
-  final onSelectedWash = outlined ? p.onAccent : ink;
+  final selectedComposite = Color.alphaBlend(selectedWash, surface);
+  final onSelectedWash = outlined
+      ? p.onAccent
+      : contrastRatio(ink, selectedComposite) >= 4.5
+      ? ink
+      : _readableOn(selectedComposite, Colors.black, Colors.white);
 
   return ThemeData(
     useMaterial3: true,
     brightness: p.brightness,
     colorScheme: scheme,
-    scaffoldBackgroundColor: canvas,
+    scaffoldBackgroundColor: texture == ThemeTexture.none ? canvas : Colors.transparent,
     canvasColor: canvas,
     textTheme: text,
     dividerTheme: DividerThemeData(color: divider, thickness: 1, space: 1),
@@ -223,7 +246,13 @@ ThemeData buildTheme({
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(Tokens.minTarget, Tokens.minTarget),
-        shape: controlShape.copyWith(side: outlined ? outline : BorderSide.none),
+        shape: controlShape.copyWith(
+          side: outlined
+              ? outline
+              : lowAccentContrast
+              ? BorderSide(color: boundary)
+              : BorderSide.none,
+        ),
         backgroundColor: p.accent,
         foregroundColor: p.onAccent,
         textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
@@ -248,10 +277,7 @@ ThemeData buildTheme({
       ),
     ),
     iconButtonTheme: IconButtonThemeData(
-      style: IconButton.styleFrom(
-        minimumSize: const Size(Tokens.minTarget, Tokens.minTarget),
-        foregroundColor: ink,
-      ),
+      style: IconButton.styleFrom(minimumSize: const Size(Tokens.minTarget, Tokens.minTarget), foregroundColor: ink),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -306,6 +332,11 @@ ThemeData buildTheme({
       contentTextStyle: TextStyle(fontSize: 15, color: _readableOn(p.navBackground, p.navInk, surface)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(controlRadius)),
     ),
+    sliderTheme: SliderThemeData(
+      thumbColor: accentMark,
+      activeTrackColor: accentMark,
+      overlayColor: accentMark.withValues(alpha: .12),
+    ),
     switchTheme: SwitchThemeData(
       trackOutlineColor: WidgetStateProperty.resolveWith(
         (states) => states.contains(WidgetState.selected) ? Colors.transparent : boundary,
@@ -330,10 +361,7 @@ ThemeData buildTheme({
       minVerticalPadding: density == Density.compact ? 6 : 10,
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
-      builders: {
-        TargetPlatform.android: _CalmPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      },
+      builders: {TargetPlatform.android: _CalmPageTransitionsBuilder(), TargetPlatform.iOS: CupertinoPageTransitionsBuilder()},
     ),
     extensions: [
       ScheduleColors(

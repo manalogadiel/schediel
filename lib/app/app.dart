@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
+
+import 'theme/theme_customization.dart';
+import 'widgets/theme_texture.dart';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,6 +87,7 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
           (previous.themeMode != next.themeMode ||
               previous.theme != next.theme ||
               previous.customHue != next.customHue ||
+              !mapEquals(previous.customizations, next.customizations) ||
               previous.showCategoryColors != next.showCategoryColors)) {
         ref.read(widgetSnapshotServiceProvider).refresh();
       }
@@ -92,6 +98,7 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
       brightness: b,
       density: appearance.density,
       showCategoryColors: appearance.showCategoryColors,
+      texture: appearance.customizations[appearance.theme]?.texture ?? ThemeTexture.none,
     );
     return MaterialApp.router(
       title: 'Schediel',
@@ -109,16 +116,25 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
       supportedLocales: const [Locale('en')],
       builder: (context, child) {
         final colors = context.scheduleColors;
-        final chrome = Theme.of(context).brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
+        final chrome = contrastRatio(Colors.black, colors.canvas) >= contrastRatio(Colors.white, colors.canvas)
+            ? SystemUiOverlayStyle.dark
+            : SystemUiOverlayStyle.light;
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: chrome.copyWith(
             statusBarColor: Colors.transparent,
             systemNavigationBarColor: colors.canvas,
+            systemNavigationBarIconBrightness: chrome.statusBarIconBrightness,
             systemNavigationBarDividerColor: Colors.transparent,
             systemNavigationBarContrastEnforced: false,
             systemStatusBarContrastEnforced: false,
           ),
-          child: ColoredBox(color: colors.canvas, child: child!),
+          child: ColoredBox(
+            color: colors.canvas,
+            child: ThemeTextureSurface(
+              texture: appearance.customizations[appearance.theme]?.texture ?? ThemeTexture.none,
+              child: child!,
+            ),
+          ),
         );
       },
     );

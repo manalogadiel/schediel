@@ -127,7 +127,7 @@ class _DayCell extends StatelessWidget {
         ? RoundedRectangleBorder(side: selected || isToday ? BorderSide(color: p.outline, width: 2) : BorderSide.none)
         : RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(Tokens.radiusControl),
-            side: selected && c.outlined
+            side: selected && (c.outlined || contrastRatio(p.accent, c.canvas) < 3 || contrastRatio(p.accent, c.surface) < 3)
                 ? BorderSide(color: p.outline, width: 2)
                 : isToday && !selected
                 ? BorderSide(color: c.accentText, width: 1.5)
