@@ -34,6 +34,7 @@ Future<void> _seed(TestHarness h) => h.run(() async {
       ScheduleDraft(
         title: title,
         categoryId: category,
+        details: const ScheduleDetails(location: '105', professor: 'Midterms', subtitle: 'CS 312', notes: 'Private fixture notes'),
         time: DateOnlySpec(
           startDate: LocalDate(2026, 11, 3),
           endDateExclusive: LocalDate(2026, 11, 4),
@@ -50,18 +51,74 @@ Future<void> _openShare(TestHarness h) async {
   await h.settle();
 }
 
+Future<void> _chooseCategories(TestHarness h, List<String> ids) async {
+  await h.tester.tap(find.byKey(const ValueKey('share-category-selector')));
+  await h.settle();
+  for (final id in ids) {
+    await h.tester.tap(find.byKey(ValueKey('share-category-$id')));
+    await h.settle();
+  }
+  await h.tapText('Apply');
+}
+
 void main() {
+  appTest('categories use one grouped picker and cancel keeps the current selection', (h) async {
+    await _seed(h);
+    await _openShare(h);
+    expect(find.byType(FilterChip), findsNothing);
+    expect(find.byKey(const ValueKey('share-category-selector')), findsOneWidget);
+    expect(find.byKey(const ValueKey('share-category-school')), findsNothing);
+    await h.tester.tap(find.byKey(const ValueKey('share-category-selector')));
+    await h.settle();
+    expect(find.byKey(const ValueKey('share-category-school')), findsOneWidget);
+    await h.tester.tap(find.byKey(const ValueKey('share-category-personal')));
+    await h.tapText('Cancel');
+    expect(find.text('All categories'), findsOneWidget);
+    expect(find.text('3 selected'), findsOneWidget);
+    expect(find.text('School class'), findsOneWidget);
+    expect(find.text('Personal visit'), findsOneWidget);
+  });
+
+  appTest('grouped category selection fits a narrow screen with enlarged text', (h) async {
+    h.tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(h.tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await _seed(h);
+    await _openShare(h);
+    await _chooseCategories(h, ['school']);
+    expect(find.text('1 selected'), findsOneWidget);
+    expect(h.tester.takeException(), isNull);
+  }, size: const Size(360, 740));
+
+  final detailSheet = _ShareSheet();
+  appTest('details start checked except Notes and changes reach the sent link', (h) async {
+    await _seed(h);
+    await _openShare(h);
+    await _chooseCategories(h, ['school']);
+    await h.tapText('Details');
+    for (final label in ['Location', 'Person', 'Subtitle', 'Notes']) {
+      final row = find.widgetWithText(CheckboxListTile, label);
+      expect(h.tester.widget<CheckboxListTile>(row).value, label != 'Notes');
+    }
+    await h.tapText('Location');
+    await h.tapText('Notes');
+    await h.tapText('Send link');
+    final payload = DirectShare.decode(DirectShare.findInText(detailSheet.message!)!, h.read(sharePayloadValidatorProvider))!;
+    expect(payload.items.single.details, const ScheduleDetails(professor: 'Midterms', subtitle: 'CS 312', notes: 'Private fixture notes'));
+    expect(payload.sharedFieldPolicy.location, isFalse);
+    expect(payload.sharedFieldPolicy.notes, isTrue);
+  }, bridge: detailSheet);
+
   appTest('adding a share category keeps individual schedules deselected', (
     h,
   ) async {
     await _seed(h);
     await _openShare(h);
-    await h.tester.tap(find.byKey(const ValueKey('share-category-school')));
+    await _chooseCategories(h, ['school']);
     await h.settle();
     await h.tester.tap(find.widgetWithText(CheckboxListTile, 'School class'));
     await h.settle();
     expect(find.text('0 selected'), findsOneWidget);
-    await h.tester.tap(find.byKey(const ValueKey('share-category-personal')));
+    await _chooseCategories(h, ['personal']);
     await h.settle();
     expect(find.text('1 selected'), findsOneWidget);
     expect(
@@ -88,7 +145,7 @@ void main() {
       await _seed(h);
       await _openShare(h);
       expect(find.text('3 selected'), findsOneWidget);
-      await h.tester.tap(find.byKey(const ValueKey('share-category-school')));
+      await _chooseCategories(h, ['school']);
       await h.settle();
       expect(find.text('1 selected'), findsOneWidget);
       expect(find.text('Personal visit'), findsNothing);
@@ -103,6 +160,11 @@ void main() {
       )!;
       expect(payload.items.map((s) => s.title), ['School class']);
       expect(payload.items.single.categoryLabel, 'School');
+      expect(payload.sharedFieldPolicy.location, isTrue);
+      expect(payload.sharedFieldPolicy.professor, isTrue);
+      expect(payload.sharedFieldPolicy.subtitle, isTrue);
+      expect(payload.sharedFieldPolicy.notes, isFalse);
+      expect(payload.items.single.details, const ScheduleDetails(location: '105', professor: 'Midterms', subtitle: 'CS 312'));
     },
     bridge: sheet,
   );
@@ -112,13 +174,12 @@ void main() {
     (h) async {
       await _seed(h);
       await _openShare(h);
-      await h.tester.tap(find.byKey(const ValueKey('share-category-school')));
+      await _chooseCategories(h, ['school']);
       await h.settle();
-      await h.tester.tap(find.byKey(const ValueKey('share-category-personal')));
+      await _chooseCategories(h, ['personal']);
       await h.settle();
       expect(find.text('2 selected'), findsOneWidget);
-      await h.tester.tap(find.byKey(const ValueKey('share-category-school')));
-      await h.tester.tap(find.byKey(const ValueKey('share-category-personal')));
+      await _chooseCategories(h, ['school', 'personal']);
       await h.settle();
       expect(find.text('0 selected'), findsOneWidget);
       expect(
@@ -127,9 +188,7 @@ void main() {
             .onPressed,
         isNull,
       );
-      await h.tester.tap(
-        find.byKey(const ValueKey('share-category-uncategorized')),
-      );
+      await _chooseCategories(h, ['uncategorized']);
       await h.settle();
       expect(find.text('1 selected'), findsOneWidget);
       expect(find.text('Unfiled'), findsOneWidget);

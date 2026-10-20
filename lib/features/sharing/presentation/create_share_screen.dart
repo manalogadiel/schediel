@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/format.dart';
+import '../../../app/icons.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
@@ -27,7 +28,7 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
   List<ScheduleSeries>? _all;
   final _selected = <String>{};
   CategoryFilter _shareFilter = const CategoryFilter.all();
-  bool _location = false, _professor = false, _subtitle = false, _notes = false;
+  bool _location = true, _professor = true, _subtitle = true, _notes = false;
   Duration _validity = const Duration(days: 7);
   bool _creating = false;
   bool _uncertain = false;
@@ -50,17 +51,59 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
   void _selectScope() {
     _selected..clear()..addAll((_all ?? []).where((s) => _shareFilter.matches(s.categoryId)).map((s) => s.id));
   }
-  void _category(String? id, bool on) => setState(() {
+  void _applyFilter(CategoryFilter next) => setState(() {
     final previous = _shareFilter;
-    final ids = _shareFilter.isAll ? <String>{} : {..._shareFilter.categoryIds};
-    if (id != null) { on ? ids.add(id) : ids.remove(id); }
-    _shareFilter = CategoryFilter.only(ids,
-      includeUncategorized: id == null ? on : !_shareFilter.isAll && _shareFilter.includeUncategorized);
+    _shareFilter = next;
     // Adding a category must not restore individually excluded schedules.
     _selected.retainAll({for (final s in _all ?? <ScheduleSeries>[]) if (_shareFilter.matches(s.categoryId)) s.id});
     _selected.addAll([for (final s in _all ?? <ScheduleSeries>[])
       if (_shareFilter.matches(s.categoryId) && !previous.matches(s.categoryId)) s.id]);
   });
+  Future<void> _chooseCategories(List<Category> categories) async {
+    var draft = _shareFilter;
+    void toggle(String? id, bool on) {
+      final ids = draft.isAll ? <String>{} : {...draft.categoryIds};
+      final uncategorized = id == null ? on : !draft.isAll && draft.includeUncategorized;
+      if (id != null) { on ? ids.add(id) : ids.remove(id); }
+      draft = CategoryFilter.only(ids, includeUncategorized: uncategorized);
+    }
+    final selected = await showModalBottomSheet<CategoryFilter>(
+      context: context, useRootNavigator: true, useSafeArea: true, isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(builder: (context, setSheetState) => Padding(
+        padding: EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.md + MediaQuery.viewPaddingOf(context).bottom),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .78),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('Categories', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: Tokens.md),
+            Flexible(child: ListView(shrinkWrap: true, children: [
+              SectionGroup(children: [
+                CheckboxListTile(key: const ValueKey('share-category-all'), title: const Text('All categories'),
+                  controlAffinity: ListTileControlAffinity.leading, value: draft.isAll,
+                  onChanged: (_) => setSheetState(() => draft = const CategoryFilter.all())),
+                for (final category in categories)
+                  CheckboxListTile(key: ValueKey('share-category-${category.id}'), title: Text(category.name),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    value: !draft.isAll && draft.categoryIds.contains(category.id),
+                    onChanged: (on) => setSheetState(() => toggle(category.id, on ?? false))),
+                CheckboxListTile(key: const ValueKey('share-category-uncategorized'), title: const Text('Uncategorized'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: !draft.isAll && draft.includeUncategorized,
+                  onChanged: (on) => setSheetState(() => toggle(null, on ?? false))),
+              ]),
+            ])),
+            const SizedBox(height: Tokens.sm),
+            Row(children: [
+              Expanded(child: TextButton(onPressed: () => Navigator.pop(sheetContext), child: const Text('Cancel'))),
+              const SizedBox(width: Tokens.sm),
+              Expanded(child: FilledButton(onPressed: () => Navigator.pop(sheetContext, draft), child: const Text('Apply'))),
+            ]),
+          ]),
+        ),
+      )),
+    );
+    if (mounted && selected != null) _applyFilter(selected);
+  }
   SharedFieldPolicy get _policy => SharedFieldPolicy(location: _location, professor: _professor, subtitle: _subtitle, notes: _notes);
 
   Future<void> _create(SharePayload payload) async {
@@ -83,6 +126,11 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
     final created = _created;
     final all = _all;
     final categories = ref.watch(categoriesProvider).value ?? const [];
+    final categoryLabel = _shareFilter.isAll ? 'All categories' : [
+      for (final category in categories) if (_shareFilter.categoryIds.contains(category.id)) category.name,
+      if (_shareFilter.includeUncategorized) 'Uncategorized',
+    ].join(', ');
+    final detailsCount = [_location, _professor, _subtitle, _notes].where((on) => on).length;
     ShareBuild? build;
     if (all != null) {
       build = ref.read(shareSenderProvider).build([for (final s in all) if (_selected.contains(s.id)) s],
@@ -106,34 +154,30 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
         : all == null ? (_error == null ? const Center(child: CircularProgressIndicator.adaptive())
           : EmptyState(title: _error!, action: TextButton(onPressed: _load, child: const Text('Try again'))))
         : ListView(padding: const EdgeInsets.all(Tokens.md), children: [
-          const Text('Categories to share', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: Tokens.sm),
-          Wrap(spacing: Tokens.sm, runSpacing: Tokens.xs, children: [
-            FilterChip(label: const Text('All'), selected: _shareFilter.isAll,
-              onSelected: _creating ? null : (_) => setState(() { _shareFilter = const CategoryFilter.all(); _selectScope(); })),
-            for (final category in categories)
-              FilterChip(key: ValueKey('share-category-${category.id}'), label: Text(category.name),
-                selected: !_shareFilter.isAll && _shareFilter.categoryIds.contains(category.id),
-                onSelected: _creating ? null : (on) => _category(category.id, on)),
-            FilterChip(key: const ValueKey('share-category-uncategorized'), label: const Text('Uncategorized'),
-              selected: !_shareFilter.isAll && _shareFilter.includeUncategorized,
-              onSelected: _creating ? null : (on) => _category(null, on)),
+          SectionGroup(children: [
+            ListTile(key: const ValueKey('share-category-selector'),
+              leading: const AppIcon(AppIcons.category, size: 20), title: const Text('Categories'),
+              subtitle: Text(categoryLabel.isEmpty ? 'None selected' : categoryLabel, maxLines: 2, overflow: TextOverflow.ellipsis),
+              trailing: const AppIcon(AppIcons.next, size: 18),
+              onTap: _creating ? null : () => _chooseCategories(categories)),
+            ExpansionTile(key: const ValueKey('share-details'),
+              leading: const AppIcon(AppIcons.text, size: 20), title: const Text('Details'),
+              subtitle: Text('$detailsCount included'), children: [
+                _toggle('Location', _location, (v) => _location = v),
+                _toggle('Person', _professor, (v) => _professor = v),
+                _toggle('Subtitle', _subtitle, (v) => _subtitle = v),
+                _toggle('Notes', _notes, (v) => _notes = v),
+              ]),
           ]),
-          const Text('Choose categories, then deselect any schedules you do not want to send.'),
-          const SizedBox(height: Tokens.md),
-          const Text('Past and ended entries are included unless you deselect them. Recurring schedules share their rules and exceptions, not an infinite list of dates.'),
-          const SizedBox(height: Tokens.md),
-          ExpansionTile(title: const Text('Optional details to share'), children: [
-            _toggle('Room or location', _location, (v) => _location = v),
-            _toggle('Professor or person', _professor, (v) => _professor = v),
-            _toggle('Subtitle', _subtitle, (v) => _subtitle = v),
-            _toggle('Notes', _notes, (v) => _notes = v),
-          ]),
-          const Text('Included schedules', style: TextStyle(fontWeight: FontWeight.w600)),
+          SectionGroup(header: 'Schedules', children: [
+          if (!all.any((s) => _shareFilter.matches(s.categoryId)))
+            const ListTile(title: Text('No schedules in these categories')),
           for (final s in all.where((s) => _shareFilter.matches(s.categoryId))) CheckboxListTile(value: _selected.contains(s.id), title: Text(s.title),
             subtitle: Text('${categories.where((c) => c.id == s.categoryId).firstOrNull?.name ?? 'Uncategorized'} · ${scheduleTimeLabel(s.time, Formats.of(context))}'), controlAffinity: ListTileControlAffinity.leading,
             onChanged: _creating ? null : (on) => setState(() { on == true ? _selected.add(s.id) : _selected.remove(s.id); })),
-          if (payload != null) ExpansionTile(title: const Text('Review exact included data'), children: [
+          ]),
+          Text('Includes past schedules.', style: Theme.of(context).textTheme.bodySmall),
+          if (payload != null) ExpansionTile(title: const Text('Preview'), children: [
             for (final item in payload.items) _payloadRow(item),
           ]),
           if (enabled) DropdownButtonFormField<Duration>(initialValue: _validity, decoration: const InputDecoration(labelText: 'Link validity'),
@@ -142,8 +186,8 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
             onChanged: _creating ? null : (v) => setState(() => _validity = v!)),
           const SizedBox(height: Tokens.md),
           Text(enabled
-              ? 'Send link works offline: the schedules travel inside the link. Online links can expire and be revoked; revoking does not erase copies already added.'
-              : 'Send link works offline: the schedules travel inside the link. Anyone who has it can add these schedules.'),
+              ? 'Online links can expire. Imported copies remain.'
+              : 'Anyone with the link can import a copy.', style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: Tokens.sm),
           if (build?.problem != null && build!.problem != ShareBuildProblem.nothingSelected)
             Text(switch (build.problem!) {
@@ -192,8 +236,9 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
     }
   }
 
-  Widget _toggle(String label, bool value, ValueChanged<bool> change) => SwitchListTile(title: Text(label), value: value,
-    onChanged: _creating ? null : (v) => setState(() => change(v)));
+  Widget _toggle(String label, bool value, ValueChanged<bool> change) => CheckboxListTile(title: Text(label), value: value,
+    controlAffinity: ListTileControlAffinity.leading,
+    onChanged: _creating ? null : (v) => setState(() => change(v ?? false)));
   Widget _payloadRow(ShareItem item) {
     final f = Formats.of(context);
     return ExpansionTile(title: Text(item.title), subtitle: Text('${scheduleTimeLabel(item.time, f)}\n${f.repeatSummary(item.recurrence)}'), children: [

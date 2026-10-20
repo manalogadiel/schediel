@@ -117,6 +117,8 @@ void main() {
     await h.settle();
     expect(find.text('2 selected'), findsOneWidget);
     expect(find.text('Past school fixture'), findsOneWidget);
-    expect(find.textContaining('Past and ended'), findsOneWidget);
+    await h.tester.scrollUntilVisible(find.text('Includes past schedules.'), 100,
+      scrollable: find.byType(Scrollable).first);
+    expect(find.text('Includes past schedules.'), findsOneWidget);
   }, overrides: [sharingConfigProvider.overrideWithValue(config)]);
 }

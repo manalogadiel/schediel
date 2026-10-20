@@ -28,7 +28,7 @@ The pinned `home_widget` plugin currently emits a Kotlin Gradle Plugin deprecati
 
 ## Send link — offline sharing
 
-Tap **Share**, choose **School**, **Personal**, or any other categories, then tap **Send link**. Only the checked schedules and optional details you select go into the link. Android's share menu lets you send it through your messaging app; no server or account is needed.
+Tap **Share → Categories** to choose **School**, **Personal**, or other categories from one grouped list, then tap **Send link**. Location, person and subtitle are included by default; Notes stays off unless you check it under **Details**. Only checked schedules and details go into the link. Android's share menu lets you send it through your messaging app; no server or account is needed.
 
 The recipient opens the link in Schediel and reviews it before confirming the import. If a chat app does not make the link tappable, copy the whole message and use **Open shared link**; Schediel offers the copied link automatically. **Settings → Shared links** has shortcuts for sending and opening these links. Sent links contain independent copies, do not expire, and cannot be revoked.
 
