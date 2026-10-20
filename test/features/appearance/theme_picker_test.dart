@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:schediel/app/theme/app_theme.dart';
 import 'package:schediel/app/theme/schediel_theme.dart';
 import 'package:schediel/features/appearance/appearance.dart';
+import 'package:schediel/features/appearance/appearance_screen.dart';
 
 import '../../support/harness.dart';
 
@@ -35,7 +36,7 @@ void main() {
     expect(find.byKey(const ValueKey('theme-preview')), findsOneWidget);
     final selector = h.tester.widget<SingleChildScrollView>(find.byKey(const ValueKey('theme-selector')));
     expect(selector.scrollDirection, Axis.horizontal);
-    expect(find.byType(Slider), findsNWidgets(4));
+    expect(find.byType(Slider), findsNWidgets(2));
   });
   Future<void> openThemes(TestHarness h) async {
     await h.tapText('Settings');
@@ -64,14 +65,14 @@ void main() {
     await h.tester.tap(find.bySemanticsLabel('Midnight theme'));
     await h.settle();
     expect(find.text('Midnight is always dark.'), findsOneWidget);
-    final buttons = h.tester.widget<SegmentedButton<ThemeMode>>(find.byType(SegmentedButton<ThemeMode>));
-    expect(buttons.onSelectionChanged, isNull);
+    final toggle = h.tester.widget<ModeToggle>(find.byType(ModeToggle));
+    expect(toggle.onChanged, isNull);
     expect(Theme.of(h.tester.element(find.text('Mode'))).brightness, Brightness.dark);
   });
 
   appTest('Custom color shows a hue control that saves when released', (h) async {
     await openThemes(h);
-    expect(find.byType(Slider), findsNWidgets(4));
+    expect(find.byType(Slider), findsNWidgets(2));
     await h.tester.ensureVisible(find.byKey(const ValueKey('theme-custom')));
     await h.tester.tap(find.bySemanticsLabel('Custom color theme'));
     await h.settle();
@@ -83,5 +84,37 @@ void main() {
     final saved = await h.run(() => AppearanceRepository(h.db, clock: DateTime.now).load());
     expect(saved.theme, ThemeId.custom);
     expect(saved.customizations[ThemeId.custom]!.mainHue, isNot(250));
+  });
+
+  appTest('mode toggle switches to dark and saves', (h) async {
+    await openThemes(h);
+    await h.tester.tap(find.byKey(const ValueKey('mode-dark')));
+    await h.settle();
+    final saved = await h.run(() => AppearanceRepository(h.db, clock: DateTime.now).load());
+    expect(saved.themeMode, ThemeMode.dark);
+  });
+
+  appTest('background target edits the background and a preset saves at once', (h) async {
+    await openThemes(h);
+    await h.tester.ensureVisible(find.byKey(const ValueKey('target-background')));
+    await h.tester.tap(find.byKey(const ValueKey('target-background')));
+    await h.settle();
+    expect(find.byKey(const ValueKey('background-hue')), findsOneWidget);
+    await h.tester.tap(find.bySemanticsLabel('Preset 1'));
+    await h.settle();
+    final saved = await h.run(() => AppearanceRepository(h.db, clock: DateTime.now).load());
+    expect(saved.customizations[saved.theme]!.backgroundTone, 96);
+  });
+
+  appTest('density cards save the chosen density', (h) async {
+    await openThemes(h);
+    final card = find.byKey(const ValueKey('density-compact'));
+    await h.tester.scrollUntilVisible(card, 160, scrollable: find.byType(Scrollable).first);
+    await h.tester.ensureVisible(card);
+    await h.settle();
+    await h.tester.tap(find.byKey(const ValueKey('density-compact')));
+    await h.settle();
+    final saved = await h.run(() => AppearanceRepository(h.db, clock: DateTime.now).load());
+    expect(saved.density.name, 'compact');
   });
 }
