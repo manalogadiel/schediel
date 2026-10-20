@@ -1905,13 +1905,21 @@ Two independent planning reviews were integrated. The parent also retrieved the 
 
 # Appendix D: Implementation validation
 
-**Recorded:** October 18–20, 2026 (Windows 11, UTC+08:00).
+**Recorded:** October 18–21, 2026 (Windows 11, UTC+08:00).
 
 ## Status and boundaries
 
 Schediel now has a Flutter implementation, Android native code, iOS source, a locally tested optional sharing backend and a static browser preview. **This is a development build, not a production or real-device certification.** The optional sharing backend and HTTPS domains were deployed on October 20; the live checks below are distinct from production certification. Cloud scanning stays off. No schedule data, credentials or signing identities were invented to make a test look deployed.
 
 Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
+
+## October 21: texture coverage behind widget detail headers
+
+The widget deep link correctly opened the existing occurrence, but the shared AppBar painted an opaque canvas over the already full-screen texture. Textured themes now use a transparent app-bar surface and transparent status-bar color, with system-icon brightness chosen from the canvas contrast. Untextured app bars retain their existing solid surface. Existing zero elevation/tint prevents a solid strip after scrolling; the cached texture renderer was not changed.
+
+Two pixel regressions open the actual `schediel://occurrence/...` route with a simulated system inset, compare textured/untextured status and toolbar regions in light and dark Pixel themes, scroll the details and check back navigation. Both first failed with zero visible texture pixels at the top, then passed after the theme correction. The focused texture/details suite passed **13 tests**, including cached-image reuse, contrast and existing details actions. The phone was disconnected during this change; no installation or physical widget-tap verification is claimed for this build.
+
+Final whole-project checks: **391 Flutter tests passed**, analysis reported **no issues**, and release APKs built for all three ABIs using the existing debug signing configuration. The arm64 APK reports version code **4005** (Flutter build number 2005 plus the ABI offset) and is ready for an in-place update when the phone is reconnected.
 
 ## October 20: university timetable scanning and external input labels
 

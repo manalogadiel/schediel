@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'schediel_theme.dart';
 import 'theme_customization.dart';
@@ -234,9 +235,17 @@ ThemeData buildTheme({
     materialTapTargetSize: MaterialTapTargetSize.padded,
     splashFactory: InkSparkle.splashFactory,
     appBarTheme: AppBarTheme(
-      backgroundColor: canvas,
+      backgroundColor: texture == ThemeTexture.none ? canvas : Colors.transparent,
       foregroundColor: ink,
       surfaceTintColor: Colors.transparent,
+      systemOverlayStyle: texture == ThemeTexture.none
+          ? null
+          : (contrastRatio(Colors.black, canvas) >= contrastRatio(Colors.white, canvas)
+                ? SystemUiOverlayStyle.dark
+                : SystemUiOverlayStyle.light).copyWith(
+              statusBarColor: Colors.transparent,
+              systemStatusBarContrastEnforced: false,
+            ),
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,

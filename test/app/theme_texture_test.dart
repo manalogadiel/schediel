@@ -6,6 +6,8 @@ import 'package:flutter/rendering.dart' hide TextureLayer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:schediel/app/app.dart';
+import 'package:schediel/app/deep_links.dart';
+import 'package:schediel/app/providers.dart';
 import 'package:schediel/app/theme/app_theme.dart';
 import 'package:schediel/app/theme/theme_catalog.dart';
 import 'package:schediel/app/theme/schediel_theme.dart';
@@ -15,9 +17,125 @@ import 'package:schediel/app/widgets/theme_texture.dart';
 import 'package:schediel/app/widgets/themed.dart';
 import 'package:schediel/features/appearance/appearance.dart';
 
+import 'package:schediel/core/schedule/models.dart';
+import 'package:schediel/features/schedules/presentation/occurrence_sheet.dart';
+
 import '../support/harness.dart';
+import '../features/schedules/schedule_screens_test.dart' show classDraft;
 
 void main() {
+  for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+    appTest('widget details texture reaches status bar and toolbar ($mode)', (
+      h,
+    ) async {
+      const key = ValueKey('widget-details-capture');
+      h.tester.view.padding = FakeViewPadding(
+        top: 24 * h.tester.view.devicePixelRatio,
+      );
+      h.tester.view.viewPadding = FakeViewPadding(
+        top: 24 * h.tester.view.devicePixelRatio,
+      );
+      addTearDown(h.tester.view.resetPadding);
+      addTearDown(h.tester.view.resetViewPadding);
+      await h.tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: h.container,
+          child: const RepaintBoundary(key: key, child: SchedielApp()),
+        ),
+      );
+      final id = await h.run(
+        () => h
+            .read(scheduleRepositoryProvider)
+            .create(
+              classDraft(title: 'Fixture widget details').copyWith(
+                details: ScheduleDetails(
+                  notes: List.filled(40, 'Fixture scrollable note').join('\n'),
+                ),
+              ),
+            ),
+      );
+      await h.run(
+        () => h
+            .read(appearanceProvider.notifier)
+            .update((s) => s.copyWith(theme: ThemeId.pixel, themeMode: mode)),
+      );
+      h
+          .read(deepLinkCoordinatorProvider)
+          .handle(Uri.parse('schediel://occurrence/$id/2026-11-02'));
+      await h.settle();
+      expect(find.byType(OccurrenceDetailsPage), findsOneWidget);
+      Future<List<int>> capture() async {
+        final boundary = h.tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(key),
+        );
+        final image = await h.tester.runAsync(
+          () => boundary.toImage(pixelRatio: 1),
+        );
+        final bytes = await h.tester.runAsync(
+          () => image!.toByteData(format: ui.ImageByteFormat.rawRgba),
+        );
+        image!.dispose();
+        return bytes!.buffer.asUint8List().toList();
+      }
+
+      final plain = await capture();
+      await h.run(
+        () => h
+            .read(appearanceProvider.notifier)
+            .update(
+              (s) => s.copyWith(
+                customizations: {
+                  ThemeId.pixel: const ThemeCustomization(
+                    texture: ThemeTexture.stripes,
+                  ),
+                },
+              ),
+            ),
+      );
+      await h.settle();
+      await _loadTextures(h.tester);
+      await h.tester.pump();
+      void checkTop(List<int> pixels) {
+        for (final (top, height) in [(2, 20), (28, 40)]) {
+          var changed = 0;
+          for (var y = top; y < top + height; y++) {
+            for (var x = 280; x < 390; x++) {
+              final i = (y * 400 + x) * 4;
+              if ((plain[i] - pixels[i]).abs() > 3) changed++;
+            }
+          }
+          expect(
+            changed,
+            greaterThan(20),
+            reason:
+                'Texture must remain visible at y=$top, including system inset.',
+          );
+        }
+      }
+
+      checkTop(await capture());
+      final appBar = h.tester.element(find.byType(AppBar));
+      final style = Theme.of(appBar).appBarTheme.systemOverlayStyle!;
+      expect(style.statusBarColor, Colors.transparent);
+      expect(
+        style.statusBarIconBrightness,
+        mode == ThemeMode.dark ? Brightness.light : Brightness.dark,
+      );
+      await h.tester.drag(
+        find.descendant(
+          of: find.byType(OccurrenceDetailsPage),
+          matching: find.byType(ListView),
+        ),
+        const Offset(0, -350),
+      );
+      await h.settle();
+      checkTop(await capture());
+      await h.tester.pageBack();
+      await h.settle();
+      expect(find.byType(OccurrenceDetailsPage), findsNothing);
+      expect(h.tester.takeException(), isNull);
+    });
+  }
   testWidgets('animated card contents do not repaint a static texture', (tester) async {
     final offset = ValueNotifier<double>(0);
     addTearDown(offset.dispose);
