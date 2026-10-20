@@ -157,4 +157,16 @@ class WidgetPlannerTest {
         assertEquals(WidgetPlanner.DEFAULT_TITLE_LINE_SP, ThemeStyle.titleLineSp(null))
         assertEquals(17f, ThemeStyle.titleLineSp("pixel"))
     }
+
+    @Test
+    fun smallestSizedVariantIsTheBareNextItem() {
+        val withCaptions = result(allDay = listOf(entry(7), entry(8)))
+        val sized = WidgetPlanner.sized(withCaptions, 1f, holderChromeDp = 24f)
+        val (height, plan) = sized.first()
+        assertTrue(plan.allDay.isEmpty())
+        assertEquals(1, plan.holders.size)
+        assertNull(plan.holders.first().details)
+        assertEquals(RowStatus.NEXT, plan.holders.first().status)
+        assertEquals(16f + 24f + 16f + 20f, height, 0.01f)
+    }
 }

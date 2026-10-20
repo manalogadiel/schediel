@@ -41,4 +41,13 @@ void main() {
     final icon = h.tester.widget<AppIcon>(find.descendant(of: remove, matching: find.byType(AppIcon)));
     expect(icon.color, error);
   });
+
+  appTest('the edit icon follows the button foreground', (h) async {
+    await h.run(() => h.read(scheduleRepositoryProvider).create(classDraft(title: 'Fixture edit')));
+    await h.settle();
+    await h.tapText('Fixture edit');
+    final edit = find.ancestor(of: find.text('Edit'), matching: find.byWidgetPredicate((w) => w is ButtonStyleButton));
+    final icon = h.tester.widget<AppIcon>(find.descendant(of: edit, matching: find.byType(AppIcon)));
+    expect(icon.color, isNull, reason: 'inherits the deepened fill foreground via IconTheme');
+  });
 }

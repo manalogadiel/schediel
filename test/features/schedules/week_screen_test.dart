@@ -1,3 +1,6 @@
+import 'package:schediel/core/time/local_date.dart';
+import 'package:schediel/core/schedule/models.dart';
+import 'package:schediel/features/schedules/data/schedule_repository.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,5 +76,34 @@ void main() {
       expect(line.maxLines, 1, reason: line.data);
     }
     expect(lines.first.data, 'Automata');
+  });
+
+  appTest('an all-day item lays out in the week grid strip', (h) async {
+    await h.run(
+      () => h.read(scheduleRepositoryProvider).create(
+        ScheduleDraft(title: 'Fixture all day', time: DateOnlySpec(startDate: LocalDate(2026, 11, 3), endDateExclusive: LocalDate(2026, 11, 4))),
+      ),
+    );
+    await h.settle();
+    await h.tapText('Week');
+    expect(h.tester.takeException(), isNull);
+    expect(find.text('Fixture all day'), findsOneWidget);
+  });
+
+  appTest('week blocks do not overflow at 200% text', (h) async {
+    h.tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(h.tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await h.run(() => h.read(scheduleRepositoryProvider).create(classDraft(title: 'Automata Theory')));
+    await h.settle();
+    await h.tapText('Week');
+    // Large text prefers the agenda; force the grid.
+    await h.tester.tap(find.byTooltip('Show time grid'));
+    await h.settle();
+    expect(h.tester.takeException(), isNull);
+  });
+
+  appTest('the week number comes from the Thursday inside the visible week', (h) async {
+    await h.tapText('Week');
+    expect(find.text('W45'), findsOneWidget);
   });
 }
