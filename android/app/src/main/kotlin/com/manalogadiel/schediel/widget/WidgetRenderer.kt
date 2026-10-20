@@ -99,7 +99,7 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
             result,
             heightDp(options),
             context.resources.configuration.fontScale,
-            extraChromeDp = if (theme != null) 4f else 0f,
+            extraChromeDp = ThemeStyle.extraChromeDp(theme?.style),
             titleLineSp = ThemeStyle.titleLineSp(theme?.style),
         )
         plan.allDay.forEachIndexed { i, entry ->

@@ -7,6 +7,25 @@ import org.junit.Test
 import java.time.LocalDate
 
 class WidgetPlannerTest {
+    @Test
+    fun expandedStylesFitThreeAtReferenceHeight() {
+        for (style in ThemeStyle.STYLES) {
+            val plan = WidgetPlanner.plan(result(upcoming = listOf(entry(2), entry(3))), 260f, 1f,
+                extraChromeDp = ThemeStyle.extraChromeDp(style), titleLineSp = ThemeStyle.titleLineSp(style))
+            assertEquals(style, 3, plan.holders.size)
+        }
+    }
+
+    @Test
+    fun onePixelBelowThreeRowBoundaryShowsTwo() {
+        for (style in ThemeStyle.STYLES) {
+            val required = 16f + 3 * (22f + ThemeStyle.extraChromeDp(style) + 16f + ThemeStyle.titleLineSp(style) + 16f)
+            val plan = WidgetPlanner.plan(result(upcoming = listOf(entry(2), entry(3))), required - 1f, 1f,
+                extraChromeDp = ThemeStyle.extraChromeDp(style), titleLineSp = ThemeStyle.titleLineSp(style))
+            assertEquals(style, 2, plan.holders.size)
+        }
+    }
+
     private fun entry(n: Int, location: String? = "Fixture room $n") = SnapshotEntry(
         id = "s$n/2026-11-02",
         title = "Fixture $n",

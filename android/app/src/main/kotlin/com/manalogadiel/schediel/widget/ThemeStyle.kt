@@ -100,6 +100,9 @@ object ThemeStyle {
      */
     fun sharedAlpha(light: HolderColors, dark: HolderColors): Int = maxOf(light.fill ushr 24, dark.fill ushr 24)
 
+    /** Reserved layout padding, even when a translucent surface hides its shadow. */
+    fun extraChromeDp(style: String?): Float = if (style == "pop" || style == "pixel") 3f else 0f
+
     /** Title line height (sp) for the style's title font; Caveat and Silkscreen differ from the system font. */
     fun titleLineSp(style: String?): Float = when (style) {
         "sketch" -> 25f
