@@ -184,9 +184,11 @@ class _DetailsBody extends ConsumerWidget {
               child: FilledButton.tonalIcon(
                 icon: AppIcon(AppIcons.remove, size: 18, color: Theme.of(context).colorScheme.error),
                 label: Text(occurrence.isRecurring ? 'Remove' : 'Delete'),
+                // Soft red container: text and trash icon share the error color.
                 style: FilledButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
-                  backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                  iconColor: Theme.of(context).colorScheme.error,
+                  backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: .12),
                 ),
                 onPressed: () => removeOccurrence(context, ref, occurrence, inSheet: inSheet),
               ),

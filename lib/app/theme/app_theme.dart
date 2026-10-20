@@ -178,6 +178,15 @@ ThemeData buildTheme({
   final outline = BorderSide(color: p.outline, width: 2);
   final side = outlined ? outline : BorderSide(color: boundary);
 
+  // Filled buttons need a fill that reads against surfaces (3:1) in Soft.
+  var buttonFill = p.accent;
+  if (!outlined && lowAccentContrast) {
+    for (var t = .2; t <= 1.0 && (contrastRatio(buttonFill, surface) < 3 || contrastRatio(buttonFill, canvas) < 3); t += .1) {
+      buttonFill = Color.lerp(p.accent, ink, t)!;
+    }
+  }
+  final onButtonFill = contrastRatio(p.onAccent, buttonFill) >= 4.5 ? p.onAccent : _readableOn(buttonFill, Colors.black, Colors.white);
+
   final scheme = ColorScheme(
     brightness: p.brightness,
     primary: p.accent,
@@ -253,16 +262,11 @@ ThemeData buildTheme({
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(Tokens.minTarget, Tokens.minTarget),
-        shape: controlShape.copyWith(
-          side: outlined
-              ? outline
-              : lowAccentContrast
-              ? BorderSide(color: boundary)
-              : BorderSide.none,
-        ),
-        backgroundColor: p.accent,
-        foregroundColor: p.onAccent,
+        minimumSize: Size(Tokens.minTarget, outlined ? Tokens.minTarget : 52),
+        // Soft buttons never draw an outline; a pale accent deepens instead.
+        shape: outlined ? controlShape.copyWith(side: outline) : RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: buttonFill,
+        foregroundColor: onButtonFill,
         textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         padding: const EdgeInsets.symmetric(horizontal: Tokens.md, vertical: 12),
       ),

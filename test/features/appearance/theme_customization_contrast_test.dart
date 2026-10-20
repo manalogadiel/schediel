@@ -73,7 +73,7 @@ void main() {
               final style = data.filledButtonTheme.style!;
               final border = style.side?.resolve({}) ?? style.shape!.resolve({})!.side;
               final outlineContrast = border.style == BorderStyle.none ? 0.0 : contrastRatio(border.color, p.surface);
-              final fillContrast = contrastRatio(p.accent, p.surface);
+              final fillContrast = contrastRatio(style.backgroundColor!.resolve({})!, p.surface);
               expect(
                 fillContrast > outlineContrast ? fillContrast : outlineContrast,
                 greaterThanOrEqualTo(3),
