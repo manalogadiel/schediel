@@ -106,4 +106,23 @@ void main() {
     await h.tapText('Week');
     expect(find.text('W45'), findsOneWidget);
   });
+
+  appTest('swiping the week header moves a week', (h) async {
+    await h.tapText('Week');
+    await h.tester.fling(find.byKey(const ValueKey('day-2026-11-04')), const Offset(-300, 0), 1000);
+    await h.settle();
+    expect(h.read(effectiveDateProvider), LocalDate(2026, 11, 9));
+  });
+
+  appTest('three overlapping blocks still show a title initial', (h) async {
+    for (final title in ['Alpha', 'Beta', 'Gamma']) {
+      await h.run(() => h.read(scheduleRepositoryProvider).create(classDraft(title: title, weekdays: const [1])));
+    }
+    await h.settle();
+    await h.tapText('Week');
+    expect(h.tester.takeException(), isNull);
+    for (final initial in ['A', 'B', 'G']) {
+      expect(find.descendant(of: find.byKey(const ValueKey('week-block')), matching: find.text(initial)), findsOneWidget, reason: initial);
+    }
+  }, size: const Size(360, 800));
 }

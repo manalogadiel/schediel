@@ -23,6 +23,11 @@ Future<LocalDate?> showMonthSheet(BuildContext context, {required LocalDate init
 
 LocalDate _firstOf(int year, int month) => LocalDate.fromDateTime(DateTime.utc(year, month, 1));
 
+// A month's 42-day grid spills into its neighbours, so the first and last
+// months LocalDate supports cannot be shown whole.
+const _minMonthIndex = LocalDate.minYear * 12 + 1;
+const _maxMonthIndex = LocalDate.maxYear * 12 + 10;
+
 /// A month calendar in a bottom sheet: oversized month heading, a raised
 /// grid with today ringed, the selection as a glowing orb and dots on days
 /// that have schedules. Swipe or use the chevrons to change month.
@@ -35,11 +40,24 @@ class MonthSheet extends ConsumerStatefulWidget {
 }
 
 class _MonthSheetState extends ConsumerState<MonthSheet> {
-  late LocalDate _month = _firstOf(widget.initial.year, widget.initial.month);
+  late LocalDate _month = _clamped(widget.initial);
   late LocalDate _selected = widget.initial;
   int _direction = 1;
 
+  static int _index(LocalDate d) => d.year * 12 + d.month - 1;
+
+  static LocalDate _clamped(LocalDate d) {
+    final i = _index(d).clamp(_minMonthIndex, _maxMonthIndex);
+    return _firstOf(i ~/ 12, i % 12 + 1);
+  }
+
+  bool _canPage(int delta) {
+    final target = _index(_month) + delta;
+    return target >= _minMonthIndex && target <= _maxMonthIndex;
+  }
+
   void _page(int delta) {
+    if (!_canPage(delta)) return;
     HapticFeedback.selectionClick();
     setState(() {
       _direction = delta;
@@ -83,15 +101,19 @@ class _MonthSheetState extends ConsumerState<MonthSheet> {
             for (var i = 0; i < 7; i++)
               Expanded(
                 child: Center(
-                  child: Text(
-                    f.weekdayShort(days[i].weekday).toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.clip,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: .6,
-                      color: days[i].weekday >= 6 ? c.accentText : c.secondaryInk,
+                  // Large text on a narrow screen shrinks the label to fit
+                  // its column instead of cutting it off.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      f.weekdayShort(days[i].weekday).toUpperCase(),
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .6,
+                        color: days[i].weekday >= 6 ? c.accentText : c.secondaryInk,
+                      ),
                     ),
                   ),
                 ),
@@ -159,9 +181,9 @@ class _MonthSheetState extends ConsumerState<MonthSheet> {
                     ),
                   ),
                 ),
-                _RoundButton(key: const ValueKey('month-prev'), icon: AppIcons.previous, tooltip: 'Previous month', onTap: () => _page(-1)),
+                _RoundButton(key: const ValueKey('month-prev'), icon: AppIcons.previous, tooltip: 'Previous month', onTap: _canPage(-1) ? () => _page(-1) : null),
                 const SizedBox(width: 8),
-                _RoundButton(key: const ValueKey('month-next'), icon: AppIcons.next, tooltip: 'Next month', onTap: () => _page(1)),
+                _RoundButton(key: const ValueKey('month-next'), icon: AppIcons.next, tooltip: 'Next month', onTap: _canPage(1) ? () => _page(1) : null),
               ],
             ),
             const SizedBox(height: 16),
@@ -243,7 +265,7 @@ class _RoundButton extends StatelessWidget {
   const _RoundButton({super.key, required this.icon, required this.tooltip, required this.onTap});
   final AppIcons icon;
   final String tooltip;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -259,7 +281,7 @@ class _RoundButton extends StatelessWidget {
           onTap: onTap,
           child: SizedBox.square(
             dimension: 44,
-            child: Center(child: AppIcon(icon, size: 20, color: c.ink)),
+            child: Center(child: AppIcon(icon, size: 20, color: onTap == null ? c.ink.withValues(alpha: .3) : c.ink)),
           ),
         ),
       ),

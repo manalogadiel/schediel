@@ -68,7 +68,7 @@ This conservative parser does not claim to understand every timetable or every s
 
 ## Release signing
 
-Release builds read `android/key.properties` (git-ignored) when present and otherwise fall back to the debug key.
+Release builds read `android/key.properties` (git-ignored) when present. Without it they fall back to the debug key and Gradle prints a `WARNING` saying so; if `key.properties` names a keystore that does not exist, the build stops. A relative `storeFile` is read from `android/`.
 
 1. Create an upload key once and keep the passwords private:
    `keytool -genkey -v -keystore %USERPROFILE%\schediel-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`

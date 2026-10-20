@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -343,12 +344,28 @@ class _WeekGridState extends ConsumerState<_WeekGrid> {
         final selected = ref.watch(effectiveDateProvider);
         return Column(
           children: [
-            _WeekHeader(
-              days: week.days,
-              gutter: _gutter,
-              colWidth: colWidth,
-              selected: selected,
-              onSelect: ref.read(selectedDateProvider.notifier).select,
+            // Swipe the header sideways to move a week, like the day strip.
+            Semantics(
+              customSemanticsActions: {
+                const CustomSemanticsAction(label: 'Previous week'): () =>
+                    ref.read(selectedDateProvider.notifier).select(selected.addDays(-7)),
+                const CustomSemanticsAction(label: 'Next week'): () => ref.read(selectedDateProvider.notifier).select(selected.addDays(7)),
+              },
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onHorizontalDragEnd: (d) {
+                  final v = d.primaryVelocity ?? 0;
+                  if (v.abs() < 200) return;
+                  ref.read(selectedDateProvider.notifier).select(selected.addDays(v < 0 ? 7 : -7));
+                },
+                child: _WeekHeader(
+                  days: week.days,
+                  gutter: _gutter,
+                  colWidth: colWidth,
+                  selected: selected,
+                  onSelect: ref.read(selectedDateProvider.notifier).select,
+                ),
+              ),
             ),
             if (hasStrip)
               Padding(
@@ -511,45 +528,59 @@ class _Block extends ConsumerWidget {
               ),
             ],
           )
-        : Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (!colors.outlined) Container(width: 3, color: strong),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 3, 3, 2),
-                  child: LayoutBuilder(
-                    builder: (context, box) {
-                      final showTime = t is TimedTiming && box.maxHeight >= titleLine + timeLine;
-                      final room = box.maxHeight - (showTime ? timeLine : 0);
-                      final lines = (room / titleLine).floor().clamp(1, 3);
-                      final words = occurrence.title.trim().split(RegExp(r'\s+'));
-                      final shown = [
-                        for (var k = 0; k < lines && k < words.length; k++) k == lines - 1 ? words.sublist(k).join(' ') : words[k],
-                      ];
-                      return ClipRect(
-                        child: OverflowBox(
-                          alignment: Alignment.topLeft,
-                          maxHeight: double.infinity,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              for (final w in shown) line(w, titleStyle),
-                              if (showTime)
-                                line(
-                                  OccurrenceTimeText.of(t, zones, zone, f).start,
-                                  TextStyle(fontSize: 10.5, height: 1.2, color: ink.withValues(alpha: .72)),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+        : LayoutBuilder(
+            builder: (context, outer) {
+              // Three or more overlaps leave too little room for a bar and an
+              // ellipsized title, so the block shows the title's first letter.
+              final narrow = outer.maxWidth < 24;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!colors.outlined && !narrow) Container(width: 3, color: strong),
+                  Expanded(
+                    child: Padding(
+                      padding: narrow ? const EdgeInsets.fromLTRB(2, 3, 2, 2) : const EdgeInsets.fromLTRB(4, 3, 3, 2),
+                      child: LayoutBuilder(
+                        builder: (context, box) {
+                          final showTime = !narrow && t is TimedTiming && box.maxHeight >= titleLine + timeLine;
+                          final room = box.maxHeight - (showTime ? timeLine : 0);
+                          final lines = (room / titleLine).floor().clamp(1, 3);
+                          final title = occurrence.title.trim();
+                          final words = title.split(RegExp(r'\s+'));
+                          final shown = narrow
+                              ? [if (title.isNotEmpty) title.characters.first]
+                              : [
+                                  for (var k = 0; k < lines && k < words.length; k++)
+                                    k == lines - 1 ? words.sublist(k).join(' ') : words[k],
+                                ];
+                          return ClipRect(
+                            child: OverflowBox(
+                              alignment: Alignment.topLeft,
+                              maxHeight: double.infinity,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: narrow ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+                                children: [
+                                  for (final w in shown)
+                                    narrow
+                                        ? Text(w, maxLines: 1, softWrap: false, overflow: TextOverflow.clip, style: titleStyle)
+                                        : line(w, titleStyle),
+                                  if (showTime)
+                                    line(
+                                      OccurrenceTimeText.of(t, zones, zone, f).start,
+                                      TextStyle(fontSize: 10.5, height: 1.2, color: ink.withValues(alpha: .72)),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           );
     return Semantics(
       button: true,
@@ -604,9 +635,13 @@ class _WeekHeader extends StatelessWidget {
         SizedBox(
           width: gutter,
           child: Center(
-            child: Text(
-              'W${isoWeek(days.firstWhere((d) => d.date.weekday == 4, orElse: () => days.first).date)}',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .4, color: c.secondaryInk),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'W${isoWeek(days.firstWhere((d) => d.date.weekday == 4, orElse: () => days.first).date)}',
+                maxLines: 1,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .4, color: c.secondaryInk),
+              ),
             ),
           ),
         ),

@@ -60,4 +60,15 @@ void main() {
     expect(find.byKey(const ValueKey('month-done')), findsOneWidget);
     expect(h.tester.takeException(), isNull);
   });
+
+  appTest('paging stops at the last month the calendar supports', (h) async {
+    h.read(selectedDateProvider.notifier).select(LocalDate(2199, 11, 10));
+    await h.settle();
+    await _open(h);
+    expect(find.text('November 2199'), findsOneWidget);
+    await h.tester.tap(find.byKey(const ValueKey('month-next')));
+    await h.settle();
+    expect(h.tester.takeException(), isNull);
+    expect(find.text('November 2199'), findsOneWidget);
+  });
 }

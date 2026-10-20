@@ -16,11 +16,21 @@ val shareHost: String = (project.findProperty("schediel.shareHost") as String?) 
 val appLinkHost: String = (project.findProperty("schediel.appLinkHost") as String?) ?: shareHost
 
 // Release signing comes from android/key.properties (git-ignored; see README
-// "Release signing"). Without it, release builds fall back to the debug key so
-// `flutter run --release` keeps working.
+// "Release signing"). A relative storeFile is read from android/, next to
+// key.properties. Without the file, release builds fall back to the debug key
+// so `flutter run --release` keeps working, and say so; a key.properties that
+// names a missing keystore fails the build instead of silently falling back.
 val keyProperties = Properties().apply {
     val file = rootProject.file("key.properties")
     if (file.exists()) file.inputStream().use { load(it) }
+}
+val releaseStoreFile: File? = keyProperties.getProperty("storeFile")?.let { rootProject.file(it) }
+if (releaseStoreFile != null && !releaseStoreFile.exists()) {
+    throw GradleException("android/key.properties names a keystore that does not exist: $releaseStoreFile")
+}
+val buildsRelease = gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
+if (releaseStoreFile == null && buildsRelease) {
+    logger.warn("WARNING: android/key.properties not found; this release build is signed with the DEBUG key (see README \"Release signing\").")
 }
 
 android {
@@ -54,9 +64,9 @@ android {
     }
 
     signingConfigs {
-        if (keyProperties.getProperty("storeFile") != null) {
+        if (releaseStoreFile != null) {
             create("release") {
-                storeFile = file(keyProperties.getProperty("storeFile"))
+                storeFile = releaseStoreFile
                 storePassword = keyProperties.getProperty("storePassword")
                 keyAlias = keyProperties.getProperty("keyAlias")
                 keyPassword = keyProperties.getProperty("keyPassword")

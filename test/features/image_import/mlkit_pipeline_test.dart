@@ -14,7 +14,7 @@ void main() {
   late Directory dir;
   late PreparedImageFile source;
   setUp(() async {
-    dir = await Directory(Platform.environment['TMPDIR']!).createTemp('schediel-ocr-');
+    dir = await Directory.systemTemp.createTemp('schediel-ocr-');
     final image = await normalizeImage(img.encodePng(img.Image(width: 200, height: 100)));
     final file = await File('${dir.path}/normalized.png').writeAsBytes(image.bytes);
     source = PreparedImageFile(path: file.path, width: image.width, height: image.height, sourceRevision: 4, ownedDirectory: dir);

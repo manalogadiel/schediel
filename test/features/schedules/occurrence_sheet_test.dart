@@ -20,7 +20,7 @@ void main() {
       showCategoryColors: true,
     );
     final style = theme.filledButtonTheme.style!;
-    final shape = style.shape!.resolve({})! as OutlinedBorder;
+    final shape = style.shape!.resolve({})!;
     expect(shape.side, BorderSide.none);
     final bg = style.backgroundColor!.resolve({})!;
     final fg = style.foregroundColor!.resolve({})!;

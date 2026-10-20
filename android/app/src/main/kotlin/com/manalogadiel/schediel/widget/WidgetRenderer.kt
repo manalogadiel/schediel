@@ -3,6 +3,7 @@ package com.manalogadiel.schediel.widget
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.Typeface
 import android.icu.text.SimpleDateFormat
 import android.icu.util.TimeZone
@@ -74,7 +75,13 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
     private fun isNight(): Boolean =
         (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
+    // Title bitmaps for the current build, shared by every size variant: the
+    // sized RemoteViews share one bitmap cache that stores a reused Bitmap
+    // object once, so the variants do not multiply the parcel size.
+    private val titleBitmaps = HashMap<Pair<String, Boolean>, Bitmap?>()
+
     fun build(result: ReadResult, options: Bundle?, nowMs: Long): RemoteViews {
+        titleBitmaps.clear()
         val style = result.theme?.takeIf { result.settings?.useAppTheme == true }?.style
         val fontScale = context.resources.configuration.fontScale
         val chrome = ThemeStyle.holderChromeDp(style)
@@ -144,7 +151,9 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
             val titleImage = titleImageIds[i]
             val bitmap = if (theme != null && theme.style in BITMAP_TITLE_STYLES) {
                 TitleBitmap.maxWidthPx(widthDp(options), context.resources.displayMetrics.density)?.let { max ->
-                    TitleBitmap.render(context, theme.style, entry.title, row.emphasized, context.resources.configuration.fontScale, max)
+                    titleBitmaps.getOrPut(entry.title to row.emphasized) {
+                        TitleBitmap.render(context, theme.style, entry.title, row.emphasized, context.resources.configuration.fontScale, max)
+                    }
                 }
             } else {
                 null
