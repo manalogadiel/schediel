@@ -65,9 +65,7 @@ class ThemedCard extends StatelessWidget {
         children: [
           Positioned.fill(
             child: IgnorePointer(
-              child: CustomPaint(
-                painter: TexturePainter(c.texture, shade: c.palette.cardInk.withValues(alpha: .045), accent: c.palette.accent),
-              ),
+              child: TextureLayer(c.texture, shade: c.palette.cardInk.withValues(alpha: .045), accent: c.palette.accent),
             ),
           ),
           content,

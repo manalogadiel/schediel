@@ -1,5 +1,7 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -42,12 +44,7 @@ class ThemeTextureSurface extends StatelessWidget {
         Positioned.fill(
           child: IgnorePointer(
             child: ExcludeSemantics(
-              child: RepaintBoundary(
-                child: CustomPaint(
-                  isComplex: texture != ThemeTexture.none,
-                  painter: TexturePainter(texture, shade: textureOverlay(c), background: c.canvas, accent: c.palette.accent),
-                ),
-              ),
+              child: TextureLayer(texture, shade: textureOverlay(c), background: c.canvas, accent: c.palette.accent),
             ),
           ),
         ),
@@ -55,6 +52,78 @@ class ThemeTextureSurface extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Rasterize static decoration once instead of submitting thousands of grain
+/// marks to the GPU on every scroll/blur frame. Flutter's bounded image cache
+/// shares equal surfaces and owns their lifetime, including memory pressure.
+class TextureLayer extends StatelessWidget {
+  const TextureLayer(this.texture, {super.key, required this.shade, this.background, this.accent});
+  final ThemeTexture texture;
+  final Color shade;
+  final Color? background, accent;
+
+  @override
+  Widget build(BuildContext context) {
+    if (texture == ThemeTexture.none) return ColoredBox(color: background ?? Colors.transparent);
+    return RepaintBoundary(child: LayoutBuilder(builder: (context, constraints) {
+      final size = constraints.biggest;
+      if (!size.isFinite || size.isEmpty) return const SizedBox.shrink();
+      return Image(
+        image: TextureImage(texture, size: size, shade: shade, background: background,
+          accent: accent, pixelRatio: math.min(MediaQuery.devicePixelRatioOf(context), 2048 / size.longestSide)),
+        width: size.width,
+        height: size.height,
+        fit: BoxFit.fill,
+        excludeFromSemantics: true,
+        // Retain the canvas while a new size/color is rasterized; never show
+        // a previous theme's cached image after an appearance change.
+        frameBuilder: (_, child, frame, _) => frame == null
+            ? ColoredBox(color: background ?? Colors.transparent)
+            : child,
+        errorBuilder: (_, _, _) => ColoredBox(color: background ?? Colors.transparent),
+      );
+    }));
+  }
+}
+
+@visibleForTesting
+class TextureImage extends ImageProvider<TextureImage> {
+  const TextureImage(this.texture, {required this.size, required this.shade,
+    required this.pixelRatio, this.background, this.accent});
+  final ThemeTexture texture;
+  final Size size;
+  final Color shade;
+  final double pixelRatio;
+  final Color? background, accent;
+
+  @override
+  Future<TextureImage> obtainKey(ImageConfiguration configuration) => SynchronousFuture(this);
+
+  @override
+  ImageStreamCompleter loadImage(TextureImage key, ImageDecoderCallback decode) =>
+      OneFrameImageStreamCompleter(key._rasterize());
+
+  Future<ImageInfo> _rasterize() async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder)..scale(pixelRatio);
+    TexturePainter(texture, shade: shade, background: background, accent: accent).paint(canvas, size);
+    final picture = recorder.endRecording();
+    try {
+      return ImageInfo(image: await picture.toImage(
+        math.max(1, (size.width * pixelRatio).ceil()),
+        math.max(1, (size.height * pixelRatio).ceil())), scale: pixelRatio);
+    } finally {
+      picture.dispose();
+    }
+  }
+
+  @override
+  bool operator ==(Object other) => other is TextureImage && texture == other.texture &&
+      size == other.size && shade == other.shade && pixelRatio == other.pixelRatio &&
+      background == other.background && accent == other.accent;
+  @override
+  int get hashCode => Object.hash(texture, size, shade, pixelRatio, background, accent);
 }
 
 /// Draws one texture pattern in [shade] (a translucent black or white),

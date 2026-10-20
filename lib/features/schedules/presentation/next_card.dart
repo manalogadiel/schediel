@@ -220,7 +220,7 @@ class _GlowCard extends StatelessWidget {
             if (context.scheduleColors.texture != ThemeTexture.none)
               Positioned.fill(
                 child: IgnorePointer(
-                  child: CustomPaint(painter: TexturePainter(context.scheduleColors.texture, shade: Colors.white.withValues(alpha: .07), accent: accent)),
+                  child: TextureLayer(context.scheduleColors.texture, shade: Colors.white.withValues(alpha: .07), accent: accent),
                 ),
               ),
             Material(
