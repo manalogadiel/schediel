@@ -53,7 +53,7 @@ Future<void> main() async {
           ),
         ),
       ],
-      child: const SchedielApp(),
+      child: const SchedielApp(showIntro: true),
     ),
   );
 }

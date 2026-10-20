@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show mapEquals;
 
 import 'theme/theme_customization.dart';
+import 'widgets/launch_intro.dart';
 import 'widgets/theme_texture.dart';
 
 import 'package:flutter/services.dart';
@@ -23,7 +24,10 @@ import 'theme/tokens.dart';
 final routerProvider = Provider<GoRouter>((ref) => buildRouter());
 
 class SchedielApp extends ConsumerStatefulWidget {
-  const SchedielApp({super.key});
+  const SchedielApp({super.key, this.showIntro = false});
+
+  /// Plays the short brand intro after the system splash (real launches only).
+  final bool showIntro;
 
   @override
   ConsumerState<SchedielApp> createState() => _SchedielAppState();
@@ -128,11 +132,14 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
             systemNavigationBarContrastEnforced: false,
             systemStatusBarContrastEnforced: false,
           ),
-          child: ColoredBox(
-            color: colors.canvas,
-            child: ThemeTextureSurface(
-              texture: appearance.customizations[appearance.theme]?.texture ?? ThemeTexture.none,
-              child: child!,
+          child: LaunchIntro(
+            enabled: widget.showIntro,
+            child: ColoredBox(
+              color: colors.canvas,
+              child: ThemeTextureSurface(
+                texture: appearance.customizations[appearance.theme]?.texture ?? ThemeTexture.none,
+                child: child!,
+              ),
             ),
           ),
         );
