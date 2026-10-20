@@ -21,12 +21,13 @@ import '../../reminders/presentation/alert_status_line.dart';
 Future<void> showOccurrenceSheet(BuildContext context, Occurrence occurrence) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (context) => DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.6,
-      minChildSize: 0.3,
+      initialChildSize: 0.75,
+      minChildSize: 0.4,
       maxChildSize: 0.95,
       builder: (context, controller) => OccurrenceDetails(
         seriesId: occurrence.seriesId,

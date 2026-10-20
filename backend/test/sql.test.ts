@@ -4,12 +4,12 @@ import { database, call, A, B } from './db.ts';
 import { validPayload } from './fixtures.ts';
 import { sha256Hex } from '../supabase/functions/_shared/crypto.ts';
 
-async function createRequest(owner = A, key = crypto.randomUUID(), payload = validPayload()) {
-  const body = { payload, tokenDigest: 'a'.repeat(64), expiresAt: new Date(Date.now() + 86400000).toISOString() };
+async function createRequest(owner = A, key = crypto.randomUUID(), payload = validPayload(), tokenDigest?: string) {
+  const body = { payload, tokenDigest: tokenDigest ?? await sha256Hex(crypto.randomUUID()), expiresAt: new Date(Date.now() + 86400000).toISOString() };
   return { args: [owner, await sha256Hex(key), await sha256Hex(JSON.stringify(body)), JSON.stringify(payload), body.tokenDigest, body.expiresAt, Buffer.byteLength(JSON.stringify(payload))], casts: ['uuid', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'integer'] };
 }
-async function create(db: any, owner = A) {
-  const {args, casts} = await createRequest(owner);
+async function create(db: any, owner = A, digest?: string) {
+  const {args, casts} = await createRequest(owner, undefined, undefined, digest);
   return call(db, 'create_share', args, casts);
 }
 test('migration creates deny-by-default internal tables and service-only functions', async t => {
@@ -92,7 +92,7 @@ test('expiry, computed bytes, digest and label bounds are checked by SQL', async
 });
 test('capability resolution hides state until digest matches; revoke is owner-scoped and idempotent', async t => {
   const db = await database(); t.after(() => db.close());
-  const created = await create(db), id = created.data.shareId;
+  const created = await create(db, A, 'a'.repeat(64)), id = created.data.shareId;
   const resolve = (digest='a'.repeat(64), versions=['1.0'], shareId=id) => call(db,'resolve_share',[shareId,digest,versions,'c'.repeat(64)],['uuid','text','text[]','text']);
   assert.equal((await resolve('b'.repeat(64))).code,'not_found');
   assert.equal((await resolve('a'.repeat(64),['1.0'],crypto.randomUUID())).code,'not_found');
@@ -105,10 +105,10 @@ test('capability resolution hides state until digest matches; revoke is owner-sc
   assert.deepEqual((await call(db,'revoke_share',[A,id],['uuid','uuid'])).data,revoked);
   assert.equal((await resolve('b'.repeat(64),['2.0'])).code,'not_found');
   assert.equal((await resolve()).code,'link_revoked');
-  const other = await create(db);
+  const other = await create(db, A, 'b'.repeat(64));
   await db.query("update schediel_private.share_links set created_at=clock_timestamp()-interval '2 days', expires_at=clock_timestamp()-interval '1 second' where id=$1",[other.data.shareId]);
-  assert.equal((await resolve('b'.repeat(64),['1.0'],other.data.shareId)).code,'not_found');
-  assert.equal((await resolve('a'.repeat(64),['1.0'],other.data.shareId)).code,'link_expired');
+  assert.equal((await resolve('c'.repeat(64),['1.0'],other.data.shareId)).code,'not_found');
+  assert.equal((await resolve('b'.repeat(64),['1.0'],other.data.shareId)).code,'link_expired');
 });
 test('persistent rate buckets accept only hashes, cap attempts, and do not retain network addresses', async t => {
   const db = await database(); t.after(() => db.close());

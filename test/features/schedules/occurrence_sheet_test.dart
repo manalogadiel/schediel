@@ -2,16 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:schediel/app/icons.dart';
 import 'package:schediel/app/providers.dart';
+import 'package:schediel/app/router.dart';
 import 'package:schediel/app/theme/app_theme.dart';
 import 'package:schediel/app/theme/schediel_theme.dart';
 import 'package:schediel/app/theme/theme_catalog.dart';
 import 'package:schediel/app/theme/theme_customization.dart';
 import 'package:schediel/app/theme/tokens.dart';
+import 'package:schediel/features/schedules/presentation/occurrence_sheet.dart';
 
 import '../../support/harness.dart';
 import 'schedule_screens_test.dart' show classDraft;
 
 void main() {
+  for (final tab in ['Today', 'Week']) {
+    appTest('$tab details open higher on the root navigator above the floating bar', (h) async {
+      await h.run(() => h.read(scheduleRepositoryProvider).create(classDraft(title: 'Fixture visible actions', professor: 'Fixture person')));
+      await h.settle();
+      if (tab == 'Week') {
+        await h.tapText('Week');
+        final block = find.byKey(const ValueKey('week-block')).first;
+        await h.tester.ensureVisible(block);
+        await h.tester.tap(block);
+        await h.settle();
+      } else {
+        await h.tapText('Fixture visible actions');
+      }
+      final details = find.byType(OccurrenceDetails);
+      final route = ModalRoute.of(h.tester.element(details))!;
+      expect(route.navigator, same(rootNavigatorKey.currentState));
+      expect(h.tester.widget<DraggableScrollableSheet>(find.byType(DraggableScrollableSheet)).initialChildSize, .75);
+      expect(h.tester.getSize(details).height, greaterThan(h.tester.view.physicalSize.height / h.tester.view.devicePixelRatio * .65));
+      expect(find.text('Edit').hitTestable(), findsOneWidget);
+      expect(find.text('Remove').hitTestable(), findsOneWidget);
+      expect(find.byKey(const ValueKey('nav-week')).hitTestable(), findsNothing);
+      expect(h.tester.takeException(), isNull);
+    });
+  }
   test('soft filled buttons never draw an outline, even with a pale accent', () {
     final theme = buildTheme(
       theme: themeFor(ThemeId.lilac, customization: const ThemeCustomization(mainTone: 92)),

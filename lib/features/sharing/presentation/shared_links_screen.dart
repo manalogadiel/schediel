@@ -73,7 +73,21 @@ class _SharedLinksScreenState extends ConsumerState<SharedLinksScreen> {
     final f = Formats.of(context);
     return Scaffold(appBar: AppBar(title: const Text('Shared links'), actions: [
       if (configured) IconButton(tooltip: 'Refresh shared links', onPressed: _busy ? null : _refresh, icon: const AppIcon(AppIcons.restore)),
-    ]), body: !configured ? const SharingUnavailable() : ListView(padding: const EdgeInsets.all(Tokens.md), children: [
+    ]), body: !configured ? ListView(padding: const EdgeInsets.all(Tokens.md), children: [
+      const Text('Send schedules', style: TextStyle(fontWeight: FontWeight.w600)),
+      const SizedBox(height: Tokens.sm),
+      const Text('Choose schedules and tap Send link to share through your messaging app. The schedules travel inside the link; Schediel does not upload them.'),
+      const SizedBox(height: Tokens.md),
+      FilledButton(onPressed: () => context.push('/share/create'), child: const Text('Share schedules')),
+      const SizedBox(height: Tokens.lg),
+      const Text('Received a link?', style: TextStyle(fontWeight: FontWeight.w600)),
+      const SizedBox(height: Tokens.sm),
+      const Text('Copy the message and open the link here. Review it before adding anything to your schedules.'),
+      const SizedBox(height: Tokens.sm),
+      OutlinedButton(onPressed: () => context.push('/share/open'), child: const Text('Open shared link')),
+      const SizedBox(height: Tokens.lg),
+      const Text('Sent links are not kept in a history here. They contain independent copies and cannot be expired or revoked.'),
+    ]) : ListView(padding: const EdgeInsets.all(Tokens.md), children: [
       const Text('Only links owned by this online identity can be managed here. Losing the session or reinstalling may lose that access.'),
       if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: Tokens.md),
         child: Semantics(liveRegion: true, child: Text(_error!))),

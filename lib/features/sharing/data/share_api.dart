@@ -118,7 +118,7 @@ abstract class ShareApi {
 
   Future<OwnedShare> revoke(String shareId);
 
-  Future<ResolvedShare> resolve({required String shareId, required String token});
+  Future<ResolvedShare> resolve({required String? shareId, required String token});
 }
 
 /// Calls the Supabase Edge Functions. Management requests use an anonymous
@@ -276,10 +276,10 @@ class SupabaseShareApi implements ShareApi, BackendDataApi {
   }
 
   @override
-  Future<ResolvedShare> resolve({required String shareId, required String token}) async {
+  Future<ResolvedShare> resolve({required String? shareId, required String token}) async {
     // The token travels only in this POST body (CONTRACTS.md 7.3).
     final data = await _invoke('share-resolve', body: {
-      'shareId': shareId,
+      'shareId': ?shareId,
       'token': token,
       'supportedSchemaVersions': const ['1.0'],
     });

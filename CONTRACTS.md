@@ -217,7 +217,7 @@ Exact source-identity duplicates default to skip, with an explicit keep-copy cho
 - Revocation does not reach into recipient-local imported copies.
 - Already downloaded previews cannot be recalled, and a response authorized before revocation commits may still finish. Subsequent authorization must fail.
 - Creator link metadata does not reconstruct a token from its hash.
-- The client creates and protects at least 32 random secret bytes before creation, sends only the digest, and composes an HTTPS `/s/{shareId}#token={secret}` link from returned non-secret metadata. Fragment preservation is a native/web proof gate.
+- The client creates and protects at least 32 random secret bytes before creation, sends only the digest, and composes a compact HTTPS `/s/#{secret}` link using the retained secret. Legacy `/s/{shareId}#token={secret}` links remain accepted. Fragment preservation is a native/web proof gate.
 - The backend, management responses and idempotency records contain no raw secret or complete bearer URL. Replay returns the existing metadata, not a new capability. Expired replays fail safely instead of creating another resource under the old key.
 
 ## 6. Native widget snapshot contract
@@ -281,7 +281,7 @@ An exact owner status endpoint supports revoke read-back before the app claims t
 
 Input: share ID, fragment-derived bearer token and supported schema versions, submitted in a redacted POST body. Output: only the permitted versioned snapshot and safe availability metadata. The resolver is read-only and rate-limited. It does not create an anonymous user, an import, a notification or a scan job.
 
-Resolve body fields: `shareId`, `token`, `supportedSchemaVersions`. Only a matching capability may receive the payload or a known expired/revoked `410` state. Wrong/unknown capabilities and cross-owner management access do not expose owner metadata.
+Resolve body fields: `token`, `supportedSchemaVersions`, and optional legacy `shareId`. Compact links resolve by the full capability digest; a supplied legacy ID must match, and ambiguous digests fail closed. A digest-only reservation survives snapshot deletion so a received link cannot be reassigned to another payload; conflicting creations do not consume creation quotas or create retry records. Only a matching capability may receive the payload or a known expired/revoked `410` state. Wrong/unknown capabilities and cross-owner management access do not expose owner metadata.
 
 The fragment keeps the secret out of the ordinary HTTP route but not browser history, page scripts or application state. Do not log full incoming deep-link URIs. Demonstrate fragment preservation, no third-party scripts, no-store behavior and redaction before launch. Do not use a storage signed-download URL as a supposedly immediately revocable share capability.
 

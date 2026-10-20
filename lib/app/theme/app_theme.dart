@@ -160,7 +160,12 @@ ThemeData buildTheme({
   // Non-text boundaries need 3:1; accent-colored text needs 4.5:1.
   final softBoundary = Color.lerp(secondaryInk, surface, 0.3)!;
   final boundary = contrastRatio(softBoundary, surface) >= 3 ? softBoundary : secondaryInk;
-  final accentText = contrastRatio(p.accent, surface) >= 4.5 && contrastRatio(p.accent, canvas) >= 4.5 ? p.accent : ink;
+  // Accent text close to 4.5:1 on a plain canvas leaves no room for visible
+  // texture. Use the main ink when the accent cannot also read over marks.
+  final texturedCanvas = texture == ThemeTexture.none ? canvas : Color.alphaBlend(
+    (canvas.computeLuminance() > .5 ? Colors.black : Colors.white).withValues(alpha: .12), canvas);
+  final accentText = contrastRatio(p.accent, surface) >= 4.5 &&
+      contrastRatio(p.accent, canvas) >= 4.5 && contrastRatio(p.accent, texturedCanvas) >= 4.5 ? p.accent : ink;
   final accentMark = contrastRatio(p.accent, surface) >= 3 && contrastRatio(p.accent, canvas) >= 3 ? p.accent : ink;
   bool readableError(Color c) => contrastRatio(c, surface) >= 4.5 && contrastRatio(c, canvas) >= 4.5;
   final preferredError = dark ? Tokens.darkError : Tokens.error;

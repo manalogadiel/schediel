@@ -81,7 +81,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'This removes saved schedules, their exceptions and alert preferences from this app. Categories and appearance stay. Shared links are not revoked.',
+                    'This removes saved schedules, their exceptions and alert preferences from this app. Categories and appearance stay. Copies you have shared remain with their recipients.',
                   ),
                   const SizedBox(height: Tokens.sm),
                   CheckboxListTile(
@@ -172,23 +172,20 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
             ],
           ),
           SectionGroup(
-            header: 'Online sharing',
+            header: configured ? 'Online sharing' : 'Sharing',
             children: [
               _details(
-                'Link access and deletion',
+                configured ? 'Link access and deletion' : 'Schedules inside links',
                 'Only selected fields are shared; imported copies cannot be recalled.',
-                const Padding(
+                Padding(
                   padding: EdgeInsets.all(Tokens.md),
                   child: Text(
-                    'Only schedules and optional fields selected for a link are uploaded. Anyone with a forwarded link can view it until expiry or revocation. Downloaded or imported copies cannot be recalled. A lost anonymous session may lose management rights; this app does not promise recovery.',
+                    configured
+                        ? 'Only schedules and optional fields selected for a link are uploaded. Anyone with a forwarded link can view it until expiry or revocation. Downloaded or imported copies cannot be recalled. A lost anonymous session may lose management rights; this app does not promise recovery.'
+                        : 'Send link packs only the schedules and optional fields you select into the link itself. Schediel does not upload them. Anyone with the link can review and import a copy. These links do not expire and cannot be revoked. Deleting a local schedule does not remove shared copies.',
                   ),
                 ),
               ),
-              if (!configured)
-                const Padding(
-                  padding: EdgeInsets.all(Tokens.md),
-                  child: Text('Sharing backend is not configured in this build.'),
-                ),
               if (configured && !_expired)
                 ListTile(title: const Text('Delete my backend data'), onTap: _busy ? null : _backendDelete),
               if (configured && _expired)

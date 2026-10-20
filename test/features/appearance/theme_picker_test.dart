@@ -8,6 +8,24 @@ import 'package:schediel/features/appearance/appearance_screen.dart';
 import '../../support/harness.dart';
 
 void main() {
+  appTest('mode buttons and their contents are centered at both text sizes', (h) async {
+    await h.tapText('Settings');
+    await h.tapText('Appearance');
+    for (final scale in [1.0, 2.0]) {
+      h.tester.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(h.tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await h.settle();
+      final center = h.tester.getCenter(find.byType(ModeToggle)).dy;
+      for (final (mode, label) in [(ThemeMode.light, 'Light'), (ThemeMode.dark, 'Dark'), (ThemeMode.system, 'Auto')]) {
+        final button = find.byKey(ValueKey('mode-${mode.name}'));
+        expect(h.tester.getCenter(button).dy, closeTo(center, .5));
+        expect(h.tester.getCenter(find.descendant(of: button, matching: find.text(label))).dy,
+          closeTo(center, .5));
+        expect(h.tester.getSize(button).height, greaterThanOrEqualTo(40));
+      }
+      expect(h.tester.takeException(), isNull);
+    }
+  });
   appTest('appearance remains usable at 200 percent text and stores a texture for its family', (h) async {
     h.tester.platformDispatcher.textScaleFactorTestValue = 2;
     addTearDown(h.tester.platformDispatcher.clearTextScaleFactorTestValue);

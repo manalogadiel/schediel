@@ -10,6 +10,7 @@ void main() {
     final links = container.read(deepLinkCoordinatorProvider);
     final token = 'A' * 43;
     expect(links.routeFor(Uri.parse('https://share.example/s/6f1c2b1e-9d3a-4c55-8e21-0a7b3c4d5e6f#token=$token')), '/share/open');
+    expect(links.routeFor(Uri.parse('https://share.example/s/#$token')), '/share/open');
     for (final text in ['https://other.example/s/6f1c2b1e-9d3a-4c55-8e21-0a7b3c4d5e6f#token=$token',
       'https://user@share.example/s/6f1c2b1e-9d3a-4c55-8e21-0a7b3c4d5e6f#token=$token',
       'https://share.example/s/bad#token=$token']) {

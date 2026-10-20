@@ -64,6 +64,8 @@ test('HTTP input errors are bounded, safe, and never reflect payload/digest/unkn
 test('public resolver accepts a non-JWT publishable key, never authenticates, and fails closed before lookup',async t=>{
   const ctx=await setup(t), {handler,queries}=ctx, body=await createBody();
   const created=await (await handler(request('/share-links','POST',body))).json();
+  const creationQuery=queries.find(q=>q.sql.includes('.create_share('));
+  assert.deepEqual(creationQuery?.params[3], body.payload, 'jsonb stays an object for the production driver');
   const before=ctx.authCalls(), resolve={shareId:created.shareId,token:secret,supportedSchemaVersions:['1.0']};
   const publicReq=request('/share-resolve','POST',resolve); publicReq.headers.delete('authorization');
   publicReq.headers.set('origin','https://share.test');
@@ -88,6 +90,49 @@ test('public resolver accepts a non-JWT publishable key, never authenticates, an
     assert.ok(!JSON.stringify(q.params).includes('sb_publishable_fixture'));
   }
 });
+test('compact links resolve by capability only, preserve revocation and fail closed on ambiguity', async t => {
+  const {handler, queries, db} = await setup(t), body = await createBody();
+  const created = await (await handler(request('/share-links', 'POST', body))).json();
+  const compact = {token: secret, supportedSchemaVersions: ['1.0']};
+  const response = await handler(request('/share-resolve', 'POST', compact, 'invalid'));
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).shareId, created.shareId);
+  assert.equal(queries.filter(q => q.sql.includes('.resolve_share(')).at(-1)?.params[0], null);
+  await error(await handler(request('/share-resolve', 'POST', {...compact, shareId: null})), 400, 'invalid_request');
+  await error(await handler(request('/share-resolve', 'POST', {...compact, token: Buffer.alloc(32, 9).toString('base64url')})), 404, 'not_found');
+  await error(await handler(request('/share-links', 'POST', body, 'owner-b')), 400, 'invalid_request');
+  await db.exec('reset role');
+  // Legacy/privileged duplicate data must still fail closed, never pick a copy.
+  const duplicate = (await db.query('insert into schediel_private.share_links(owner_id,schema_version,payload,payload_hash,payload_bytes,token_digest,item_count,category_labels,created_at,expires_at) select owner_id,schema_version,payload,payload_hash,payload_bytes,token_digest,item_count,category_labels,created_at,expires_at from schediel_private.share_links where id=$1 returning id', [created.shareId])).rows[0];
+  await error(await handler(request('/share-resolve', 'POST', compact)), 404, 'not_found');
+  await db.query('delete from schediel_private.share_links where id=$1', [duplicate.id]);
+  await handler(request(`/share-links/${created.shareId}`, 'DELETE'));
+  await error(await handler(request('/share-resolve', 'POST', compact)), 410, 'link_revoked');
+  await db.query("update schediel_private.share_links set revoked_at=null, created_at=clock_timestamp()-interval '2 days', expires_at=clock_timestamp()-interval '1 second' where id=$1", [created.shareId]);
+  await error(await handler(request('/share-resolve', 'POST', compact)), 410, 'link_expired');
+  await db.exec('update schediel_private.policy set resolves_per_minute=1');
+  await error(await handler(request('/share-resolve', 'POST', compact)), 429, 'rate_limited');
+});
+
+test('a recipient cannot reuse a capability to replace a live or deleted snapshot', async t => {
+  const {handler, db} = await setup(t), body = await createBody();
+  const created = await (await handler(request('/share-links', 'POST', body))).json();
+  const replacement = structuredClone(body); replacement.payload.items[0].title = 'Unwanted replacement';
+  await error(await handler(request('/share-links', 'POST', replacement, 'owner-b')), 400, 'invalid_request');
+  const resolve = {token: secret, supportedSchemaVersions: ['1.0']};
+  const unchanged = await (await handler(request('/share-resolve', 'POST', resolve))).json();
+  assert.equal(unchanged.shareId, created.shareId); assert.deepEqual(unchanged.payload, body.payload);
+  assert.deepEqual((await (await handler(request('/share-links', 'GET', undefined, 'owner-b'))).json()).items, []);
+  assert.equal((await handler(request('/privacy/delete-backend-data', 'POST', {confirm: 'delete-backend-data'}))).status, 202);
+  await error(await handler(request('/share-links', 'POST', replacement, 'owner-b')), 400, 'invalid_request');
+  await error(await handler(request('/share-resolve', 'POST', resolve)), 404, 'not_found');
+  await assert.rejects(db.query('select schediel_private.create_share_unreserved(null,null,null,null,null,null,null)'), /permission denied/);
+  await db.exec('reset role');
+  assert.equal((await db.query('select count(*)::integer n from schediel_private.share_links')).rows[0].n, 0);
+  assert.equal((await db.query('select count(*)::integer n from schediel_private.reserved_share_capabilities')).rows[0].n, 1);
+  assert.equal((await db.query("select used from schediel_private.usage_buckets where scope='create-global'")).rows[0].used, 1);
+});
+
 test('health and preflight have no side effects; all documented scanning routes stay gated',async t=>{
   const ctx=await setup(t), {handler,queries}=ctx;
   const health=await handler(request('/health','GET',undefined,'invalid')); assert.equal(health.status,200); assert.deepEqual(await health.json(),{status:'ok'});
@@ -100,6 +145,21 @@ test('health and preflight have no side effects; all documented scanning routes 
   }
   assert.equal(queries.length,0);
   await error(await handler(new Request(base+'/health',{headers:{origin:'https://unapproved.test'}})),403,'forbidden');
+});
+
+test('hosted gateway paths behave exactly like external transport paths', async t => {
+  const {handler} = await setup(t);
+  const hosted = (path: string, method = 'GET', body?: unknown) => {
+    const req = request(path, method, body);
+    return new Request(req.url.replace('/functions/v1/', '/'), req);
+  };
+  const health = await handler(hosted('/health'));
+  assert.equal(health.status, 200); assert.deepEqual(await health.json(), {status: 'ok'});
+  const created = await (await handler(hosted('/share-links', 'POST', await createBody()))).json();
+  assert.ok(created.shareId);
+  const resolved = await handler(hosted('/share-resolve', 'POST', {token: secret, supportedSchemaVersions: ['1.0']}));
+  assert.equal(resolved.status, 200); assert.equal((await resolved.json()).shareId, created.shareId);
+  await error(await handler(hosted('/unknown')), 404, 'not_found');
 });
 test('HTTP explicit backend deletion returns 202 with exact owner-only verifiable progress',async t=>{
   const {handler}=await setup(t), body=await createBody();

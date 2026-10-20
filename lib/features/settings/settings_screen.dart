@@ -67,7 +67,7 @@ class SettingsScreen extends ConsumerWidget {
                 ListTile(
                   leading: const SoftIcon(AppIcons.info, key: ValueKey('settings-icon-info'), colorKey: 'gray'),
                   title: const Text('Open source licenses'),
-                  onTap: () => showLicensePage(context: context, applicationName: 'Schediel'),
+                  onTap: () => context.push('/settings/licenses'),
                 ),
               ],
             ),

@@ -1,9 +1,11 @@
 # Schediel sharing backend
 
-This is the optional backend for immutable, expiring and revocable schedule links. Local schedules, widgets and on-device image review do not depend on it. **Nothing has been deployed.** Cloud image scanning is intentionally disabled.
+This is the optional backend for immutable, expiring and revocable schedule links. Local schedules, widgets and on-device image review do not depend on it. The Schediel project was deployed on October 20, 2026; live verification is recorded in `../VALIDATION.md`. Cloud image scanning is intentionally disabled.
 
 ## Layout and local checks
 
+- `supabase/migrations/202610200002_reserve_share_capabilities.sql`: permanent digest-only reservations prevent a recipient from replacing a live or deleted short-link destination; conflicting creates roll back quota and retry writes.
+- `supabase/migrations/202610200001_compact_share_links.sql`: indexed full-capability resolution for compact links, retaining rate limits, locks and legacy ID scoping; ambiguous digests fail closed.
 - `supabase/migrations/202610180001_sharing.sql`: unexposed `schediel_private` schema, deny-by-default RLS/grants, atomic ownership/idempotency/quota/revoke/resolve/deletion operations.
 - `supabase/functions/_shared/`: strict payload validator, canonical token helpers, safe HTTP handlers, Auth verifier, parameterized Postgres store and runtime composition.
 - `supabase/functions/{share-links,share-resolve,scan,privacy,health}`: thin Deno entry points.
@@ -65,3 +67,11 @@ supabase functions deploy health
 Do not expose `schediel_private` in Data API schemas. Enable anonymous sign-ins only for explicit online creation, configure abuse/CAPTCHA policy before public rollout, and test management/resolution with two real identities and a public browser. Verify proxy overwrites, CORS, TLS, request-body log redaction and real Postgres behavior. A deployment still needs a verified owned domain, signing associations and cold/warm mobile link tests. Use separate staging/production projects; no project, region, signing identity or domain is invented here.
 
 The API never returns a bearer secret in owner metadata. The client stores the random secret locally and sends only its digest on creation; public resolution sends the canonical token in a no-store POST body. Rate-limit hashes and request IDs are not personal schedule logs. Do not enable body/URL logging upstream. Retention, monitoring, backup, load and security review remain production gates; these local tests are not certification.
+
+## Live verification
+
+From the repository root, `node tools/check_sharing_live.mjs --create-fixtures` opts into creating disposable anonymous identities and synthetic contract snapshots, then verifies creation/replay, two-owner isolation, public compact/legacy resolution, CORS, revocation and sharing-only deletion. It cleans up the snapshots and signs out test sessions. Credentials and bearer links stay in memory; no phone schedules are used. Add `--device SERIAL` with an unlocked Android phone to check verified URL routing and the Edit/Add review controls without importing; add `--browser-button` to open the real Chrome preview and tap its Open in Schediel button instead. Anonymous test identities may remain in Auth; this is separate from deleting their snapshots.
+
+Hosted gateways forward `/health`, `/share-links` and similar paths after stripping `/functions/v1`; handlers accept both forms. JSON payloads are passed to the Postgres driver as objects so its JSONB serializer does not double-encode them.
+
+Snapshot deletion retains the digest-only capability reservation (without an owner or payload) so a previously issued short URL can never be reassigned. The unreserved creation function is not executable by the runtime role.

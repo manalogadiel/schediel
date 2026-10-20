@@ -1,12 +1,49 @@
 # Implementation and documentation validation
 
-**Recorded:** October 18–19, 2026 (Windows 11, UTC+08:00).
+**Recorded:** October 18–20, 2026 (Windows 11, UTC+08:00).
 
 ## Status and boundaries
 
-Schediel now has a Flutter implementation, Android native code, iOS source, a locally tested optional sharing backend and a static browser preview. **This is a development build, not a production or real-device certification.** Supabase/domain deployment has not occurred. Cloud scanning stays off. No schedule data, credentials or signing identities were invented to make a test look deployed.
+Schediel now has a Flutter implementation, Android native code, iOS source, a locally tested optional sharing backend and a static browser preview. **This is a development build, not a production or real-device certification.** The optional sharing backend and HTTPS domains were deployed on October 20; the live checks below are distinct from production certification. Cloud scanning stays off. No schedule data, credentials or signing identities were invented to make a test look deployed.
 
 Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
+
+## October 20: texture rendering performance
+
+The user isolated widespread stutter to enabling a texture. A regression reproduced ten full texture repaints during ten foreground animation frames. Repaint boundaries alone prevented those Dart paint calls but did not remove the expensive GPU work while scrolling behind the blurred navigation bar. Texture surfaces now rasterize their existing deterministic painter once and reuse an image through Flutter's bounded image cache. Cache identity includes pattern, size, pixel ratio, background, shade and accent; physical dimensions are capped at 2048 pixels per side. Framework image ownership handles eviction, disposal and memory pressure. No network or database is involved.
+
+`tools/profile_textures.dart` exercised all eleven settings on the connected Android 13 phone in profile mode: the same thirty synthetic cards, navigation blur and four 1.2-second scrolls per setting, after a one-second warmup. No user schedules were read or changed. Median raster times before and after caching:
+
+| Texture | Before | Cached |
+|---|---:|---:|
+| Paper | 66.1 ms | 11.6 ms |
+| Dots | 24.1 ms | 11.7 ms |
+| Carbon | 138.9 ms | 12.2 ms |
+
+All cached textures measured 10.7–12.2 ms median and 12.7–13.2 ms at the 90th percentile in this workload. These are warmed synthetic rendering measurements on one phone, not a guarantee for every screen/device, cold texture generation, battery use or all app frame times. The probe temporarily replaces the app UI and must be followed by a normal release installation with `adb install -r`, preserving the existing key and local data.
+
+Full Flutter suite: **377 passed**. The additional cache invalidation regression was then added and the focused texture suite passed **6 tests**, including retained-image reuse, size/pattern/palette changes, visible texture, contrast and preserved input/semantics. Full analysis reported no issues. Release split APKs built with the existing debug key and online-sharing configuration; `adb install -r` restored the normal app successfully (arm64 version code 4003, Flutter build number 2003 plus the ABI offset). The committed build number matches the installed release so future default builds remain installable over it. No uninstall, data clear, signing change or schedule import occurred.
+
+## October 20: browser button handoff correction
+
+The user reported that Open in Schediel stayed in Messenger/browser previews despite verified Android domains. The old button navigated to another HTTPS page, which a browser can keep internally. Android now receives a package-scoped intent directly from the user click; the full fragment is preserved and the original HTTPS preview is its fallback. No automatic launch or import was introduced, and no bearer is placed in page markup.
+
+- Browser/jsdom suite: **142 passed**, covering compact/legacy links from both origins, user-gesture-only launch, explicit package, full fragment, fallback URL and no bearer in markup after the click.
+- Android's own intent parser confirmed that the target package and complete share fragment survive parsing.
+- The website-only update was deployed to both public production domains; no APK reinstall, signing change or local data operation was required.
+- On the connected Android 13 phone, the real Chrome Open in Schediel button was tapped for synthetic previews on both domains and opened the installed native review with Edit and Add selected schedules. No Add action was tapped; synthetic server copies were cleaned up. Messenger's private conversations were not opened or changed; a restrictive embedded browser may still require Open in browser before the button.
+
+## October 20: compact online sharing and Android installation
+
+- `flutter analyze --no-pub`: no issues. Full `flutter test`: **376 passed**.
+- Backend Node/PGlite suite: **82 passed**; browser/jsdom suite: **138 passed**. Deno 2.5.4 checked all five function entry points.
+- Applied the sharing migrations, including permanent capability reservations, to the existing Schediel project; deployed functions and the static fallback. `schediel-share.vercel.app` and `schediel-open.vercel.app` both serve the matching Android association JSON publicly, without redirects. The second host is a production domain; preview authentication remains enabled for preview deployments.
+- Live checks with two disposable anonymous identities and synthetic snapshots passed: creation, identical replay, management authorization, cross-owner read/revoke rejection, compact and legacy public resolution, invalid capabilities, unsupported versions, both browser origins, revocation, deletion-job readback, rejection of deleted-link replacement, and preservation of the other owner's snapshot. Synthetic snapshots were deleted afterward; test sessions were signed out. Anonymous test identity records can remain in Auth.
+- Ingress was verified before use: `cf-connecting-ip` supports successful normal resolution, forged values receive 403 at the gateway, and spoofed `x-real-ip` / `x-forwarded-for` leave one resolver subject (three attempts) in aggregate database checks. No address or hash was printed.
+- Live testing found and fixed two environment gaps: the hosted gateway strips `/functions/v1`, and Postgres.js must receive payload objects rather than pre-stringified JSONB. Both now have regression coverage.
+- Built release split APKs with the existing PC debug signing key and the ignored public sharing settings. Updated the connected Android 13 phone with `adb install -r` successfully; no uninstall, key replacement, data clear, or schedule import occurred.
+- Android reports **both hosts verified**. Real VIEW intents opened the app on first launch after installation and while already open; UI inspection found the synthetic title, Shared schedules, Edit and Add selected schedules in the review. The unmodified reviews were closed, and only the synthetic server copies were removed. Automated widget tests separately verify that edits stay inactive until Add and that first visits to Shared links do not sign in or report an authentication error.
+- Some messaging apps may retain links in their own browser. The fallback preview offers an explicit cross-host Open action; actual Messenger/Viber/SMS behavior has not been certified. Recipients need a compatible installed Schediel APK. iOS remains unbuilt and unverified.
 
 ## Independent review findings and fixes
 

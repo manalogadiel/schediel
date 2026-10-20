@@ -11,11 +11,13 @@ export function createSqlStore(query: Query) {
   return {
     rate: (scope: string, subjectHash: string) => call('take_rate', [scope, subjectHash], ['text', 'text']),
     async create(owner: string, key: string, body: any) {
-      return call('create_share', [owner, await sha256Hex(key), await sha256Hex(canonicalJson(body)), JSON.stringify(body.payload), body.tokenDigest, body.expiresAt, new TextEncoder().encode(JSON.stringify(body.payload)).byteLength], ['uuid', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'integer']);
+      // Pass the JSON object: Postgres.js serializes jsonb parameters itself.
+      // Stringifying here double-encodes it into a JSON string in production.
+      return call('create_share', [owner, await sha256Hex(key), await sha256Hex(canonicalJson(body)), body.payload, body.tokenDigest, body.expiresAt, new TextEncoder().encode(JSON.stringify(body.payload)).byteLength], ['uuid', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'integer']);
     },
     get: (owner: string, id: string) => call('get_share', [owner, id], ['uuid', 'uuid']),
     revoke: (owner: string, id: string) => call('revoke_share', [owner, id], ['uuid', 'uuid']),
-    resolve: (id: string, digest: string, versions: string[], addressHash: string) => call('resolve_share', [id, digest, versions, addressHash], ['uuid', 'text', 'text[]', 'text']),
+    resolve: (id: string | null, digest: string, versions: string[], addressHash: string) => call('resolve_share', [id, digest, versions, addressHash], ['uuid', 'text', 'text[]', 'text']),
     async deleteBackendData(owner: string, key: string, body: any) {
       return call('delete_backend_data', [owner, await sha256Hex(key), await sha256Hex(canonicalJson(body)), body.confirm], ['uuid', 'text', 'text', 'text']);
     },

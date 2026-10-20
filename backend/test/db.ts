@@ -1,5 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 export const A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 export const B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 export async function database() {
@@ -9,8 +9,10 @@ export async function database() {
     create schema auth;
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   `);
-  const path = new URL('../supabase/migrations/202610180001_sharing.sql', import.meta.url);
-  if (existsSync(path)) await db.exec(readFileSync(path, 'utf8'));
+  const directory = new URL('../supabase/migrations/', import.meta.url);
+  for (const file of readdirSync(directory).filter(name => name.endsWith('.sql')).sort()) {
+    await db.exec(readFileSync(new URL(file, directory), 'utf8'));
+  }
   return db;
 }
 export async function call(db: PGlite, name: string, args: unknown[], casts: string[]) {

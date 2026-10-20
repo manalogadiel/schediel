@@ -6,6 +6,46 @@ const app = await import('../src/app.js').catch(error => {
   throw error;
 });
 
+for (const origin of ['https://share.example', 'https://app.example']) {
+  for (const legacy of [false, true]) {
+    test(`Android Open requests Schediel directly from ${origin}, legacy=${legacy}`, async t => {
+      const path = legacy ? `/s/${shareId}#token=${token}` : `/s/#${token}`;
+      const window = await browser(t, {url: `${origin}${path}`});
+      Object.defineProperty(window.navigator, 'userAgent', {value: 'Mozilla/5.0 (Linux; Android 13) Chrome/132.0 Mobile Safari/537.36'});
+      const assigned = [];
+      await app.startPreview({window: navigationWindow(window, assigned), config: {...config, appLinkOrigin: 'https://app.example'}});
+      assert.deepEqual(assigned, [], 'must not launch automatically');
+      assert.equal(window.location.hash, '');
+      assert.ok(!window.document.documentElement.outerHTML.includes(token));
+      window.document.querySelector('#open-app').click();
+      const destination = origin === 'https://app.example' ? 'https://share.example' : 'https://app.example';
+      const url = `${destination}${path}`;
+      assert.deepEqual(assigned, [`intent:${url.slice('https:'.length)}#Intent;scheme=https;package=com.manalogadiel.schediel;S.browser_fallback_url=${encodeURIComponent(url)};end`]);
+      assert.ok(!window.document.documentElement.outerHTML.includes(token), 'bearer stays out of page markup after the click');
+      assert.equal(window.location.hash, '');
+    });
+  }
+}
+
+for (const origin of ['https://share.example', 'https://app.example']) {
+  test(`compact link resolves without an ID and hands off across hosts from ${origin}`, async t => {
+    const calls = [], navigated = [];
+    const window = await browser(t, {url: `${origin}/s/#${token}`, fetch: async (url, options) => {
+      calls.push({url, options});
+      assert.equal(window.location.hash, '');
+      return response(200, resolved());
+    }});
+    await app.startPreview({window, config: {...config, appLinkOrigin: 'https://app.example'}, navigate: url => navigated.push(url)});
+    assert.equal(window.document.querySelector('main').dataset.state, 'preview');
+    assert.deepEqual(JSON.parse(calls[0].options.body), {token, supportedSchemaVersions: ['1.0']});
+    assert.ok(!calls[0].url.includes(token));
+    window.document.querySelector('#open-app').click();
+    const destination = origin === 'https://app.example' ? 'https://share.example' : 'https://app.example';
+    assert.deepEqual(navigated, [`${destination}/s/#${token}`]);
+    assert.ok(!window.document.documentElement.outerHTML.includes(token));
+  });
+}
+
 // Exercise the production default navigator, not only the injected callback.
 function navigationWindow(window, assigned) {
   return new Proxy({}, { get(_, key) {

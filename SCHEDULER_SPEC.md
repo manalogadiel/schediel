@@ -791,7 +791,7 @@ The snapshot payload includes only selected content fields, structured recurrenc
 
 - Generate at least 32 random bytes on device using a vetted cryptographically secure source. Persist the secret in an appropriate protected store before the create request so an uncertain response does not lose it.
 - Send only its SHA-256 digest with the selected snapshot to create the backend record. The server validates the digest format and stores the digest, never the raw secret.
-- The proposed URL shape is an owned HTTPS `/s/{shareId}` route with `#token={secret}`. The client composes it from server metadata and the retained local secret; the create response and idempotency cache contain no bearer URL.
+- The compact URL shape is an owned HTTPS `/s/` route with `#{secret}`; the legacy `/s/{shareId}#token={secret}` shape remains readable. The client composes it from server metadata and the retained local secret; the create response and idempotency cache contain no bearer URL.
 - A URI fragment is handled separately from dereferencing, reducing disclosure to ordinary HTTP request paths; it still exists in browser history, application state, screenshots and any script reading the page. No third-party scripts or analytics belong on this landing page.[30]
 - The app/browser extracts the secret and submits it only in a redacted resolver POST body with the share ID. Confirm cold/warm native and browser handling preserves fragments before freezing this URL scheme.
 - The owner list/status endpoints return metadata, not recoverable secrets. If local secrets are lost, create a replacement link rather than pretending a hash can reconstruct one.

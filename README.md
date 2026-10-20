@@ -2,7 +2,7 @@
 
 Offline-first Flutter scheduling app for Android and iOS. Repeating schedules, room/professor/subtitle details, Today and Week, categories, native home-screen widgets, optional reminders/alarms, image review and preview-first share links. Eight themes (Lilac, Clay, Pop, Mint, Midnight, Pixel, Sketch, Custom color) and an optional local profile; home-screen widgets can follow the app theme.
 
-**Development build, not release-certified.** Android debug compilation and local automated tests are recorded in [VALIDATION.md](VALIDATION.md). No backend or share domain is deployed. iOS code has not been built on a Mac; the WidgetKit target still requires the documented Xcode setup. Real-device checks remain mandatory.
+**Development build, not release-certified.** Android debug compilation and local automated tests are recorded in [VALIDATION.md](VALIDATION.md). The optional Android sharing service and HTTPS domains were deployed on October 20, 2026; see [VALIDATION.md](VALIDATION.md) for the checks and remaining platform limits. iOS code has not been built on a Mac; the WidgetKit target still requires the documented Xcode setup. Real-device checks remain mandatory.
 
 ## Run locally
 
@@ -26,55 +26,57 @@ Android JVM tests and lint (from `android/`; Windows uses `cmd.exe /c "gradlew.b
 
 The pinned `home_widget` plugin currently emits a Kotlin Gradle Plugin deprecation warning. The debug APK is for testing and uses debug signing; production signing, permissions/store eligibility and dependency updates must be reviewed before release. Do not distribute it as a signed production release.
 
-## Link sharing — optional deployment
+## Share schedules
 
-Keep these build-time defines absent for offline development; the app then explains that sharing is not configured. When the approved Supabase backend and owned domain are ready:
+Tap **Share → Categories** to choose School, Personal, or other categories from one grouped list. Location, person and subtitle are included by default; Notes stays off unless checked under Details. Only checked schedules and details are shared.
+
+With online sharing configured, **Send link** creates a short HTTPS link and opens Android's share menu. Your friend reviews the schedules in a tall modal, can edit them, and taps **Add selected schedules** to save an independent local copy. Internet is required to create or retrieve an online link; imported copies work offline. Anyone with a forwarded link can view it until expiry or revocation. Downloaded copies cannot be recalled.
+
+**Send offline link** packs the snapshot into the link itself and needs no server or account. These links do not expire and cannot be revoked. In an offline-only build the primary Send link action uses this self-contained format. If a chat app does not make either link tappable, copy the whole message and use **Open shared link**; Schediel offers the copied link automatically.
+
+**Settings → Shared links** has sending/opening shortcuts and online link management when configured. Online creation establishes an anonymous session only when requested; ordinary local use and public link resolution do not create an identity. Losing that session may lose management rights to old links.
+
+## Online sharing configuration
+
+This PC's share and handoff domains are `schediel-share.vercel.app` and `schediel-open.vercel.app`. Both are public production domains with the installed APK's Android signing association. Some messaging apps may retain links in their own browser; the fallback offers an explicit Open action that requests the installed Android app directly. If an embedded browser blocks that action, open the original link in Chrome and tap Open in Schediel there. Recipients need a compatible installed Schediel APK.
+
+Keep these build-time defines absent for offline-only builds. For online builds, put only public configuration in git-ignored `env/sharing.json` (start from `env/sharing.example.json`):
 
 - `SCHEDIEL_SUPABASE_URL`: actual HTTPS Supabase project origin.
-- `SCHEDIEL_SUPABASE_KEY`: public project publishable key, never a service/provider secret.
-- `SCHEDIEL_SHARE_HOST`: hostname only, without `https://` or a path.
-- `SCHEDIEL_APP_LINK_HOST` (optional): a second owned hostname, different from the share host, that the browser preview's **Open in Schediel** button hands off to. Set the Gradle property `schediel.appLinkHost` to the same value.
+- `SCHEDIEL_SUPABASE_KEY`: public publishable key, never a provider/service secret.
+- `SCHEDIEL_SHARE_HOST`: primary hostname without a scheme or path.
+- `SCHEDIEL_APP_LINK_HOST` (optional): distinct owned handoff hostname.
+- `SCHEDIEL_SUPABASE_PROJECT_REF` and `SCHEDIEL_VERCEL_PROJECT`: deployment identifiers used by the script.
 
-Put them in `env/sharing.json` (git-ignored; copy `env/sharing.example.json`) and build with `--dart-define-from-file=env/sharing.json`. Android reads the App Link host from the same file; the Gradle properties `schediel.shareHost` / `schediel.appLinkHost` override it, and without either the host is deliberately `schediel.invalid`. Configure real signing associations and iOS Associated Domains on the owned host before claiming verified links.
+For a new environment, sign the Supabase and Vercel CLIs into the intended accounts, enable **Authentication → Sign In / Providers → Allow anonymous sign-ins**, and download the public database certificate from **Database → Settings → SSL configuration**. Keep private credentials in platform secret storage, never app configuration, Git or chat.
 
-### Online sharing setup (Supabase + Vercel)
-
-Account steps (only you can do these):
-
-1. Create the release key first (see [Release signing](#release-signing)); App Links are verified against it.
-2. Create a free project at [supabase.com](https://supabase.com) (region: Southeast Asia (Singapore)). Save the database password in a password manager.
-3. In the project: **Authentication → Sign In / Providers → Allow anonymous sign-ins** → on → Save.
-4. **Project Settings → API Keys**: copy the **publishable** key (`sb_publishable_…`). Never copy the secret key anywhere.
-5. **Database → Settings → SSL Configuration → Download certificate** (saves `prod-ca-2021.crt`).
-6. Create a free account at [vercel.com](https://vercel.com) and pick a project name (lowercase, e.g. `schediel-share`). The page will live at `https://<name>.vercel.app`.
-7. In this repo's terminal (Node 22+): `npx supabase login` and `npx vercel login`; each opens the browser once.
-
-Then:
+Keep this PC's existing debug signing key for in-place updates. Use `apksigner verify --print-certs` on the APK and set `$apkCertificateSha256` to its actual colon-separated SHA-256 certificate fingerprint; this fingerprint is public and requires no new key or keystore password.
 
 ```powershell
-copy env\sharing.example.json env\sharing.json   # fill in the five values
-powershell -ExecutionPolicy Bypass -File tools\deploy_sharing.ps1 -DatabaseCaPath $HOME\Downloads\prod-ca-2021.crt
+powershell -ExecutionPolicy Bypass -File tools\deploy_sharing.ps1 -DatabaseCaPath $HOME\Downloads\prod-ca-2021.crt -AndroidCertSha256 $apkCertificateSha256
 flutter build apk --release --split-per-abi --dart-define-from-file=env/sharing.json
 adb install -r build\app\outputs\flutter-apk\app-arm64-v8a-release.apk
 ```
 
-The script links the project and asks for the database password, pushes the migration, sets the function secrets (it generates the rate-limit key and never prints it), deploys the five functions, checks that an unknown link gives 404, then builds the share page with `assetlinks.json` from your release key and deploys it to Vercel. Re-run any part with `-SkipDatabase`, `-SkipSecrets`, `-SkipFunctions` or `-SkipWeb`. If the resolve check reports 503, follow its hint (certificate or `-IpHeader x-forwarded-for`). If Vercel gives the project a different domain than `<name>.vercel.app`, put that domain in `SCHEDIEL_SHARE_HOST` and run again with `-SkipDatabase -SkipFunctions`.
+The script applies migrations, configures server secrets without showing values, deploys functions, probes unknown-link rejection, and publishes the browser fallback and association files. The current CLI can use a temporary database login role. A second host is attached as a public production domain; preview deployment protection stays enabled. Both association URLs must return JSON without authentication or redirects.
 
-On the phone: create a link → open it (it should open Schediel, not the browser) → review → confirm adds; revoke it → reopening says the link was revoked; in airplane mode **Create link** reports an error and **Send link** still works.
+A resolver 503 stops deployment. Verify the database certificate and ingress policy before changing the trusted address header. On this project, `cf-connecting-ip` was verified: forged values are rejected and spoofed alternative headers do not change the rate-limit identity. Re-runs can use `-SkipDatabase`, `-SkipSecrets`, `-SkipFunctions` or `-SkipWeb` for completed stages.
 
-The backend stores only the selected snapshot and the secret's digest; it is not a sync database for all local schedules. The device retains the random bearer secret in platform-protected storage. An anonymous online identity is created only for explicit share creation; ordinary local use and public link resolution do not create an identity. Anyone with a link can view it until expiry/revocation. Recipient imports are independent copies; revocation cannot recall downloaded copies. Losing the online identity/session can lose management of old links.
+Compact links use `/s/#` followed by the full 256-bit random capability. Legacy `/s/{shareId}#token=...` links remain readable. The backend stores selected snapshots and secret digests, never the raw token or all local schedules. Deletion retains only a minimal capability reservation so an old link cannot point to a replacement. Expiry choices are one or seven days. Cloud image scanning remains disabled.
 
-- [Backend setup, tests and deployment gates](backend/README.md)
-- [Static browser-preview setup and hosting](web-preview/README.md)
-- [Frozen API transport](contracts/openapi.yaml)
-
-No real project, domain, certificate fingerprint, Apple team ID, region, credentials or recovery promise is fabricated in this repository. A local test pass is not production security approval.
+- [Backend setup and live verification](backend/README.md)
+- [Browser fallback and hosting](web-preview/README.md)
+- [API transport](contracts/openapi.yaml)
 
 ## Themes, profile and widgets
 
 Settings → Appearance switches the theme at once; Custom color has one hue slider and is contrast-checked. Settings → Profile holds an optional name and photo, stored only on the device. Pixel and Sketch use two bundled display fonts (Silkscreen, Caveat; SIL Open Font License, see `assets/fonts/`) for headings only.
 
 To place the widget on Android: open the app once, long-press the home screen → Widgets → Schediel → Schedules. Per-widget settings, including **Use app theme**, are under Settings → Home screen widgets. The widget sits on your wallpaper; it never replaces it.
+
+Expanded widgets fit up to four schedule cards to the space available; Compact shows up to two. All four styles offer title/time-only cards before omitting schedules, then restore all-day captions and optional details when there is room. Very small widgets show **Open Schediel** instead of clipping a card. Large text keeps its size and hides optional details first.
+
+**Settings → Open source licenses** starts with short credits. Tap a font or icon name for its complete notice, or **All library licenses** for the full dependency list.
 
 The themed widget layouts and shapes are generated; after editing `tools/gen_widget_layouts.py` run:
 
@@ -93,20 +95,9 @@ This conservative parser does not claim to understand every timetable or every s
 
 ## Release signing
 
-Release builds read `android/key.properties` (git-ignored) when present. Without it they fall back to the debug key and Gradle prints a `WARNING` saying so; if `key.properties` names a keystore that does not exist, the build stops. A relative `storeFile` is read from `android/`.
+Personal updates on this PC keep the existing debug key. Release builds read git-ignored `android/key.properties` when present; without it they use that debug key. No release key is needed for this sharing setup or its verified Android links.
 
-1. Create an upload key once and keep the passwords private:
-   `keytool -genkey -v -keystore %USERPROFILE%\schediel-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`
-2. Create `android/key.properties`:
-   ```
-   storeFile=C:/Users/<you>/schediel-upload.jks
-   storePassword=...
-   keyAlias=upload
-   keyPassword=...
-   ```
-3. `flutter build apk --release --split-per-abi` (phones: `app-arm64-v8a-release.apk`).
-
-A build signed with a new key cannot update one signed with the debug key: send your schedules to yourself with **Send link**, uninstall, install the release build, then open the link to re-import.
+A new signing key cannot update the currently installed app. Preserve the existing key and never uninstall as part of this setup, because uninstalling removes local schedules. A future store-distribution signing migration requires its own reviewed plan.
 
 ## Native limits and privacy
 
