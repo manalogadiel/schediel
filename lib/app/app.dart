@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
+
+import 'theme/theme_customization.dart';
+import 'widgets/launch_intro.dart';
+import 'widgets/theme_texture.dart';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,7 +24,10 @@ import 'theme/tokens.dart';
 final routerProvider = Provider<GoRouter>((ref) => buildRouter());
 
 class SchedielApp extends ConsumerStatefulWidget {
-  const SchedielApp({super.key});
+  const SchedielApp({super.key, this.showIntro = false});
+
+  /// Plays the short brand intro after the system splash (real launches only).
+  final bool showIntro;
 
   @override
   ConsumerState<SchedielApp> createState() => _SchedielAppState();
@@ -81,17 +91,19 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
           (previous.themeMode != next.themeMode ||
               previous.theme != next.theme ||
               previous.customHue != next.customHue ||
+              !mapEquals(previous.customizations, next.customizations) ||
               previous.showCategoryColors != next.showCategoryColors)) {
         ref.read(widgetSnapshotServiceProvider).refresh();
       }
     });
     final selected = appearance.schedielTheme;
     ThemeData theme(Brightness b) => buildTheme(
-          theme: selected,
-          brightness: b,
-          density: appearance.density,
-          showCategoryColors: appearance.showCategoryColors,
-        );
+      theme: selected,
+      brightness: b,
+      density: appearance.density,
+      showCategoryColors: appearance.showCategoryColors,
+      texture: appearance.customizations[appearance.theme]?.texture ?? ThemeTexture.none,
+    );
     return MaterialApp.router(
       title: 'Schediel',
       debugShowCheckedModeBanner: false,
@@ -106,6 +118,32 @@ class _SchedielAppState extends ConsumerState<SchedielApp> with WidgetsBindingOb
       routerConfig: router,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('en')],
+      builder: (context, child) {
+        final colors = context.scheduleColors;
+        final chrome = contrastRatio(Colors.black, colors.canvas) >= contrastRatio(Colors.white, colors.canvas)
+            ? SystemUiOverlayStyle.dark
+            : SystemUiOverlayStyle.light;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: chrome.copyWith(
+            statusBarColor: Colors.transparent,
+            systemNavigationBarColor: colors.canvas,
+            systemNavigationBarIconBrightness: chrome.statusBarIconBrightness,
+            systemNavigationBarDividerColor: Colors.transparent,
+            systemNavigationBarContrastEnforced: false,
+            systemStatusBarContrastEnforced: false,
+          ),
+          child: LaunchIntro(
+            enabled: widget.showIntro,
+            child: ColoredBox(
+              color: colors.canvas,
+              child: ThemeTextureSurface(
+                texture: appearance.customizations[appearance.theme]?.texture ?? ThemeTexture.none,
+                child: child!,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

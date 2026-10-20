@@ -34,7 +34,7 @@ void main() {
   });
 
   test('file preparation owns only normalized temporary output and bounds file reads', () async {
-    final root = await Directory(Platform.environment['TMPDIR']!).createTemp('schediel-prepare-');
+    final root = await Directory.systemTemp.createTemp('schediel-prepare-');
     addTearDown(() => root.delete(recursive: true));
     final original = await File('${root.path}/user-photo.not-a-png-extension').writeAsBytes(img.encodePng(img.Image(width: 4, height: 3)));
     final preparer = LocalImageFilePreparer(temporaryDirectory: () async => root);

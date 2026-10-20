@@ -46,6 +46,7 @@ class NativeBridge(private val context: Context) : MethodChannel.MethodCallHandl
                 }
                 "getScheduledAlarms" -> result.success(AlarmStore(context).load().map { it.requestKey })
                 "launchClockAlarm" -> result.success(launchClock(call))
+                "shareText" -> result.success(shareText(call))
                 else -> result.notImplemented()
             }
         } catch (e: Exception) {
@@ -107,6 +108,22 @@ class NativeBridge(private val context: Context) : MethodChannel.MethodCallHandl
         } ?: Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))
         return try {
             context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        }
+    }
+
+    /** Opens the system share sheet with plain text; false if nothing can receive it. */
+    private fun shareText(call: MethodCall): Boolean {
+        val text = call.argument<String>("text") ?: return false
+        val send = Intent(Intent.ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(Intent.EXTRA_TEXT, text)
+        call.argument<String>("subject")?.let { send.putExtra(Intent.EXTRA_SUBJECT, it) }
+        val chooser = Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return try {
+            context.startActivity(chooser)
             true
         } catch (e: ActivityNotFoundException) {
             false

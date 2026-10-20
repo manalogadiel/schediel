@@ -59,20 +59,20 @@ void main() {
     expect(find.byKey(const ValueKey('today-pill')), findsNothing);
     await h.tester.tap(find.byKey(const ValueKey('day-2026-11-04')));
     await h.settle();
-    expect(find.text('Wednesday, November 4'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Wednesday, November 4')), findsOneWidget);
     await h.tester.tap(find.byKey(const ValueKey('today-pill')));
     await h.settle();
-    expect(find.text('Monday, November 2'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Monday, November 2')), findsOneWidget);
     expect(find.byKey(const ValueKey('today-pill')), findsNothing);
   });
 
   appTest('swiping the day strip moves by a week', (h) async {
     await h.tester.fling(find.byType(DayStripView), const Offset(-300, 0), 1000);
     await h.settle();
-    expect(find.text('Monday, November 9'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Monday, November 9')), findsOneWidget);
     await h.tester.fling(find.byType(DayStripView), const Offset(300, 0), 1000);
     await h.settle();
-    expect(find.text('Monday, November 2'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Monday, November 2')), findsOneWidget);
   });
 
   appTest('the Next card shows the next item with a live countdown', now: DateTime.utc(2026, 11, 2, 1, 30), (h) async {
@@ -88,11 +88,18 @@ void main() {
     expect(find.byKey(const ValueKey('elapsed-bar')), findsOneWidget);
   });
 
-  appTest('no Next card when nothing is next', now: DateTime.utc(2026, 11, 2, 1, 30), (h) async {
+  appTest('with nothing left today the Next card looks ahead to the coming days', now: DateTime.utc(2026, 11, 2, 1, 30), (h) async {
     await h.run(() => h.read(scheduleRepositoryProvider).create(classDraft(title: 'Fixture only', hour: 9, endHour: 10)));
     await h.settle();
+    final card = find.byType(NextCard);
+    expect(card, findsOneWidget);
+    expect(find.descendant(of: card, matching: find.text('Fixture only')), findsOneWidget);
+    expect(find.descendant(of: card, matching: find.text('Wed, Nov 4')), findsOneWidget);
+  });
+
+  appTest('no Next card when nothing is scheduled ahead', now: DateTime.utc(2026, 11, 2, 1, 30), (h) async {
+    await h.settle();
     expect(find.byType(NextCard), findsNothing);
-    expect(find.text('Next'), findsNothing);
   });
 
   appTest('Today fits a narrow screen at 200% text', size: const Size(320, 700), now: DateTime.utc(2026, 11, 2, 1, 30), (h) async {

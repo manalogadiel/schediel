@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/icons.dart';
 import '../../../app/theme/tokens.dart';
@@ -10,6 +12,7 @@ import '../../schedules/data/schedule_repository.dart';
 import '../application/share_sender.dart';
 import '../application/sharing_config.dart';
 import '../data/share_api.dart';
+import '../domain/direct_share.dart';
 import '../domain/share_link.dart';
 import '../domain/share_payload.dart';
 
@@ -25,15 +28,35 @@ class _ShareOpenScreenState extends ConsumerState<ShareOpenScreen> {
   bool _loading = false;
   String? _error;
 
+  Uri? _clipboardLink;
+
   @override void initState() {
     super.initState();
     if (widget.initialLink != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _resolve(widget.initialLink!));
+    } else {
+      _checkClipboard();
     }
   }
+
+  /// Offers a copied Schediel link; only read when this screen is opened.
+  Future<void> _checkClipboard() async {
+    try {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      final link = data?.text == null ? null : DirectShare.findInText(data!.text!);
+      if (mounted && link != null) setState(() => _clipboardLink = link);
+    } on Object {
+      // Clipboard access is optional.
+    }
+  }
+
+  void _openDirect(Uri link) => context.pushReplacement('/share/import', extra: link);
   @override void dispose() { _text.dispose(); super.dispose(); }
 
   void _open() {
+    final direct = DirectShare.findInText(_text.text);
+    if (direct != null) { _text.clear(); _openDirect(direct); return; }
+    if (!ref.read(sharingConfigProvider).isConfigured) { setState(() => _error = 'invalid_token'); return; }
     final link = ShareLink.tryParseText(_text.text, host: ref.read(sharingConfigProvider).shareHost);
     _text.clear();
     if (link == null) { setState(() => _error = 'invalid_token'); return; }
@@ -80,14 +103,20 @@ class _ShareOpenScreenState extends ConsumerState<ShareOpenScreen> {
     }
     return Scaffold(appBar: AppBar(title: const Text('Open shared link'), leading: IconButton(
       tooltip: 'Close', onPressed: () => Navigator.of(context).maybePop(), icon: const AppIcon(AppIcons.close))),
-      body: !config.isConfigured ? const SharingUnavailable() : ListView(padding: const EdgeInsets.all(Tokens.md), children: [
-        const Text('Preview and edit before adding. Opening a link never adds schedules automatically.'),
+      body: ListView(padding: const EdgeInsets.all(Tokens.md), children: [
+        const Text('Paste a link or the whole message. You can review and edit before anything is added.'),
+        if (_clipboardLink != null) ...[
+          const SizedBox(height: Tokens.md),
+          FilledButton.tonalIcon(key: const ValueKey('paste-direct'), onPressed: () => _openDirect(_clipboardLink!),
+            icon: const AppIcon(AppIcons.copy, size: 18), label: const Text('Open copied link')),
+        ],
         const SizedBox(height: Tokens.md),
         TextField(controller: _text, enabled: !_loading, autocorrect: false, enableSuggestions: false,
           keyboardType: TextInputType.url, decoration: const InputDecoration(labelText: 'Shared link'),
           onSubmitted: (_) => _open()),
         const SizedBox(height: Tokens.md),
         FilledButton(onPressed: _loading ? null : _open, child: const Text('Open preview')),
+        if (!config.isConfigured) const Padding(padding: EdgeInsets.only(top: Tokens.md), child: SharingUnavailable()),
         if (_loading) const Padding(padding: EdgeInsets.all(Tokens.lg), child: Center(child: CircularProgressIndicator.adaptive())),
         if (_error != null) Semantics(liveRegion: true, child: EmptyState(title: shareErrorLabel(_error!),
           message: _error == 'rate_limited' ? 'Wait a moment before trying again.' : null,
@@ -99,8 +128,8 @@ class _ShareOpenScreenState extends ConsumerState<ShareOpenScreen> {
 
 class SharingUnavailable extends StatelessWidget {
   const SharingUnavailable({super.key});
-  @override Widget build(BuildContext context) => const EmptyState(title: 'Sharing is not configured',
-    message: 'Online sharing needs a deployed backend and a verified share domain. Your local schedules still work.');
+  @override Widget build(BuildContext context) => Text('Online links are not set up on this device. Links sent from Schediel work offline.',
+    style: Theme.of(context).textTheme.bodySmall);
 }
 
 String shareErrorLabel(String code) => switch (code) {

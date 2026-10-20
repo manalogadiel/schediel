@@ -3,6 +3,7 @@ package com.manalogadiel.schediel.widget
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.Typeface
 import android.icu.text.SimpleDateFormat
 import android.icu.util.TimeZone
@@ -13,6 +14,7 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.format.DateFormat
 import android.text.style.StyleSpan
+import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import com.manalogadiel.schediel.MainActivity
@@ -73,7 +75,30 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
     private fun isNight(): Boolean =
         (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
+    // Title bitmaps for the current build, shared by every size variant: the
+    // sized RemoteViews share one bitmap cache that stores a reused Bitmap
+    // object once, so the variants do not multiply the parcel size.
+    private val titleBitmaps = HashMap<Pair<String, Boolean>, Bitmap?>()
+
     fun build(result: ReadResult, options: Bundle?, nowMs: Long): RemoteViews {
+        titleBitmaps.clear()
+        val style = result.theme?.takeIf { result.settings?.useAppTheme == true }?.style
+        val fontScale = context.resources.configuration.fontScale
+        val chrome = ThemeStyle.holderChromeDp(style)
+        val title = ThemeStyle.titleLineSp(style)
+        // Android 12+: one layout per row count, keyed by the height it needs;
+        // the host picks the largest that fits the widget's real size, so the
+        // container fills even when the reported size is conservative.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && result.state == ReadState.ENTRIES && result.settings != null) {
+            val sized = WidgetPlanner.sized(result, fontScale, chrome, title)
+            if (sized.isNotEmpty()) {
+                return RemoteViews(sized.associate { (height, plan) -> SizeF(1f, height) to buildFor(result, options, nowMs, plan) })
+            }
+        }
+        return buildFor(result, options, nowMs, WidgetPlanner.plan(result, heightDp(options), fontScale, chrome, title))
+    }
+
+    private fun buildFor(result: ReadResult, options: Bundle?, nowMs: Long, plan: WidgetPlan): RemoteViews {
         // Themed holders when this widget opted in and the snapshot carries a
         // valid theme; otherwise exactly the original look.
         val theme = result.theme?.takeIf { result.settings?.useAppTheme == true }
@@ -95,13 +120,6 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
 
         val settings = result.settings!!
         val today = Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
-        val plan = WidgetPlanner.plan(
-            result,
-            heightDp(options),
-            context.resources.configuration.fontScale,
-            extraChromeDp = if (theme != null) 4f else 0f,
-            titleLineSp = ThemeStyle.titleLineSp(theme?.style),
-        )
         plan.allDay.forEachIndexed { i, entry ->
             val id = captionIds[i]
             views.setViewVisibility(id, View.VISIBLE)
@@ -133,7 +151,9 @@ class WidgetRenderer(private val context: Context, private val zone: ZoneId) {
             val titleImage = titleImageIds[i]
             val bitmap = if (theme != null && theme.style in BITMAP_TITLE_STYLES) {
                 TitleBitmap.maxWidthPx(widthDp(options), context.resources.displayMetrics.density)?.let { max ->
-                    TitleBitmap.render(context, theme.style, entry.title, row.emphasized, context.resources.configuration.fontScale, max)
+                    titleBitmaps.getOrPut(entry.title to row.emphasized) {
+                        TitleBitmap.render(context, theme.style, entry.title, row.emphasized, context.resources.configuration.fontScale, max)
+                    }
                 }
             } else {
                 null

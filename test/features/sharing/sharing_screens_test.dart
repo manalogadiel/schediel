@@ -60,10 +60,11 @@ void main() {
   },overrides:[sharingConfigProvider.overrideWithValue(config),shareApiProvider.overrideWithValue(uncertain),
     shareSecretStoreProvider.overrideWithValue(MemoryShareSecretStore())]);
 
-  appTest('sharing stays off until backend and owned domain are configured', (h) async {
+  appTest('online links stay off until a backend is configured; offline links can still be pasted', (h) async {
     rootNavigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const ShareOpenScreen()));
     await h.settle();
-    expect(find.text('Sharing is not configured'), findsOneWidget);
+    expect(find.textContaining('Online links are not set up'), findsOneWidget);
+    expect(find.text('Open preview'), findsOneWidget);
     expect(find.text('Add selected schedules'), findsNothing);
   });
 

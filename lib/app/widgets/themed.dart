@@ -7,9 +7,11 @@ import '../../features/profile/domain/profile.dart';
 import '../icons.dart';
 import '../theme/app_theme.dart';
 import '../theme/schediel_theme.dart';
+import '../theme/theme_customization.dart';
 import '../theme/tokens.dart';
 import 'pixel_border.dart';
 import 'sketch_border.dart';
+import 'theme_texture.dart';
 
 /// Hard shadow offset used by pop and pixel shapes.
 double _shadowFor(StyleFamily style, bool emphasized) => switch (style) {
@@ -57,6 +59,21 @@ class ThemedCard extends StatelessWidget {
 
     Widget content = Padding(padding: padding, child: child);
     if (tappable) content = ConstrainedBox(constraints: const BoxConstraints(minHeight: Tokens.minTarget), child: content);
+    // Cards repeat the chosen texture, fainter, in their own ink.
+    if (c.texture != ThemeTexture.none) {
+      content = Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: TexturePainter(c.texture, shade: c.palette.cardInk.withValues(alpha: .045), accent: c.palette.accent),
+              ),
+            ),
+          ),
+          content,
+        ],
+      );
+    }
 
     Widget ink0(Widget child, {ShapeBorder? shape, BorderRadius? borderRadius}) => Material(
           type: MaterialType.transparency,

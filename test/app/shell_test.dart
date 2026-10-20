@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:schediel/app/icons.dart';
 import 'package:schediel/app/providers.dart';
 import 'package:schediel/app/shell.dart';
 import 'package:schediel/core/time/local_date.dart';
@@ -27,10 +28,24 @@ void main() {
   appTest('tapping Today while on Today returns to today', (h) async {
     await h.run(() async => h.read(selectedDateProvider.notifier).select(LocalDate(2026, 11, 5)));
     await h.settle();
-    expect(find.text('Thursday, November 5'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Thursday, November 5')), findsOneWidget);
     await h.tester.tap(find.byKey(const ValueKey('nav-today')));
     await h.settle();
-    expect(find.text('Monday, November 2'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Monday, November 2')), findsOneWidget);
+  });
+
+  test('Today and Week use distinct icons', () {
+    expect(AppIcons.today.asset, isNot(AppIcons.week.asset));
+    expect(AppIcons.todayFill.asset, isNot(AppIcons.weekFill.asset));
+  });
+
+  appTest('switching tabs fades through and settles on the new page', (h) async {
+    await h.tester.tap(find.byKey(const ValueKey('nav-settings')));
+    await h.tester.pump();
+    await h.tester.pump(BranchSwitcher.duration ~/ 2);
+    expect(find.byType(FloatingNavBar), findsOneWidget);
+    await h.settle();
+    expect(find.text('Appearance'), findsOneWidget);
   });
 
   appTest('switching tabs keeps the floating bar', (h) async {

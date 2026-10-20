@@ -30,9 +30,12 @@ Future<void> main() async {
     overrides: [databaseProvider.overrideWithValue(db)],
   );
 
-  final zone = await container.read(deviceZoneSourceProvider)();
-  final appearance = await AppearanceRepository(db, clock: DateTime.now).load();
-  final savedFilter = await db.readValue(AppFilterNotifier.storageKey);
+  // Independent startup reads run together to shorten the cold start.
+  final (zone, appearance, savedFilter) = await (
+    container.read(deviceZoneSourceProvider)(),
+    AppearanceRepository(db, clock: DateTime.now).load(),
+    db.readValue(AppFilterNotifier.storageKey),
+  ).wait;
   container.dispose();
 
   runApp(
@@ -53,7 +56,7 @@ Future<void> main() async {
           ),
         ),
       ],
-      child: const SchedielApp(),
+      child: const SchedielApp(showIntro: true),
     ),
   );
 }

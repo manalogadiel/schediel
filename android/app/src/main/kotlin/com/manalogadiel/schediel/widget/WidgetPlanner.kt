@@ -19,7 +19,7 @@ object WidgetPlanner {
     const val LARGE_TEXT_SCALE = 1.3f
 
     private const val ROOT_PADDING_DP = 16f
-    private const val HOLDER_CHROME_DP = 22f
+    const val DEFAULT_HOLDER_CHROME_DP = 22f
     private const val SMALL_LINE_SP = 16f
     private const val TITLE_LINE_SP = 20f
     private const val CAPTION_MARGIN_DP = 4f
@@ -27,14 +27,14 @@ object WidgetPlanner {
     const val DEFAULT_TITLE_LINE_SP = TITLE_LINE_SP
 
     /**
-     * [extraChromeDp]: per-holder space themed shapes add (offset shadow);
-     * [titleLineSp]: the title line height of the layout's title font.
+     * [holderChromeDp]: a holder's non-text height (margin, inset, padding)
+     * measured from its layout; [titleLineSp]: the title font's line height.
      */
     fun plan(
         result: ReadResult,
         heightDp: Float?,
         fontScale: Float,
-        extraChromeDp: Float = 0f,
+        holderChromeDp: Float = DEFAULT_HOLDER_CHROME_DP,
         titleLineSp: Float = TITLE_LINE_SP,
     ): WidgetPlan {
         val settings = result.settings ?: return WidgetPlan(emptyList(), emptyList())
@@ -51,8 +51,7 @@ object WidgetPlanner {
 
         val available = heightDp - ROOT_PADDING_DP
         val captionHeight = SMALL_LINE_SP * fontScale + CAPTION_MARGIN_DP
-        fun holderHeight(row: HolderRow) =
-            HOLDER_CHROME_DP + extraChromeDp + (SMALL_LINE_SP + titleLineSp + if (row.details != null) SMALL_LINE_SP else 0f) * fontScale
+        fun holderHeight(row: HolderRow) = holderHeight(row, fontScale, holderChromeDp, titleLineSp)
 
         fun fitting(captionCount: Int): List<HolderRow> {
             var used = captionCount * captionHeight
@@ -75,6 +74,37 @@ object WidgetPlanner {
             holders = listOf(candidates.first().copy(details = null))
         }
         return WidgetPlan(captions, holders)
+    }
+
+    private fun holderHeight(row: HolderRow, fontScale: Float, chrome: Float, title: Float) =
+        chrome + (SMALL_LINE_SP + title + if (row.details != null) SMALL_LINE_SP else 0f) * fontScale
+
+    /**
+     * One plan per holder count (1..n) with the height it needs, ascending,
+     * led by a bare variant (the next item's title and time, no captions).
+     * Android 12+ hosts pick the largest layout that fits the widget's real
+     * size, so the container fills even when the reported size is
+     * conservative.
+     */
+    fun sized(
+        result: ReadResult,
+        fontScale: Float,
+        holderChromeDp: Float = DEFAULT_HOLDER_CHROME_DP,
+        titleLineSp: Float = TITLE_LINE_SP,
+    ): List<Pair<Float, WidgetPlan>> {
+        val full = plan(result, null, fontScale, holderChromeDp, titleLineSp)
+        val captions = SMALL_LINE_SP * fontScale + CAPTION_MARGIN_DP
+        var height = ROOT_PADDING_DP + full.allDay.size * captions
+        val variants = full.holders.mapIndexed { i, row ->
+            height += holderHeight(row, fontScale, holderChromeDp, titleLineSp)
+            height to WidgetPlan(full.allDay, full.holders.take(i + 1))
+        }
+        if (variants.isEmpty()) return variants
+        // The smallest size: just the next item's title and time, no captions.
+        val bare = (full.holders.firstOrNull { it.status == RowStatus.NEXT } ?: full.holders.first()).copy(details = null)
+        val bareHeight = ROOT_PADDING_DP + holderHeight(bare, fontScale, holderChromeDp, titleLineSp)
+        if (bareHeight >= variants.first().first) return variants
+        return listOf(bareHeight to WidgetPlan(emptyList(), listOf(bare))) + variants
     }
 
     private fun row(entry: SnapshotEntry, status: RowStatus, emphasized: Boolean, settings: WidgetSettings, showDetails: Boolean): HolderRow {

@@ -5127,7 +5127,7 @@ class $AppearancePreferencesTable extends AppearancePreferences
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('system'),
+    defaultValue: const Constant('light'),
   );
   static const VerificationMeta _accentKeyMeta = const VerificationMeta(
     'accentKey',
@@ -5165,6 +5165,18 @@ class $AppearancePreferencesTable extends AppearancePreferences
     requiredDuringInsert: false,
     defaultValue: const Constant(250),
   );
+  static const VerificationMeta _themeCustomizationsJsonMeta =
+      const VerificationMeta('themeCustomizationsJson');
+  @override
+  late final GeneratedColumn<String> themeCustomizationsJson =
+      GeneratedColumn<String>(
+        'theme_customizations_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('{}'),
+      );
   static const VerificationMeta _densityMeta = const VerificationMeta(
     'density',
   );
@@ -5209,6 +5221,7 @@ class $AppearancePreferencesTable extends AppearancePreferences
     accentKey,
     themeKey,
     customHue,
+    themeCustomizationsJson,
     density,
     showCategoryColors,
     updatedAt,
@@ -5250,6 +5263,15 @@ class $AppearancePreferencesTable extends AppearancePreferences
       context.handle(
         _customHueMeta,
         customHue.isAcceptableOrUnknown(data['custom_hue']!, _customHueMeta),
+      );
+    }
+    if (data.containsKey('theme_customizations_json')) {
+      context.handle(
+        _themeCustomizationsJsonMeta,
+        themeCustomizationsJson.isAcceptableOrUnknown(
+          data['theme_customizations_json']!,
+          _themeCustomizationsJsonMeta,
+        ),
       );
     }
     if (data.containsKey('density')) {
@@ -5304,6 +5326,10 @@ class $AppearancePreferencesTable extends AppearancePreferences
         DriftSqlType.int,
         data['${effectivePrefix}custom_hue'],
       )!,
+      themeCustomizationsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}theme_customizations_json'],
+      )!,
       density: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}density'],
@@ -5333,6 +5359,7 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
   final String accentKey;
   final String themeKey;
   final int customHue;
+  final String themeCustomizationsJson;
   final String density;
   final bool showCategoryColors;
   final DateTime updatedAt;
@@ -5342,6 +5369,7 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     required this.accentKey,
     required this.themeKey,
     required this.customHue,
+    required this.themeCustomizationsJson,
     required this.density,
     required this.showCategoryColors,
     required this.updatedAt,
@@ -5354,6 +5382,9 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     map['accent_key'] = Variable<String>(accentKey);
     map['theme_key'] = Variable<String>(themeKey);
     map['custom_hue'] = Variable<int>(customHue);
+    map['theme_customizations_json'] = Variable<String>(
+      themeCustomizationsJson,
+    );
     map['density'] = Variable<String>(density);
     map['show_category_colors'] = Variable<bool>(showCategoryColors);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -5367,6 +5398,7 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
       accentKey: Value(accentKey),
       themeKey: Value(themeKey),
       customHue: Value(customHue),
+      themeCustomizationsJson: Value(themeCustomizationsJson),
       density: Value(density),
       showCategoryColors: Value(showCategoryColors),
       updatedAt: Value(updatedAt),
@@ -5384,6 +5416,9 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
       accentKey: serializer.fromJson<String>(json['accentKey']),
       themeKey: serializer.fromJson<String>(json['themeKey']),
       customHue: serializer.fromJson<int>(json['customHue']),
+      themeCustomizationsJson: serializer.fromJson<String>(
+        json['themeCustomizationsJson'],
+      ),
       density: serializer.fromJson<String>(json['density']),
       showCategoryColors: serializer.fromJson<bool>(json['showCategoryColors']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -5398,6 +5433,9 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
       'accentKey': serializer.toJson<String>(accentKey),
       'themeKey': serializer.toJson<String>(themeKey),
       'customHue': serializer.toJson<int>(customHue),
+      'themeCustomizationsJson': serializer.toJson<String>(
+        themeCustomizationsJson,
+      ),
       'density': serializer.toJson<String>(density),
       'showCategoryColors': serializer.toJson<bool>(showCategoryColors),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -5410,6 +5448,7 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     String? accentKey,
     String? themeKey,
     int? customHue,
+    String? themeCustomizationsJson,
     String? density,
     bool? showCategoryColors,
     DateTime? updatedAt,
@@ -5419,6 +5458,8 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     accentKey: accentKey ?? this.accentKey,
     themeKey: themeKey ?? this.themeKey,
     customHue: customHue ?? this.customHue,
+    themeCustomizationsJson:
+        themeCustomizationsJson ?? this.themeCustomizationsJson,
     density: density ?? this.density,
     showCategoryColors: showCategoryColors ?? this.showCategoryColors,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -5430,6 +5471,9 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
       accentKey: data.accentKey.present ? data.accentKey.value : this.accentKey,
       themeKey: data.themeKey.present ? data.themeKey.value : this.themeKey,
       customHue: data.customHue.present ? data.customHue.value : this.customHue,
+      themeCustomizationsJson: data.themeCustomizationsJson.present
+          ? data.themeCustomizationsJson.value
+          : this.themeCustomizationsJson,
       density: data.density.present ? data.density.value : this.density,
       showCategoryColors: data.showCategoryColors.present
           ? data.showCategoryColors.value
@@ -5446,6 +5490,7 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
           ..write('accentKey: $accentKey, ')
           ..write('themeKey: $themeKey, ')
           ..write('customHue: $customHue, ')
+          ..write('themeCustomizationsJson: $themeCustomizationsJson, ')
           ..write('density: $density, ')
           ..write('showCategoryColors: $showCategoryColors, ')
           ..write('updatedAt: $updatedAt')
@@ -5460,6 +5505,7 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
     accentKey,
     themeKey,
     customHue,
+    themeCustomizationsJson,
     density,
     showCategoryColors,
     updatedAt,
@@ -5473,6 +5519,7 @@ class PreferencesRow extends DataClass implements Insertable<PreferencesRow> {
           other.accentKey == this.accentKey &&
           other.themeKey == this.themeKey &&
           other.customHue == this.customHue &&
+          other.themeCustomizationsJson == this.themeCustomizationsJson &&
           other.density == this.density &&
           other.showCategoryColors == this.showCategoryColors &&
           other.updatedAt == this.updatedAt);
@@ -5484,6 +5531,7 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
   final Value<String> accentKey;
   final Value<String> themeKey;
   final Value<int> customHue;
+  final Value<String> themeCustomizationsJson;
   final Value<String> density;
   final Value<bool> showCategoryColors;
   final Value<DateTime> updatedAt;
@@ -5493,6 +5541,7 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     this.accentKey = const Value.absent(),
     this.themeKey = const Value.absent(),
     this.customHue = const Value.absent(),
+    this.themeCustomizationsJson = const Value.absent(),
     this.density = const Value.absent(),
     this.showCategoryColors = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -5503,6 +5552,7 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     this.accentKey = const Value.absent(),
     this.themeKey = const Value.absent(),
     this.customHue = const Value.absent(),
+    this.themeCustomizationsJson = const Value.absent(),
     this.density = const Value.absent(),
     this.showCategoryColors = const Value.absent(),
     required DateTime updatedAt,
@@ -5513,6 +5563,7 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     Expression<String>? accentKey,
     Expression<String>? themeKey,
     Expression<int>? customHue,
+    Expression<String>? themeCustomizationsJson,
     Expression<String>? density,
     Expression<bool>? showCategoryColors,
     Expression<DateTime>? updatedAt,
@@ -5523,6 +5574,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
       if (accentKey != null) 'accent_key': accentKey,
       if (themeKey != null) 'theme_key': themeKey,
       if (customHue != null) 'custom_hue': customHue,
+      if (themeCustomizationsJson != null)
+        'theme_customizations_json': themeCustomizationsJson,
       if (density != null) 'density': density,
       if (showCategoryColors != null)
         'show_category_colors': showCategoryColors,
@@ -5536,6 +5589,7 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     Value<String>? accentKey,
     Value<String>? themeKey,
     Value<int>? customHue,
+    Value<String>? themeCustomizationsJson,
     Value<String>? density,
     Value<bool>? showCategoryColors,
     Value<DateTime>? updatedAt,
@@ -5546,6 +5600,8 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
       accentKey: accentKey ?? this.accentKey,
       themeKey: themeKey ?? this.themeKey,
       customHue: customHue ?? this.customHue,
+      themeCustomizationsJson:
+          themeCustomizationsJson ?? this.themeCustomizationsJson,
       density: density ?? this.density,
       showCategoryColors: showCategoryColors ?? this.showCategoryColors,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -5570,6 +5626,11 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
     if (customHue.present) {
       map['custom_hue'] = Variable<int>(customHue.value);
     }
+    if (themeCustomizationsJson.present) {
+      map['theme_customizations_json'] = Variable<String>(
+        themeCustomizationsJson.value,
+      );
+    }
     if (density.present) {
       map['density'] = Variable<String>(density.value);
     }
@@ -5590,6 +5651,7 @@ class AppearancePreferencesCompanion extends UpdateCompanion<PreferencesRow> {
           ..write('accentKey: $accentKey, ')
           ..write('themeKey: $themeKey, ')
           ..write('customHue: $customHue, ')
+          ..write('themeCustomizationsJson: $themeCustomizationsJson, ')
           ..write('density: $density, ')
           ..write('showCategoryColors: $showCategoryColors, ')
           ..write('updatedAt: $updatedAt')
@@ -11786,6 +11848,7 @@ typedef $$AppearancePreferencesTableCreateCompanionBuilder =
       Value<String> accentKey,
       Value<String> themeKey,
       Value<int> customHue,
+      Value<String> themeCustomizationsJson,
       Value<String> density,
       Value<bool> showCategoryColors,
       required DateTime updatedAt,
@@ -11797,6 +11860,7 @@ typedef $$AppearancePreferencesTableUpdateCompanionBuilder =
       Value<String> accentKey,
       Value<String> themeKey,
       Value<int> customHue,
+      Value<String> themeCustomizationsJson,
       Value<String> density,
       Value<bool> showCategoryColors,
       Value<DateTime> updatedAt,
@@ -11833,6 +11897,11 @@ class $$AppearancePreferencesTableFilterComposer
 
   ColumnFilters<int> get customHue => $composableBuilder(
     column: $table.customHue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get themeCustomizationsJson => $composableBuilder(
+    column: $table.themeCustomizationsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11886,6 +11955,11 @@ class $$AppearancePreferencesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get themeCustomizationsJson => $composableBuilder(
+    column: $table.themeCustomizationsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get density => $composableBuilder(
     column: $table.density,
     builder: (column) => ColumnOrderings(column),
@@ -11925,6 +11999,11 @@ class $$AppearancePreferencesTableAnnotationComposer
 
   GeneratedColumn<int> get customHue =>
       $composableBuilder(column: $table.customHue, builder: (column) => column);
+
+  GeneratedColumn<String> get themeCustomizationsJson => $composableBuilder(
+    column: $table.themeCustomizationsJson,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get density =>
       $composableBuilder(column: $table.density, builder: (column) => column);
@@ -11989,6 +12068,7 @@ class $$AppearancePreferencesTableTableManager
                 Value<String> accentKey = const Value.absent(),
                 Value<String> themeKey = const Value.absent(),
                 Value<int> customHue = const Value.absent(),
+                Value<String> themeCustomizationsJson = const Value.absent(),
                 Value<String> density = const Value.absent(),
                 Value<bool> showCategoryColors = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -11998,6 +12078,7 @@ class $$AppearancePreferencesTableTableManager
                 accentKey: accentKey,
                 themeKey: themeKey,
                 customHue: customHue,
+                themeCustomizationsJson: themeCustomizationsJson,
                 density: density,
                 showCategoryColors: showCategoryColors,
                 updatedAt: updatedAt,
@@ -12009,6 +12090,7 @@ class $$AppearancePreferencesTableTableManager
                 Value<String> accentKey = const Value.absent(),
                 Value<String> themeKey = const Value.absent(),
                 Value<int> customHue = const Value.absent(),
+                Value<String> themeCustomizationsJson = const Value.absent(),
                 Value<String> density = const Value.absent(),
                 Value<bool> showCategoryColors = const Value.absent(),
                 required DateTime updatedAt,
@@ -12018,6 +12100,7 @@ class $$AppearancePreferencesTableTableManager
                 accentKey: accentKey,
                 themeKey: themeKey,
                 customHue: customHue,
+                themeCustomizationsJson: themeCustomizationsJson,
                 density: density,
                 showCategoryColors: showCategoryColors,
                 updatedAt: updatedAt,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/schedule/models.dart';
+import '../core/schedule/occurrence.dart';
 import '../core/schedule/occurrence_engine.dart';
 import '../core/schedule/validation.dart';
 import '../core/time/local_date.dart';
@@ -168,6 +169,24 @@ final dayViewProvider = Provider.family<AsyncValue<DayView>, LocalDate>((ref, da
   return seriesAsync.whenData(
     (series) => builder.build(series: series, filter: filter, date: date, today: today, now: now, zone: zone),
   );
+});
+
+/// The schedule for Today's hero card: the next start later today, else the
+/// first timed entry in the next two weeks. Ongoing entries stay in the
+/// timeline. Follows the current filter; null when nothing is coming up.
+typedef UpNext = ({Occurrence occurrence, LocalDate date});
+
+final upNextProvider = Provider<UpNext?>((ref) {
+  final today = ref.watch(todayProvider);
+  for (var i = 0; i < 15; i++) {
+    final date = today.addDays(i);
+    final view = ref.watch(dayViewProvider(date)).value;
+    if (view == null) return null;
+    final a = view.agenda;
+    final first = i == 0 ? a.next : a.timed.firstOrNull;
+    if (first != null) return (occurrence: first, date: date);
+  }
+  return null;
 });
 
 final weekViewProvider = Provider.family<AsyncValue<WeekView>, LocalDate>((ref, weekStart) {

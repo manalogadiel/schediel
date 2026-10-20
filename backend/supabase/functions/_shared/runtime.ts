@@ -41,7 +41,9 @@ function databaseQuery(env: Environment): Query {
         const { default: postgres } = await import('npm:postgres@3.4.9');
         return postgres(databaseUrl, {
           max: 1, prepare: false, connect_timeout: 5, idle_timeout: 20,
-          ssl: local ? false : { rejectUnauthorized: true },
+          // Supabase signs database certificates with its own root CA, so a
+          // hosted connection verifies against SCHEDIEL_DATABASE_CA when set.
+          ssl: local ? false : { rejectUnauthorized: true, ...(env.SCHEDIEL_DATABASE_CA ? { ca: env.SCHEDIEL_DATABASE_CA } : {}) },
           debug: false, onnotice: () => {},
         });
       })();

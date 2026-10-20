@@ -176,4 +176,8 @@ class NativeBridge {
       _ => ClockLaunchResult.unavailable,
     };
   }
+
+  /// Opens the system share sheet; false when nothing can receive the text.
+  Future<bool> shareText(String text, {String? subject}) async =>
+      await _call<bool>('shareText', {'text': text, 'subject': ?subject}) ?? false;
 }

@@ -5,8 +5,11 @@ import '../../../app/format.dart';
 import '../../../app/icons.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../app/theme/schediel_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
+import '../../../app/widgets/labeled_field.dart';
+import 'schedule_time_picker.dart';
 import '../../../core/schedule/limits.dart';
 import '../../../core/schedule/models.dart';
 import '../../../core/schedule/occurrence.dart';
@@ -19,14 +22,25 @@ import '../../imports/domain/import_entry.dart';
 import '../../reminders/domain/alert_rule.dart';
 import '../../reminders/presentation/alert_editor.dart';
 import '../data/schedule_repository.dart';
+import 'month_sheet.dart';
 
 enum EditorScope { create, series, occurrence, review }
+
+enum _EditorStep { details, time, alerts }
 
 /// The schedule editor (spec 4.5). Values survive save errors; leaving with
 /// unsaved changes asks first.
 class ScheduleEditorScreen extends ConsumerStatefulWidget {
-  const ScheduleEditorScreen({super.key, required this.scope, this.seriesId, this.occurrenceKey, this.initialDate,
-    this.initialDraft, this.initialAlerts = const [], this.initialExceptions = const []});
+  const ScheduleEditorScreen({
+    super.key,
+    required this.scope,
+    this.seriesId,
+    this.occurrenceKey,
+    this.initialDate,
+    this.initialDraft,
+    this.initialAlerts = const [],
+    this.initialExceptions = const [],
+  });
 
   final EditorScope scope;
   final String? seriesId;
@@ -47,6 +61,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   final _subtitle = TextEditingController();
   final _notes = TextEditingController();
 
+  _EditorStep _step = _EditorStep.details;
   bool _initialized = false;
   bool _loadFailed = false;
   bool _saving = false;
@@ -66,7 +81,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   RecurrenceFrequency? _frequency;
   Set<int> _weekdays = {};
   LocalDate? _until;
-  bool _detailsOpen = false;
+  bool _detailsOpen = true;
   bool _repeatsOpen = false;
   bool _alertsOpen = false;
   late AlertPreference _notification;
@@ -97,9 +112,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   void _change(VoidCallback update) => setState(() {
-        update();
-        _dirty = true;
-      });
+    update();
+    _dirty = true;
+  });
 
   Future<void> _load() async {
     final zone = ref.read(deviceZoneProvider);
@@ -111,14 +126,22 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     _start = LocalTime.fromMinutes(((local.time.minutesOfDay ~/ 60) + 1) % 24 * 60);
     _end = LocalTime.fromMinutes((_start.minutesOfDay + 60) % (24 * 60));
     _lastDate = _date;
+    _hasEnd = widget.scope == EditorScope.create;
 
     if (widget.scope != EditorScope.create) {
       final repo = ref.read(scheduleRepositoryProvider);
       final d = widget.initialDraft;
       final series = widget.scope == EditorScope.review && d != null
-          ? ScheduleSeries(id: 'review', revision: 1, title: d.title, time: d.time,
-              categoryId: d.categoryId, recurrence: d.recurrence, details: d.details,
-              exceptions: widget.initialExceptions)
+          ? ScheduleSeries(
+              id: 'review',
+              revision: 1,
+              title: d.title,
+              time: d.time,
+              categoryId: d.categoryId,
+              recurrence: d.recurrence,
+              details: d.details,
+              exceptions: widget.initialExceptions,
+            )
           : await repo.load(widget.seriesId!);
       if (!mounted) return;
       if (series == null) {
@@ -156,7 +179,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       _professor.text = details.professor ?? '';
       _subtitle.text = details.subtitle ?? '';
       _notes.text = details.notes ?? '';
-      _detailsOpen = !details.isEmpty;
+      _detailsOpen = true;
       switch (time) {
         case TimedSpec():
           _dateOnly = false;
@@ -198,7 +221,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   TimeSpec _timeSpec() {
     if (_dateOnly) return DateOnlySpec(startDate: _date, endDateExclusive: _lastDate.addDays(1));
     final original = _original?.time;
-    final sameWall = original is TimedSpec && original.startDate == _date && original.startTime == _start && original.timeZone == _zone;
+    final sameWall =
+        original is TimedSpec && original.startDate == _date && original.startTime == _start && original.timeZone == _zone;
     return TimedSpec(
       startDate: _date,
       startTime: _start,
@@ -221,17 +245,12 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   ScheduleDraft _draft() => ScheduleDraft(
-        title: _title.text,
-        categoryId: _categoryId,
-        time: _timeSpec(),
-        recurrence: _recurrence(),
-        details: ScheduleDetails(
-          location: _location.text,
-          professor: _professor.text,
-          subtitle: _subtitle.text,
-          notes: _notes.text,
-        ),
-      ).normalized();
+    title: _title.text,
+    categoryId: _categoryId,
+    time: _timeSpec(),
+    recurrence: _recurrence(),
+    details: ScheduleDetails(location: _location.text, professor: _professor.text, subtitle: _subtitle.text, notes: _notes.text),
+  ).normalized();
 
   Map<String, String> _messages(List<ValidationIssue> issues) {
     String message(ValidationIssue i) {
@@ -268,9 +287,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     return errors;
   }
 
-  Future<void> _save() async {
-    if (_saving) return;
-    final draft = _draft();
+  Map<String, String> _validate(ScheduleDraft draft) {
     final validator = ref.read(seriesValidatorProvider);
     final probe = ScheduleSeries(
       id: _original?.id ?? 'draft',
@@ -286,9 +303,55 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     for (final path in _alertErrors()) {
       errors[path] = 'Choose a reminder time for this all-day schedule';
     }
+    return errors;
+  }
+
+  _EditorStep _stepFor(String path) => path == 'title' || path.startsWith('details/')
+      ? _EditorStep.details
+      : path.startsWith('alerts/')
+      ? _EditorStep.alerts
+      : _EditorStep.time;
+
+  void _advance() {
+    if (_saving || !_initialized) return;
+    if (_step == _EditorStep.alerts) {
+      _save();
+      return;
+    }
+    final errors = _validate(_draft())..removeWhere((path, _) => _stepFor(path) != _step);
     if (errors.isNotEmpty) {
       setState(() {
         _errors = errors;
+        _detailsOpen = true;
+        _repeatsOpen = true;
+      });
+      return;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _errors = {};
+      _step = _EditorStep.values[_step.index + 1];
+      _alertsOpen = true;
+    });
+  }
+
+  void _close() {
+    if (_saving) return;
+    if (_dirty) {
+      _confirmDiscard();
+    } else {
+      Navigator.of(context).pop(widget.scope == EditorScope.review ? null : false);
+    }
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    final draft = _draft();
+    final errors = _validate(draft);
+    if (errors.isNotEmpty) {
+      setState(() {
+        _errors = errors;
+        _step = errors.keys.map(_stepFor).reduce((a, b) => a.index < b.index ? a : b);
         if (errors.keys.any((k) => k.startsWith('details/'))) _detailsOpen = true;
         if (errors.keys.any((k) => k.startsWith('recurrence/'))) _repeatsOpen = true;
         if (errors.keys.any((k) => k.startsWith('alerts/'))) _alertsOpen = true;
@@ -332,7 +395,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
             choice = await showChoiceDialog<InvalidExceptionChoice>(
               context,
               title: 'Changed occurrences no longer fit',
-              message: '${invalid.length} changed or cancelled occurrence${invalid.length == 1 ? '' : 's'} '
+              message:
+                  '${invalid.length} changed or cancelled occurrence${invalid.length == 1 ? '' : 's'} '
                   'will not match the new repeat rule.'
                   '${moved > 0 ? ' Moved occurrences can be kept as separate one-time schedules.' : ''}',
               choices: [
@@ -374,7 +438,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     );
     if (discard == true && mounted) {
       _dirty = false;
-      Navigator.of(context).pop(false);
+      Navigator.of(context).pop(widget.scope == EditorScope.review ? null : false);
     }
   }
 
@@ -387,33 +451,70 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       EditorScope.review => 'Edit before adding',
     };
     return PopScope(
-      canPop: !_dirty && !_saving,
+      canPop: !_dirty && !_saving && _step == _EditorStep.details,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && !_saving) _confirmDiscard();
+        if (didPop || _saving) return;
+        if (_step != _EditorStep.details) {
+          setState(() => _step = _EditorStep.values[_step.index - 1]);
+        } else {
+          _confirmDiscard();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            tooltip: 'Close',
-            icon: const AppIcon(AppIcons.close),
-            onPressed: _saving ? null : () => Navigator.of(context).maybePop(),
-          ),
+          leading: IconButton(tooltip: 'Close', icon: const AppIcon(AppIcons.close), onPressed: _saving ? null : _close),
           title: Text(title),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: Tokens.sm),
-              child: TextButton(
-                onPressed: _initialized && !_saving ? _save : null,
-                child: Text(widget.scope == EditorScope.review ? 'Use changes' : 'Save', style: const TextStyle(fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ],
         ),
         body: _loadFailed
             ? const EmptyState(title: 'Schedule no longer available')
             : !_initialized
-                ? const Center(child: CircularProgressIndicator.adaptive())
-                : IgnorePointer(ignoring: _saving, child: _form(context)),
+            ? const Center(child: CircularProgressIndicator.adaptive())
+            : Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Tokens.md, vertical: Tokens.sm),
+                    child: _StepIndicator(
+                      index: _step.index,
+                      label: switch (_step) {
+                        _EditorStep.details => 'Details',
+                        _EditorStep.time => 'Time',
+                        _EditorStep.alerts => 'Alerts',
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: IgnorePointer(ignoring: _saving, child: _form(context)),
+                  ),
+                ],
+              ),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, Tokens.sm),
+            child: Row(
+              children: [
+                if (_step != _EditorStep.details)
+                  TextButton(
+                    onPressed: _saving ? null : () => setState(() => _step = _EditorStep.values[_step.index - 1]),
+                    child: const Text('Back'),
+                  ),
+                const Spacer(),
+                FilledButton(
+                  onPressed: _initialized && !_saving ? _advance : null,
+                  child: Text(
+                    _saving
+                        ? 'Saving…'
+                        : _step == _EditorStep.alerts
+                        ? widget.scope == EditorScope.review
+                              ? 'Use changes'
+                              : 'Save'
+                        : 'Next',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -431,60 +532,73 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     };
 
     return ListView(
+      key: ValueKey(_step),
       padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, Tokens.xxl),
       children: [
         if (_errors.keys.any((k) => k.startsWith('exceptions/')))
-          const Padding(padding: EdgeInsets.only(bottom: Tokens.md),
-            child: Text('This repeat change leaves a changed or cancelled occurrence outside the series. Keep the original repeat rule before adding.')),
+          const Padding(
+            padding: EdgeInsets.only(bottom: Tokens.md),
+            child: Text(
+              'This repeat change leaves a changed or cancelled occurrence outside the series. Keep the original repeat rule before adding.',
+            ),
+          ),
         if (scopeNote != null)
           Padding(
             padding: const EdgeInsets.only(bottom: Tokens.md),
             child: DetailLine(icon: AppIcons.info, text: scopeNote, style: text.bodyMedium),
           ),
-        SectionGroup(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(Tokens.md),
-              child: TextField(
-                controller: _title,
-                autofocus: widget.scope == EditorScope.create,
-                textCapitalization: TextCapitalization.sentences,
-                style: text.bodyLarge,
-                decoration: InputDecoration(labelText: 'Title', errorText: _errors['title']),
-              ),
-            ),
-            if (!_isOccurrence)
-              ListTile(
-                leading: const AppIcon(AppIcons.category),
-                title: const Text('Category'),
-                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                  if (category != null) CategoryDot(colorKey: category.colorKey),
-                  Text(category?.name ?? 'Uncategorized', style: text.bodyMedium?.copyWith(color: colors.secondaryInk)),
-                ]),
-                onTap: () => _pickCategory(categories),
-              ),
-            if (!_isOccurrence)
+        if (_step == _EditorStep.details)
+          SectionGroup(
+            children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Tokens.md, vertical: Tokens.sm),
-                child: SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(value: false, label: Text('Timed')),
-                    ButtonSegment(value: true, label: Text('All day')),
-                  ],
-                  selected: {_dateOnly},
-                  showSelectedIcon: false,
-                  onSelectionChanged: (s) => _change(() {
-                    _dateOnly = s.first;
-                    if (_dateOnly && _lastDate.isBefore(_date)) _lastDate = _date;
-                  }),
+                padding: const EdgeInsets.all(Tokens.md),
+                child: LabeledField(
+                  label: 'Title',
+                  controller: _title,
+                  autofocus: widget.scope == EditorScope.create,
+                  errorText: _errors['title'],
                 ),
               ),
-            ..._timeFields(context, f),
-          ],
-        ),
-        if (!_isOccurrence) _repeatsSection(context, f),
-        _detailsSection(context),
-        if (!_isOccurrence)
+            ],
+          ),
+        if (_step == _EditorStep.time)
+          SectionGroup(
+            children: [
+              if (!_isOccurrence)
+                ListTile(
+                  leading: const AppIcon(AppIcons.category),
+                  title: const Text('Category'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (category != null) CategoryDot(colorKey: category.colorKey),
+                      Text(category?.name ?? 'Uncategorized', style: text.bodyMedium?.copyWith(color: colors.secondaryInk)),
+                    ],
+                  ),
+                  onTap: () => _pickCategory(categories),
+                ),
+              if (!_isOccurrence)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Tokens.md, vertical: Tokens.sm),
+                  child: SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(value: false, label: Text('Timed')),
+                      ButtonSegment(value: true, label: Text('All day')),
+                    ],
+                    selected: {_dateOnly},
+                    showSelectedIcon: false,
+                    onSelectionChanged: (s) => _change(() {
+                      _dateOnly = s.first;
+                      if (_dateOnly && _lastDate.isBefore(_date)) _lastDate = _date;
+                    }),
+                  ),
+                ),
+              ..._timeFields(context, f),
+            ],
+          ),
+        if (_step == _EditorStep.time && !_isOccurrence) _repeatsSection(context, f),
+        if (_step == _EditorStep.details) _detailsSection(context),
+        if (_step == _EditorStep.alerts && !_isOccurrence)
           _Disclosure(
             title: 'Reminders and alarms',
             summary: _alertSummary(f),
@@ -502,9 +616,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               }),
             ),
           ),
-        if (widget.scope == EditorScope.series && (_original?.exceptions.isNotEmpty ?? false))
+        if (_step == _EditorStep.time && widget.scope == EditorScope.series && (_original?.exceptions.isNotEmpty ?? false))
           _changedOccurrences(context, f),
-        _overlapWarning(context, f),
+        if (_step == _EditorStep.time) _overlapWarning(context, f),
       ],
     );
   }
@@ -564,8 +678,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
           subtitle: _errors['time/endTime'] != null
               ? Text(_errors['time/endTime']!, style: TextStyle(color: Theme.of(context).colorScheme.error))
               : overnight
-                  ? const Text('Ends the next day')
-                  : null,
+              ? const Text('Ends the next day')
+              : null,
           trailing: value(f.clock(_end)),
           onTap: () => _pickTime(_end, (t) => _end = t),
         ),
@@ -577,7 +691,11 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
             : Text(_errors['time/timeZone']!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         trailing: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 180),
-          child: Text(_zone, overflow: TextOverflow.ellipsis, style: text.bodyMedium?.copyWith(color: secondary)),
+          child: Text(
+            _zone,
+            overflow: TextOverflow.ellipsis,
+            style: text.bodyMedium?.copyWith(color: secondary),
+          ),
         ),
         onTap: _pickZone,
       ),
@@ -655,27 +773,17 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   Widget _detailsSection(BuildContext context) {
-    final parts = [
-      _location.text.trim(),
-      _professor.text.trim(),
-      _subtitle.text.trim(),
-    ].where((s) => s.isNotEmpty).toList();
+    final parts = [_location.text.trim(), _professor.text.trim(), _subtitle.text.trim()].where((s) => s.isNotEmpty).toList();
     Widget field(TextEditingController c, String label, String path, {int maxLines = 1, AppIcons? icon}) => Padding(
-          padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, Tokens.sm),
-          child: TextField(
-            controller: c,
-            minLines: 1,
-            maxLines: maxLines,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              labelText: label,
-              errorText: _errors[path],
-              prefixIcon: icon == null
-                  ? null
-                  : Padding(padding: const EdgeInsets.all(12), child: AppIcon(icon, size: 18)),
-            ),
-          ),
-        );
+      padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, Tokens.sm),
+      child: LabeledField(
+        label: label,
+        controller: c,
+        maxLines: maxLines,
+        errorText: _errors[path],
+        prefixIcon: icon == null ? null : Padding(padding: const EdgeInsets.all(12), child: AppIcon(icon, size: 18)),
+      ),
+    );
     return _Disclosure(
       title: 'Details',
       summary: parts.isEmpty ? 'Room, person, subtitle, notes' : parts.join(' · '),
@@ -749,7 +857,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       final theirs = engine.expand(other, windowStart: windowStart, windowEnd: windowEnd, viewZone: zone).occurrences;
       for (final a in mine) {
         for (final b in theirs) {
-          if (a.timing is TimedTiming && b.timing is TimedTiming && timedOverlap(a.timing as TimedTiming, b.timing as TimedTiming)) {
+          if (a.timing is TimedTiming &&
+              b.timing is TimedTiming &&
+              timedOverlap(a.timing as TimedTiming, b.timing as TimedTiming)) {
             final day = zones.localDateOf((a.timing as TimedTiming).startUtc, zone);
             return Padding(
               padding: const EdgeInsets.only(top: Tokens.sm),
@@ -790,17 +900,15 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   Future<void> _pickDate(LocalDate current, void Function(LocalDate) apply) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(current.year, current.month, current.day),
-      firstDate: DateTime(LocalDate.minYear),
-      lastDate: DateTime(LocalDate.maxYear, 12, 31),
-    );
-    if (picked != null) _change(() => apply(LocalDate.fromDateTime(picked)));
+    final picked = await showMonthSheet(context, initial: current);
+    if (picked != null) _change(() => apply(picked));
   }
 
   Future<void> _pickTime(LocalTime current, void Function(LocalTime) apply) async {
-    final picked = await showTimePicker(context: context, initialTime: TimeOfDay(hour: current.hour, minute: current.minute));
+    final picked = await showScheduleTimePicker(
+      context,
+      initialTime: TimeOfDay(hour: current.hour, minute: current.minute),
+    );
     if (picked != null) _change(() => apply(LocalTime(picked.hour, picked.minute)));
   }
 
@@ -818,7 +926,13 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
 
 /// Collapsible editor group with a one-line summary of actual values.
 class _Disclosure extends StatelessWidget {
-  const _Disclosure({required this.title, required this.summary, required this.open, required this.onToggle, required this.child});
+  const _Disclosure({
+    required this.title,
+    required this.summary,
+    required this.open,
+    required this.onToggle,
+    required this.child,
+  });
 
   final String title;
   final String summary;
@@ -907,6 +1021,57 @@ class _ZonePickerSheetState extends State<ZonePickerSheet> {
                 trailing: matches[i] == widget.current ? const AppIcon(AppIcons.confirm) : null,
                 onTap: () => Navigator.of(context).pop(matches[i]),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small segmented progress: the current step is a long accent pill, done
+/// steps are short accent pills, upcoming ones are faint dots.
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator({required this.index, required this.label});
+
+  final int index;
+  final String label;
+  static const count = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.scheduleColors;
+    final pixel = c.style == StyleFamily.pixel;
+    final duration = AppMotion.control(context) * 1.8;
+    return Semantics(
+      label: 'Step ${index + 1} of $count, $label',
+      excludeSemantics: true,
+      child: Row(
+        children: [
+          for (var i = 0; i < count; i++) ...[
+            if (i > 0) const SizedBox(width: 5),
+            AnimatedContainer(
+              duration: duration,
+              curve: const Cubic(0.2, 0.9, 0.1, 1),
+              width: i == index ? 26 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: i <= index ? c.palette.accent.withValues(alpha: i == index ? 1 : .45) : c.ink.withValues(alpha: .14),
+                borderRadius: BorderRadius.circular(pixel ? 0 : 4),
+              ),
+            ),
+          ],
+          const SizedBox(width: 10),
+          AnimatedSwitcher(
+            duration: duration,
+            transitionBuilder: (child, a) => FadeTransition(
+              opacity: a,
+              child: SlideTransition(position: Tween(begin: const Offset(0, .4), end: Offset.zero).animate(a), child: child),
+            ),
+            child: Text(
+              label,
+              key: ValueKey(label),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: c.secondaryInk, fontWeight: FontWeight.w600),
             ),
           ),
         ],

@@ -1,4 +1,8 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
+
+import '../../app/theme/theme_customization.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,11 +14,12 @@ import '../../data/local/database.dart';
 @immutable
 class AppearanceSettings {
   const AppearanceSettings({
-    this.themeMode = ThemeMode.system,
+    this.themeMode = ThemeMode.light,
     this.theme = ThemeId.lilac,
     this.customHue = 250,
     this.density = Density.comfortable,
     this.showCategoryColors = true,
+    this.customizations = const {},
   });
 
   final ThemeMode themeMode;
@@ -24,9 +29,10 @@ class AppearanceSettings {
   final int customHue;
   final Density density;
   final bool showCategoryColors;
+  final Map<ThemeId, ThemeCustomization> customizations;
 
   /// The resolved theme definition.
-  SchedielTheme get schedielTheme => themeFor(theme, customHue: customHue);
+  SchedielTheme get schedielTheme => themeFor(theme, customHue: customHue, customization: customizations[theme]);
 
   AppearanceSettings copyWith({
     ThemeMode? themeMode,
@@ -34,14 +40,15 @@ class AppearanceSettings {
     int? customHue,
     Density? density,
     bool? showCategoryColors,
-  }) =>
-      AppearanceSettings(
-        themeMode: themeMode ?? this.themeMode,
-        theme: theme ?? this.theme,
-        customHue: (customHue ?? this.customHue) % 360,
-        density: density ?? this.density,
-        showCategoryColors: showCategoryColors ?? this.showCategoryColors,
-      );
+    Map<ThemeId, ThemeCustomization>? customizations,
+  }) => AppearanceSettings(
+    themeMode: themeMode ?? this.themeMode,
+    theme: theme ?? this.theme,
+    customHue: (customHue ?? this.customHue) % 360,
+    density: density ?? this.density,
+    showCategoryColors: showCategoryColors ?? this.showCategoryColors,
+    customizations: Map.unmodifiable(customizations ?? this.customizations),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -50,10 +57,18 @@ class AppearanceSettings {
       other.theme == theme &&
       other.customHue == customHue &&
       other.density == density &&
-      other.showCategoryColors == showCategoryColors;
+      other.showCategoryColors == showCategoryColors &&
+      mapEquals(other.customizations, customizations);
 
   @override
-  int get hashCode => Object.hash(themeMode, theme, customHue, density, showCategoryColors);
+  int get hashCode => Object.hash(
+    themeMode,
+    theme,
+    customHue,
+    density,
+    showCategoryColors,
+    Object.hashAllUnordered(customizations.entries.map((e) => Object.hash(e.key, e.value))),
+  );
 }
 
 class AppearanceRepository {
@@ -71,15 +86,19 @@ class AppearanceRepository {
       customHue: row.customHue % 360,
       density: Density.values.firstWhere((d) => d.name == row.density, orElse: () => Density.comfortable),
       showCategoryColors: row.showCategoryColors,
+      customizations: decodeThemeCustomizations(row.themeCustomizationsJson),
     );
   }
 
-  Future<void> save(AppearanceSettings s) => _db.into(_db.appearancePreferences).insertOnConflictUpdate(
+  Future<void> save(AppearanceSettings s) => _db
+      .into(_db.appearancePreferences)
+      .insertOnConflictUpdate(
         AppearancePreferencesCompanion.insert(
           id: const Value(1),
           themeMode: Value(s.themeMode.name),
           themeKey: Value(s.theme.name),
           customHue: Value(s.customHue),
+          themeCustomizationsJson: Value(encodeThemeCustomizations(s.customizations)),
           density: Value(s.density.name),
           showCategoryColors: Value(s.showCategoryColors),
           updatedAt: _clock().toUtc(),
@@ -90,9 +109,7 @@ class AppearanceRepository {
 /// Loaded before the first frame (main.dart) to avoid a theme flash.
 final initialAppearanceProvider = Provider<AppearanceSettings>((ref) => const AppearanceSettings());
 
-final appearanceRepositoryProvider = Provider<AppearanceRepository>(
-  (ref) => throw UnimplementedError('Provided in main.dart'),
-);
+final appearanceRepositoryProvider = Provider<AppearanceRepository>((ref) => throw UnimplementedError('Provided in main.dart'));
 
 final appearanceProvider = NotifierProvider<AppearanceNotifier, AppearanceSettings>(AppearanceNotifier.new);
 

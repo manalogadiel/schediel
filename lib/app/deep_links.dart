@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 
 import '../features/sharing/application/sharing_config.dart';
+import '../features/sharing/domain/direct_share.dart';
 import '../features/sharing/domain/share_link.dart';
 
 import 'app.dart';
@@ -68,8 +69,11 @@ class DeepLinkCoordinator {
       // Pushed on top so an unsaved editor underneath keeps its values.
       // The bearer remains in ephemeral arguments, not a route/query that
       // a router diagnostic or restoration log could disclose.
-      router.push(location, extra: location == '/share/open'
-          ? shareLinkFor(uri) : null);
+      router.push(location, extra: switch (location) {
+        '/share/open' => shareLinkFor(uri),
+        '/share/import' => uri,
+        _ => null,
+      });
     }
     return location;
   }
@@ -86,6 +90,7 @@ class DeepLinkCoordinator {
   String? routeFor(Uri uri) {
     if (uri.scheme == 'schediel') {
       if (uri.host == 'today') return '/today';
+      if (DirectShare.isDirect(uri)) return '/share/import';
       if (uri.host == 'occurrence' && uri.pathSegments.length == 2) {
         final [seriesId, key] = uri.pathSegments;
         if (RegExp(r'^[0-9a-zA-Z-]{1,64}$').hasMatch(seriesId) && RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(key)) {

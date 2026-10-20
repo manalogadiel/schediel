@@ -17,26 +17,25 @@ ScheduleDraft classDraft({
   String? professor,
   String? category,
   List<int> weekdays = const [1, 3],
-}) =>
-    ScheduleDraft(
-      title: title,
-      categoryId: category,
-      time: TimedSpec(
-        startDate: LocalDate(2026, 11, 2),
-        startTime: LocalTime(hour, 0),
-        timeZone: 'Asia/Manila',
-        endTime: endHour == null ? null : LocalTime(endHour, 0),
-        endDayOffset: endHour == null ? null : 0,
-      ),
-      recurrence: RecurrenceSpec(frequency: RecurrenceFrequency.weekly, weekdays: weekdays),
-      details: ScheduleDetails(location: location, professor: professor),
-    );
+}) => ScheduleDraft(
+  title: title,
+  categoryId: category,
+  time: TimedSpec(
+    startDate: LocalDate(2026, 11, 2),
+    startTime: LocalTime(hour, 0),
+    timeZone: 'Asia/Manila',
+    endTime: endHour == null ? null : LocalTime(endHour, 0),
+    endDayOffset: endHour == null ? null : 0,
+  ),
+  recurrence: RecurrenceSpec(frequency: RecurrenceFrequency.weekly, weekdays: weekdays),
+  details: ScheduleDetails(location: location, professor: professor),
+);
 
 void main() {
   appTest('first launch shows an honest empty Today with one clear action', (h) async {
     expect(find.text('No schedules yet'), findsOneWidget);
     expect(find.text('Create schedule'), findsOneWidget);
-    expect(find.text('Monday, November 2'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Monday, November 2')), findsOneWidget);
     expect(find.text('Next'), findsNothing);
     expect(find.text('Now'), findsNothing);
   });
@@ -44,9 +43,9 @@ void main() {
   appTest('Today shows Now, Next and only the details that exist', now: DateTime.utc(2026, 11, 2, 1, 30), (h) async {
     final repo = h.read(scheduleRepositoryProvider);
     await h.run(() => repo.create(classDraft(title: 'Fixture first', hour: 9, endHour: 10)));
-    await h.run(() => repo.create(
-          classDraft(title: 'Fixture second', hour: 11, endHour: 12, location: null, professor: 'Fixture person'),
-        ));
+    await h.run(
+      () => repo.create(classDraft(title: 'Fixture second', hour: 11, endHour: 12, location: null, professor: 'Fixture person')),
+    );
     await h.settle();
 
     expect(find.text('Fixture first'), findsOneWidget);
@@ -72,17 +71,17 @@ void main() {
     await h.tapText('Create schedule');
     expect(find.text('New schedule'), findsOneWidget);
 
-    await h.tapText('Save');
+    await h.tapText('Next');
     expect(find.text('Enter a title'), findsOneWidget);
     await tester.pump(const Duration(seconds: 5));
     await h.settle();
 
     await tester.enterText(find.widgetWithText(TextField, 'Title'), '  Fixture lecture  ');
-    await tester.scrollUntilVisible(find.text('Details'), 120, scrollable: find.byType(Scrollable).last);
-    await h.tapText('Details');
     final room = find.widgetWithText(TextField, 'Room or location');
     await tester.scrollUntilVisible(room, 120, scrollable: find.byType(Scrollable).last);
     await tester.enterText(room, 'Fixture hall');
+    await h.tapText('Next');
+    await h.tapText('Next');
     await h.tapText('Save');
 
     expect(find.text('New schedule'), findsNothing);

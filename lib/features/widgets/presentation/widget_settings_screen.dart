@@ -47,24 +47,29 @@ class WidgetSettingsScreen extends ConsumerWidget {
               style: text.bodyMedium?.copyWith(color: secondary),
             ),
           ),
-          SectionGroup(children: [
-            ListTile(
-              leading: const AppIcon(AppIcons.widget),
-              title: const Text('Default widget settings'),
-              subtitle: Text(_isIOS ? 'Used by all widgets on this iPhone' : 'Used by widgets without their own settings'),
-              trailing: AppIcon(AppIcons.next, size: 18, color: secondary),
-              onTap: () => context.push('/settings/widgets/${WidgetConfig.defaultKey}'),
-            ),
-          ]),
+          SectionGroup(
+            children: [
+              ListTile(
+                leading: const AppIcon(AppIcons.widget),
+                title: const Text('Default widget settings'),
+                subtitle: Text(_isIOS ? 'Used by all widgets on this iPhone' : 'Used by widgets without their own settings'),
+                trailing: AppIcon(AppIcons.next, size: 18, color: secondary),
+                onTap: () => context.push('/settings/widgets/${WidgetConfig.defaultKey}'),
+              ),
+            ],
+          ),
           if (installed.isNotEmpty)
-            SectionGroup(header: 'Placed widgets', children: [
-              for (var i = 0; i < installed.length; i++)
-                ListTile(
-                  title: Text('Widget ${i + 1}'),
-                  trailing: AppIcon(AppIcons.next, size: 18, color: secondary),
-                  onTap: () => context.push('/settings/widgets/${installed[i]}'),
-                ),
-            ]),
+            SectionGroup(
+              header: 'Placed widgets',
+              children: [
+                for (var i = 0; i < installed.length; i++)
+                  ListTile(
+                    title: Text('Widget ${i + 1}'),
+                    trailing: AppIcon(AppIcons.next, size: 18, color: secondary),
+                    onTap: () => context.push('/settings/widgets/${installed[i]}'),
+                  ),
+              ],
+            ),
           if (_isIOS)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: Tokens.xs),
@@ -96,155 +101,223 @@ class _WidgetConfigScreenState extends ConsumerState<WidgetConfigScreen> {
   Widget build(BuildContext context) {
     final saved = ref.watch(widgetConfigsProvider).value;
     if (_config == null && saved != null) {
-      _config = saved.where((c) => c.widgetKey == widget.widgetKey).firstOrNull ??
-          (saved.where((c) => c.widgetKey == WidgetConfig.defaultKey).firstOrNull ?? WidgetConfig.defaults)
-              .copyWith(widgetKey: widget.widgetKey, revision: 0);
+      _config =
+          saved.where((c) => c.widgetKey == widget.widgetKey).firstOrNull ??
+          (saved.where((c) => c.widgetKey == WidgetConfig.defaultKey).firstOrNull ?? WidgetConfig.defaults).copyWith(
+            widgetKey: widget.widgetKey,
+            revision: 0,
+          );
     }
     final config = _config;
     final categories = ref.watch(categoriesProvider).value ?? const <Category>[];
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.widgetKey == WidgetConfig.defaultKey ? 'Default widget' : 'Widget settings'),
-      ),
+      appBar: AppBar(title: Text(widget.widgetKey == WidgetConfig.defaultKey ? 'Default widget' : 'Widget settings')),
       body: config == null
           ? const Center(child: CircularProgressIndicator.adaptive())
           : ListView(
               padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, Tokens.xxl),
               children: [
                 _Preview(config: config, darkBackdrop: _darkBackdrop),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: Tokens.lg),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Preview on', style: Theme.of(context).textTheme.bodySmall),
-                      const SizedBox(width: Tokens.sm),
-                      SegmentedButton<bool>(
+                SectionGroup(
+                  header: 'Preview background',
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(Tokens.md),
+                      child: SegmentedButton<bool>(
                         segments: const [
                           ButtonSegment(value: true, label: Text('Dark')),
                           ButtonSegment(value: false, label: Text('Light')),
                         ],
                         selected: {_darkBackdrop},
                         showSelectedIcon: false,
-                        onSelectionChanged: (s) => setState(() => _darkBackdrop = s.first),
+                        onSelectionChanged: (v) => setState(() => _darkBackdrop = v.first),
+                      ),
+                    ),
+                  ],
+                ),
+                SectionGroup(
+                  header: 'Show',
+                  children: [
+                    ListTile(
+                      key: const ValueKey('widget-filter-selector'),
+                      title: const Text('Categories'),
+                      subtitle: Text(
+                        config.filter.isAll
+                            ? 'All'
+                            : [
+                                for (final c in categories)
+                                  if (config.filter.categoryIds.contains(c.id)) c.name,
+                                if (config.filter.includeUncategorized) 'Uncategorized',
+                              ].join(', '),
+                      ),
+                      trailing: const AppIcon(AppIcons.expand),
+                      onTap: () => _chooseFilter(config, categories),
+                    ),
+                  ],
+                ),
+                SectionGroup(
+                  header: 'Layout',
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(Tokens.md),
+                      child: SegmentedButton<WidgetLayout>(
+                        segments: const [
+                          ButtonSegment(value: WidgetLayout.compact, label: Text('Compact')),
+                          ButtonSegment(value: WidgetLayout.expanded, label: Text('Expanded')),
+                        ],
+                        selected: {config.layout},
+                        showSelectedIcon: false,
+                        onSelectionChanged: (s) => _update(config.copyWith(layout: s.first)),
+                      ),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Emphasize next schedule'),
+                      value: config.nextEmphasis,
+                      onChanged: (v) => _update(config.copyWith(nextEmphasis: v)),
+                    ),
+                  ],
+                ),
+                SectionGroup(
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Use app theme'),
+                      subtitle: const Text('Holders take the colors, shapes and heading font of your app theme'),
+                      value: config.useAppTheme,
+                      onChanged: (v) => _update(config.copyWith(useAppTheme: v)),
+                    ),
+                  ],
+                ),
+                SectionGroup(
+                  header: 'Surface',
+                  children: [
+                    RadioGroup<WidgetSurface>(
+                      groupValue: config.surface,
+                      onChanged: (v) => _update(config.copyWith(surface: v)),
+                      child: const Column(
+                        children: [
+                          RadioListTile(
+                            value: WidgetSurface.clear,
+                            title: Text('Clear'),
+                            subtitle: Text('No background. Your wallpaper shows through, with subtle holders.'),
+                          ),
+                          RadioListTile(
+                            value: WidgetSurface.softTint,
+                            title: Text('Soft tint'),
+                            subtitle: Text('Stronger translucent holders'),
+                          ),
+                          RadioListTile(
+                            value: WidgetSurface.solid,
+                            title: Text('Solid'),
+                            subtitle: Text('Opaque holders for the most readable text'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SectionGroup(
+                  header: 'Text',
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Match app appearance'),
+                      subtitle: const Text('Light or dark text follows the app'),
+                      value: config.matchApp,
+                      onChanged: (v) => _update(config.copyWith(matchApp: v)),
+                    ),
+                    if (!config.matchApp)
+                      Padding(
+                        padding: const EdgeInsets.all(Tokens.md),
+                        child: SegmentedButton<WidgetTextTone>(
+                          segments: const [
+                            ButtonSegment(value: WidgetTextTone.light, label: Text('Light text')),
+                            ButtonSegment(value: WidgetTextTone.dark, label: Text('Dark text')),
+                          ],
+                          selected: {config.textTone},
+                          showSelectedIcon: false,
+                          onSelectionChanged: (s) => _update(config.copyWith(textTone: s.first)),
+                        ),
+                      ),
+                  ],
+                ),
+                SectionGroup(
+                  header: 'Details',
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Room or location'),
+                      value: config.showLocation,
+                      onChanged: (v) => _update(config.copyWith(showLocation: v)),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Professor or person'),
+                      value: config.showProfessor,
+                      onChanged: (v) => _update(config.copyWith(showProfessor: v)),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Subtitle'),
+                      value: config.showSubtitle,
+                      onChanged: (v) => _update(config.copyWith(showSubtitle: v)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+    );
+  }
+
+  Future<void> _chooseFilter(WidgetConfig config, List<Category> categories) async {
+    var draft = config.filter;
+    final chosen = await showModalBottomSheet<CategoryFilter>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: const EdgeInsets.all(Tokens.md),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * .75),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Categories', style: Theme.of(sheetContext).textTheme.titleMedium),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      CheckboxListTile(
+                        title: const Text('All'),
+                        value: draft.isAll,
+                        onChanged: (_) => setSheetState(() => draft = const CategoryFilter.all()),
+                      ),
+                      for (final c in categories)
+                        CheckboxListTile(
+                          title: Text(c.name),
+                          value: !draft.isAll && draft.categoryIds.contains(c.id),
+                          onChanged: (v) => setSheetState(() => draft = _toggle(draft, c.id, v ?? false)),
+                        ),
+                      CheckboxListTile(
+                        title: const Text('Uncategorized'),
+                        value: !draft.isAll && draft.includeUncategorized,
+                        onChanged: (v) => setSheetState(() => draft = _toggle(draft, null, v ?? false)),
                       ),
                     ],
                   ),
                 ),
-                SectionGroup(header: 'Show', children: [
-                  Padding(
-                    padding: const EdgeInsets.all(Tokens.md),
-                    child: Wrap(spacing: Tokens.sm, runSpacing: Tokens.sm, children: [
-                      FilterChip(
-                        label: const Text('All'),
-                        selected: config.filter.isAll,
-                        onSelected: (_) => _update(config.copyWith(filter: const CategoryFilter.all())),
-                      ),
-                      for (final c in categories)
-                        FilterChip(
-                          label: Text(c.name),
-                          selected: !config.filter.isAll && config.filter.categoryIds.contains(c.id),
-                          onSelected: (on) => _update(config.copyWith(filter: _toggle(config.filter, c.id, on))),
-                        ),
-                      FilterChip(
-                        label: const Text('Uncategorized'),
-                        selected: !config.filter.isAll && config.filter.includeUncategorized,
-                        onSelected: (on) => _update(config.copyWith(filter: _toggle(config.filter, null, on))),
-                      ),
-                    ]),
-                  ),
-                ]),
-                SectionGroup(header: 'Layout', children: [
-                  Padding(
-                    padding: const EdgeInsets.all(Tokens.md),
-                    child: SegmentedButton<WidgetLayout>(
-                      segments: const [
-                        ButtonSegment(value: WidgetLayout.compact, label: Text('Compact')),
-                        ButtonSegment(value: WidgetLayout.expanded, label: Text('Expanded')),
-                      ],
-                      selected: {config.layout},
-                      showSelectedIcon: false,
-                      onSelectionChanged: (s) => _update(config.copyWith(layout: s.first)),
-                    ),
-                  ),
-                  SwitchListTile(
-                    title: const Text('Emphasize next schedule'),
-                    value: config.nextEmphasis,
-                    onChanged: (v) => _update(config.copyWith(nextEmphasis: v)),
-                  ),
-                ]),
-                SectionGroup(children: [
-                  SwitchListTile(
-                    title: const Text('Use app theme'),
-                    subtitle: const Text('Holders take the colors, shapes and heading font of your app theme'),
-                    value: config.useAppTheme,
-                    onChanged: (v) => _update(config.copyWith(useAppTheme: v)),
-                  ),
-                ]),
-                SectionGroup(header: 'Surface', children: [
-                  RadioGroup<WidgetSurface>(
-                    groupValue: config.surface,
-                    onChanged: (v) => _update(config.copyWith(surface: v)),
-                    child: const Column(children: [
-                      RadioListTile(
-                        value: WidgetSurface.clear,
-                        title: Text('Clear'),
-                        subtitle: Text('No background. Your wallpaper shows through, with subtle holders.'),
-                      ),
-                      RadioListTile(
-                        value: WidgetSurface.softTint,
-                        title: Text('Soft tint'),
-                        subtitle: Text('Stronger translucent holders'),
-                      ),
-                      RadioListTile(
-                        value: WidgetSurface.solid,
-                        title: Text('Solid'),
-                        subtitle: Text('Opaque holders for the most readable text'),
-                      ),
-                    ]),
-                  ),
-                ]),
-                SectionGroup(header: 'Text', children: [
-                  SwitchListTile(
-                    title: const Text('Match app appearance'),
-                    subtitle: const Text('Light or dark text follows the app'),
-                    value: config.matchApp,
-                    onChanged: (v) => _update(config.copyWith(matchApp: v)),
-                  ),
-                  if (!config.matchApp)
-                    Padding(
-                      padding: const EdgeInsets.all(Tokens.md),
-                      child: SegmentedButton<WidgetTextTone>(
-                        segments: const [
-                          ButtonSegment(value: WidgetTextTone.light, label: Text('Light text')),
-                          ButtonSegment(value: WidgetTextTone.dark, label: Text('Dark text')),
-                        ],
-                        selected: {config.textTone},
-                        showSelectedIcon: false,
-                        onSelectionChanged: (s) => _update(config.copyWith(textTone: s.first)),
-                      ),
-                    ),
-                ]),
-                SectionGroup(header: 'Details', children: [
-                  SwitchListTile(
-                    title: const Text('Room or location'),
-                    value: config.showLocation,
-                    onChanged: (v) => _update(config.copyWith(showLocation: v)),
-                  ),
-                  SwitchListTile(
-                    title: const Text('Professor or person'),
-                    value: config.showProfessor,
-                    onChanged: (v) => _update(config.copyWith(showProfessor: v)),
-                  ),
-                  SwitchListTile(
-                    title: const Text('Subtitle'),
-                    value: config.showSubtitle,
-                    onChanged: (v) => _update(config.copyWith(showSubtitle: v)),
-                  ),
-                ]),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(sheetContext), child: const Text('Cancel')),
+                    const SizedBox(width: Tokens.sm),
+                    FilledButton(onPressed: () => Navigator.pop(sheetContext, draft), child: const Text('Apply')),
+                  ],
+                ),
               ],
             ),
+          ),
+        ),
+      ),
     );
+    if (chosen != null && mounted) await _update((_config ?? config).copyWith(filter: chosen));
   }
 
   CategoryFilter _toggle(CategoryFilter filter, String? id, bool on) {
@@ -287,7 +360,9 @@ class _Preview extends ConsumerWidget {
     final appearance = ref.watch(appearanceProvider);
     final categories = ref.watch(categoriesProvider).value ?? const [];
     final themeJson = widgetThemeJson(appearance.schedielTheme, appearance.themeMode);
-    final json = ref.watch(widgetSnapshotBuilderProvider).build(
+    final json = ref
+        .watch(widgetSnapshotBuilderProvider)
+        .build(
           series: series,
           configs: [config.copyWith(widgetKey: 'preview')],
           now: now,
@@ -327,15 +402,19 @@ class _Preview extends ConsumerWidget {
       final details = [e.location, e.professor, e.subtitle].whereType<String>().toList();
       final emphasized = next && config.nextEmphasis;
       final colors = themed
-          ? holderColors(palette, next: emphasized, categoryColor: e.json['categoryColor'] as String?, surface: config.surface.name)
+          ? holderColors(
+              palette,
+              next: emphasized,
+              categoryColor: e.json['categoryColor'] as String?,
+              surface: config.surface.name,
+            )
           : null;
       final primary = colors?.ink ?? style.primaryText;
       final secondary = colors?.ink ?? style.secondaryText;
       final shapeStyle = c.style;
       // Same rule as the native widget: hard shadows only on solid holders.
-      final shadow = themed &&
-          (shapeStyle == StyleFamily.pop || shapeStyle == StyleFamily.pixel) &&
-          config.surface == WidgetSurface.solid;
+      final shadow =
+          themed && (shapeStyle == StyleFamily.pop || shapeStyle == StyleFamily.pixel) && config.surface == WidgetSurface.solid;
       final decoration = colors == null
           ? BoxDecoration(
               color: emphasized ? style.nextHolder : style.upcomingHolder,
@@ -377,9 +456,13 @@ class _Preview extends ConsumerWidget {
                 fontWeight: emphasized ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
-            if (config.layout == WidgetLayout.expanded && details.isNotEmpty)
-              Text(details.join(' · '),
-                  maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: secondary)),
+            if (config.layout == WidgetLayout.expanded && details.isNotEmpty && MediaQuery.textScalerOf(context).scale(1) < 1.3)
+              Text(
+                details.join(' · '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, color: secondary),
+              ),
           ],
         ),
       );
@@ -387,10 +470,12 @@ class _Preview extends ConsumerWidget {
 
     final children = <Widget>[];
     if (result.state != WidgetReadState.entries) {
-      children.add(Padding(
-        padding: const EdgeInsets.all(Tokens.md),
-        child: Text(result.message ?? '', style: TextStyle(color: style.primaryText, fontSize: 15)),
-      ));
+      children.add(
+        Padding(
+          padding: const EdgeInsets.all(Tokens.md),
+          child: Text(result.message ?? '', style: TextStyle(color: style.primaryText, fontSize: 15)),
+        ),
+      );
     } else {
       // Same choices as the native widgets (android/.../widget/WidgetPlanner.kt).
       final limit = config.layout == WidgetLayout.compact ? 2 : 4;
@@ -402,11 +487,17 @@ class _Preview extends ConsumerWidget {
       ];
       for (final id in result.allDay.take(2)) {
         final e = result.entries[id]!;
-        children.add(Padding(
-          padding: const EdgeInsets.only(bottom: 6, left: 4),
-          child: Text('All day · ${e.title}',
-              maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: style.secondaryText)),
-        ));
+        children.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6, left: 4),
+            child: Text(
+              'All day · ${e.title}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12, color: style.secondaryText),
+            ),
+          ),
+        );
       }
       for (final entry in ordered.take(limit)) {
         children.add(holder(entry.$1, next: entry.$2, status: entry.$3));
@@ -416,7 +507,7 @@ class _Preview extends ConsumerWidget {
     return Semantics(
       label: 'Widget preview',
       child: Container(
-        height: config.layout == WidgetLayout.compact ? 170 : 300,
+        constraints: BoxConstraints(minHeight: config.layout == WidgetLayout.compact ? 170 : 300),
         margin: const EdgeInsets.only(bottom: Tokens.sm),
         padding: const EdgeInsets.all(Tokens.md),
         decoration: BoxDecoration(
@@ -424,7 +515,7 @@ class _Preview extends ConsumerWidget {
           borderRadius: BorderRadius.circular(Tokens.radiusCard),
         ),
         child: ClipRect(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
         ),
       ),
     );

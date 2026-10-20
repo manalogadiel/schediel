@@ -20,6 +20,7 @@ void main() {
     await h.tapText('Choose photo');
     await h.tapText('Scan on device');
     expect(find.text('Needs review'), findsOneWidget);
+    await h.tester.ensureVisible(find.text('Continue to review'));
     await h.tapText('Continue to review');
     expect(find.byType(ImportReviewScreen), findsNothing);
     await h.tapText('Resolve fields');
@@ -29,6 +30,7 @@ void main() {
     await h.tester.ensureVisible(find.byKey(const Key('confirm-association')));
     await h.tester.tap(find.byKey(const Key('confirm-association'))); await h.settle();
     await h.tapText('Use draft values');
+    await h.tester.ensureVisible(find.text('Continue to review'));
     await h.tapText('Continue to review');
     expect(find.byType(ImportReviewScreen), findsOneWidget);
     expect(await h.run(h.read(scheduleRepositoryProvider).loadAll), isEmpty);

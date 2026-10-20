@@ -8,4 +8,5 @@
     <color name="widget_light_secondary">#C7FFFFFF</color>
     <color name="widget_dark_primary">#FF1D1D1F</color>
     <color name="widget_dark_secondary">#FF3A3A3C</color>
+    <color name="brand_paper">#FFFCF8F1</color>
 </resources>

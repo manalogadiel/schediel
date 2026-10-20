@@ -36,6 +36,7 @@ void main() {
     await openDefaultWidget(h);
     final toggle = find.widgetWithText(SwitchListTile, 'Use app theme');
     await h.tester.scrollUntilVisible(toggle, 200, scrollable: find.byType(Scrollable).first);
+    await h.settle();
     expect(h.tester.widget<SwitchListTile>(toggle).value, isTrue);
 
     final before = writer.written.length;
