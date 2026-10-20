@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Launch splash (API 26-30). API 31+ uses values-v31/styles.xml. -->
+<!-- Pre-Android 12 launch screen: paper and the vector mark at the size the in-app intro starts from. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/brand_paper" />
-    <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@drawable/splash_logo" />
-    </item>
+    <item
+        android:width="288dp"
+        android:height="288dp"
+        android:drawable="@drawable/splash_vector"
+        android:gravity="center" />
 </layer-list>

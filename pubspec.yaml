@@ -87,7 +87,6 @@ flutter:
   assets:
     - assets/icons/
     - assets/illustrations/
-    - assets/branding/splash_logo.png
     - assets/fonts/LICENSE-Silkscreen.txt
     - assets/fonts/LICENSE-Caveat.txt
     - assets/fonts/LICENSE-Inter.txt

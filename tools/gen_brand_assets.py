@@ -64,14 +64,7 @@ for name, s in densities.items():
     # Legacy (pre-adaptive launchers): 48dp rounded square.
     rounded(logo(int(48 * s), 0.78), 0.22).save(d / "ic_launcher.png", optimize=True)
 
-# Splash logo for API 26-30 window background: 154dp tile, matching the API 31+ system icon as measured.
-for name, s in densities.items():
-    d = RES / f"drawable-{name}"
-    d.mkdir(exist_ok=True)
-    logo(int(154 * s), 0.90).save(d / "splash_logo.png", optimize=True)
-
-# In-app intro uses the same tile (rendered at 154 logical px).
-logo(640, 0.90).save(ROOT / "assets/branding/splash_logo.png", optimize=True)
+# The launch splash is vector: see tools/gen_splash_vector.py.
 
 # iOS: opaque full-bleed squares (the system applies the mask).
 master = logo(1024, 0.80)

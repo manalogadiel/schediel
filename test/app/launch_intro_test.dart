@@ -20,9 +20,10 @@ void main() {
   testWidgets('intro covers the app with the brand logo, then removes itself', (tester) async {
     await tester.pumpWidget(_host(enabled: true));
     expect(find.byKey(LaunchIntro.overlayKey), findsOneWidget);
-    expect(find.byType(Image), findsOneWidget);
+    expect(find.byKey(LaunchIntro.markKey), findsOneWidget);
+    expect(find.text('Your week, in order.'), findsOneWidget);
 
-    await tester.pump(const Duration(milliseconds: 500)); // capped decode wait, then start
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byKey(LaunchIntro.overlayKey), findsOneWidget, reason: 'still animating');
 
