@@ -31,9 +31,23 @@ void main() {
   });
 
   group('ShareLink', () {
+    test('compact links round-trip and extract from a chat message without a schedule ID', () {
+      final uri = ShareLink(host: 'share.example', token: zeros.token).toUri();
+      expect(uri.path, '/s/');
+      expect(uri.fragment, zeros.token);
+      expect(uri.toString().length, lessThan(70));
+      final parsed = ShareLink.tryParseText('Schedules from Schediel\n($uri).', host: 'share.example');
+      expect(parsed?.token, zeros.token);
+      expect(parsed?.shareId, isNull);
+      for (final bad in ['https://other.example/s/#${zeros.token}',
+        'https://share.example/s/?x=1#${zeros.token}', 'https://share.example/s/#${zeros.token}=',
+        'https://share.example/s/#${'A' * 42}B', 'https://share.example/s/#token=${zeros.token}']) {
+        expect(ShareLink.tryParse(Uri.parse(bad), host: 'share.example'), isNull);
+      }
+    });
     test('composes the bearer link from server metadata and the local secret', () {
       final link = ShareLink(host: 'share.example', shareId: id, token: zeros.token);
-      expect(link.toUri().toString(), 'https://share.example/s/$id#token=${'A' * 43}');
+      expect(link.toUri().toString(), 'https://share.example/s/#${'A' * 43}');
     });
 
     test('parses only well-formed links for the configured host', () {

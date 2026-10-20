@@ -1,12 +1,24 @@
 # Implementation and documentation validation
 
-**Recorded:** October 18–19, 2026 (Windows 11, UTC+08:00).
+**Recorded:** October 18–20, 2026 (Windows 11, UTC+08:00).
 
 ## Status and boundaries
 
-Schediel now has a Flutter implementation, Android native code, iOS source, a locally tested optional sharing backend and a static browser preview. **This is a development build, not a production or real-device certification.** Supabase/domain deployment has not occurred. Cloud scanning stays off. No schedule data, credentials or signing identities were invented to make a test look deployed.
+Schediel now has a Flutter implementation, Android native code, iOS source, a locally tested optional sharing backend and a static browser preview. **This is a development build, not a production or real-device certification.** The optional sharing backend and HTTPS domains were deployed on October 20; the live checks below are distinct from production certification. Cloud scanning stays off. No schedule data, credentials or signing identities were invented to make a test look deployed.
 
 Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
+
+## October 20: compact online sharing and Android installation
+
+- `flutter analyze --no-pub`: no issues. Full `flutter test`: **376 passed**.
+- Backend Node/PGlite suite: **82 passed**; browser/jsdom suite: **138 passed**. Deno 2.5.4 checked all five function entry points.
+- Applied the sharing migrations, including permanent capability reservations, to the existing Schediel project; deployed functions and the static fallback. `schediel-share.vercel.app` and `schediel-open.vercel.app` both serve the matching Android association JSON publicly, without redirects. The second host is a production domain; preview authentication remains enabled for preview deployments.
+- Live checks with two disposable anonymous identities and synthetic snapshots passed: creation, identical replay, management authorization, cross-owner read/revoke rejection, compact and legacy public resolution, invalid capabilities, unsupported versions, both browser origins, revocation, deletion-job readback, rejection of deleted-link replacement, and preservation of the other owner's snapshot. Synthetic snapshots were deleted afterward; test sessions were signed out. Anonymous test identity records can remain in Auth.
+- Ingress was verified before use: `cf-connecting-ip` supports successful normal resolution, forged values receive 403 at the gateway, and spoofed `x-real-ip` / `x-forwarded-for` leave one resolver subject (three attempts) in aggregate database checks. No address or hash was printed.
+- Live testing found and fixed two environment gaps: the hosted gateway strips `/functions/v1`, and Postgres.js must receive payload objects rather than pre-stringified JSONB. Both now have regression coverage.
+- Built release split APKs with the existing PC debug signing key and the ignored public sharing settings. Updated the connected Android 13 phone with `adb install -r` successfully; no uninstall, key replacement, data clear, or schedule import occurred.
+- Android reports **both hosts verified**. Real VIEW intents opened the app on first launch after installation and while already open; UI inspection found the synthetic title, Shared schedules, Edit and Add selected schedules in the review. The unmodified reviews were closed, and only the synthetic server copies were removed. Automated widget tests separately verify that edits stay inactive until Add and that first visits to Shared links do not sign in or report an authentication error.
+- Some messaging apps may retain links in their own browser. The fallback preview offers an explicit cross-host Open action; actual Messenger/Viber/SMS behavior has not been certified. Recipients need a compatible installed Schediel APK. iOS remains unbuilt and unverified.
 
 ## Independent review findings and fixes
 

@@ -207,6 +207,9 @@ class ShareSender {
   Future<void> refresh() async {
     // The list only returns the calling identity's links.
     final ownerId = await _api.currentOwnerId();
+    // First visits have no online identity yet. Only Send link may create
+    // one; an empty local list is not an authentication failure.
+    if (ownerId == null || ownerId.isEmpty) return;
     String? cursor;
     var pages = 0;
     do {
@@ -214,7 +217,7 @@ class ShareSender {
       await _db.transaction(() async {
         for (final share in page.items) {
           await _saveOwned(share);
-          if (ownerId != null) await _db.writeValue(ownedOwnerKey(share.shareId), ownerId);
+          await _db.writeValue(ownedOwnerKey(share.shareId), ownerId);
         }
       });
       cursor = page.nextCursor;

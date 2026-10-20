@@ -106,13 +106,15 @@ GoRouter buildRouter({String initialLocation = '/today', List<RouteBase> extraRo
     GoRoute(
       path: '/share/open',
       parentNavigatorKey: rootNavigatorKey,
-      builder: (_, state) => ShareOpenScreen(initialLink: state.extra is ShareLink ? state.extra as ShareLink : null),
+      pageBuilder: (_, state) => BottomSheetPage<void>(key: state.pageKey,
+        child: ShareOpenScreen(initialLink: state.extra is ShareLink ? state.extra as ShareLink : null)),
     ),
     GoRoute(path: '/share/create', parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const CreateShareScreen()),
     GoRoute(
       path: '/share/import',
       parentNavigatorKey: rootNavigatorKey,
-      builder: (_, state) => DirectImportScreen(link: state.extra as Uri?),
+      pageBuilder: (_, state) => BottomSheetPage<void>(key: state.pageKey,
+        child: DirectImportScreen(link: state.extra as Uri?)),
     ),
     GoRoute(path: '/settings/shared-links', parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const SharedLinksScreen()),
     GoRoute(path: '/settings/privacy', parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const PrivacyScreen()),

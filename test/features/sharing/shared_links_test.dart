@@ -18,6 +18,14 @@ class ManagementApi extends PreviewApi {
   @override Future<OwnedShare> revoke(String id) async { actions.add('revoke:$id'); revoked = true; return metadata(); }
 }
 void main() {
+  final fresh = _NoSessionApi();
+  appTest('first visit to Shared links stays empty without signing in or listing', (h) async {
+    await h.tapText('Settings'); await h.tapText('Shared links');
+    expect(find.text('No shared links in the local list.'), findsOneWidget);
+    expect(find.text('Could not verify this sharing session'), findsNothing);
+    expect(fresh.actions, isEmpty); expect(fresh.preparations, 0);
+  }, overrides: [sharingConfigProvider.overrideWithValue(config), shareApiProvider.overrideWithValue(fresh)]);
+
   final api = ManagementApi();
   appTest('shared-link revocation confirms, reads exact owner status and removes local secret', (h) async {
     await h.run(() => h.read(shareSecretStoreProvider).write(ShareSender.shareSecretKey(shareId), 'A'*43));
@@ -54,6 +62,15 @@ void main() {
     expect(await h.run(() => h.db.select(h.db.pendingShareCreations).get()), hasLength(1));
   }, overrides:[sharingConfigProvider.overrideWithValue(config), shareApiProvider.overrideWithValue(owned),
     shareSecretStoreProvider.overrideWithValue(store)]);
+}
+
+class _NoSessionApi extends ManagementApi {
+  int preparations = 0;
+  @override Future<String?> currentOwnerId() async => null;
+  @override Future<String> prepareCreateOwner() async { preparations++; throw StateError('Unexpected sign-in'); }
+  @override Future<SharePage> list({String? cursor}) async {
+    actions.add('list'); throw const ShareApiException(status: 401, code: 'unauthenticated');
+  }
 }
 
 /// The current session belongs to another identity than the saved attempt.

@@ -43,24 +43,28 @@ class ShareSecret {
   final String digest;
 }
 
-/// A share bearer link: https://{host}/s/{shareId}#token={token}.
+/// A compact bearer link. The secret stays in the fragment, outside HTTP URLs.
+/// Legacy /s/{shareId}#token={token} links remain readable.
 @immutable
 class ShareLink {
-  const ShareLink({required this.host, required this.shareId, required this.token});
+  const ShareLink({required this.host, this.shareId, required this.token});
 
   final String host;
-  final String shareId;
+  final String? shareId;
   final String token;
 
   static final RegExp _uuid = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$');
 
   static bool isShareId(String value) => _uuid.hasMatch(value);
 
-  Uri toUri() => Uri(scheme: 'https', host: host, path: '/s/$shareId', fragment: 'token=$token');
+  Uri toUri() => Uri(scheme: 'https', host: host, path: '/s/', fragment: token);
 
   static ShareLink? tryParse(Uri uri, {required String host}) {
     if (uri.scheme != 'https' || uri.host.toLowerCase() != host.toLowerCase()) return null;
     if (uri.userInfo.isNotEmpty || uri.hasQuery || uri.hasPort && uri.port != 443) return null;
+    if (uri.path == '/s/' && ShareSecret.tryParse(uri.fragment) != null) {
+      return ShareLink(host: host, token: uri.fragment);
+    }
     final segments = uri.pathSegments;
     if (segments.length != 2 || segments[0] != 's' || !isShareId(segments[1])) return null;
     final fragment = uri.fragment;
@@ -71,7 +75,14 @@ class ShareLink {
   }
 
   static ShareLink? tryParseText(String text, {required String host}) {
-    final uri = Uri.tryParse(text.trim());
-    return uri == null ? null : tryParse(uri, host: host);
+    for (final match in RegExp(r'https://[^\s<>]+').allMatches(text)) {
+      var candidate = match.group(0)!;
+      // Chat messages commonly surround a link with punctuation.
+      candidate = candidate.replaceFirst(RegExp(r'[.,;!?)\]]+$'), '');
+      final uri = Uri.tryParse(candidate);
+      final link = uri == null ? null : tryParse(uri, host: host);
+      if (link != null) return link;
+    }
+    return null;
   }
 }

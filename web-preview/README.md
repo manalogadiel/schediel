@@ -1,6 +1,6 @@
 # Schediel browser share preview
 
-Static, read-only fallback for an owned `https://{host}/s/{shareId}#token={secret}` link. Opening it previews only the selected snapshot; adding schedules happens in the app after editable review and explicit confirmation. **Nothing is deployed.** There are no fake store links, trackers or third-party resources.
+Static, read-only fallback for an owned compact `https://{host}/s/#{secret}` link; legacy `/s/{shareId}#token={secret}` links remain readable. Opening it previews only the selected snapshot; adding schedules happens in the app after editable review and explicit confirmation. The Schediel share site was deployed on October 20, 2026; see `../VALIDATION.md`. There are no fake store links, trackers or third-party resources.
 
 ## Test
 
@@ -43,3 +43,5 @@ Deploy the generated directory to a static HTTPS host supporting the emitted `_r
 The fragment is removed immediately from browser history before any resolution attempt, retained only in memory for explicit retry/open-app, and sent only in the resolver POST body. Reloading after fragment removal requires reopening the original link. This is intentional privacy behavior, not deferred-install context restoration. Only a valid matching capability may see revoked/expired states; wrong/unknown links get an unavailable state.
 
 On a real Android/iOS device, prove that opening the original HTTPS link preserves its fragment on cold and warm starts and opens **preview**, not automatic import. App association/signing and store distribution are separate release gates. Link expiry/revocation cannot recall already downloaded previews or imported copies.
+
+Both share and handoff hosts must be public production domains. A Vercel alias alone can remain behind preview authentication, preventing Android from reading its association file; attach the alias to the project as a production domain. The preview accepts either configured origin and hands off to the other only after the Open action.

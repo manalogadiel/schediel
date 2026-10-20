@@ -6,6 +6,25 @@ const app = await import('../src/app.js').catch(error => {
   throw error;
 });
 
+for (const origin of ['https://share.example', 'https://app.example']) {
+  test(`compact link resolves without an ID and hands off across hosts from ${origin}`, async t => {
+    const calls = [], navigated = [];
+    const window = await browser(t, {url: `${origin}/s/#${token}`, fetch: async (url, options) => {
+      calls.push({url, options});
+      assert.equal(window.location.hash, '');
+      return response(200, resolved());
+    }});
+    await app.startPreview({window, config: {...config, appLinkOrigin: 'https://app.example'}, navigate: url => navigated.push(url)});
+    assert.equal(window.document.querySelector('main').dataset.state, 'preview');
+    assert.deepEqual(JSON.parse(calls[0].options.body), {token, supportedSchemaVersions: ['1.0']});
+    assert.ok(!calls[0].url.includes(token));
+    window.document.querySelector('#open-app').click();
+    const destination = origin === 'https://app.example' ? 'https://share.example' : 'https://app.example';
+    assert.deepEqual(navigated, [`${destination}/s/#${token}`]);
+    assert.ok(!window.document.documentElement.outerHTML.includes(token));
+  });
+}
+
 // Exercise the production default navigator, not only the injected callback.
 function navigationWindow(window, assigned) {
   return new Proxy({}, { get(_, key) {

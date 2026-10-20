@@ -154,7 +154,7 @@ function timestamp(value, path) {
 export function validateResolvedShare(result, expectedId) {
   try {
     object(result, ['shareId', 'schemaVersion', 'snapshotVersion', 'createdAt', 'expiresAt', 'itemCount', 'payload'], '');
-    if (result.shareId !== expectedId) fail('invalid_value', '/shareId');
+    if (typeof result.shareId !== 'string' || !UUID.test(result.shareId) || expectedId != null && result.shareId !== expectedId) fail('invalid_value', '/shareId');
     if (result.schemaVersion !== '1.0') fail('unsupported_version', '/schemaVersion');
     integer(result.snapshotVersion, 1, Number.MAX_SAFE_INTEGER, '/snapshotVersion');
     const created = timestamp(result.createdAt, '/createdAt');

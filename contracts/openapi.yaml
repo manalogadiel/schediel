@@ -31,7 +31,7 @@ paths:
       description: >-
         The client generates 32 random bytes, stores them in protected local storage, and sends only the
         lowercase hex SHA-256 digest. The response never contains the secret or a complete bearer URL; the
-        client composes https://{shareHost}{routePath}#token={base64url secret}. Ownership comes from the
+        client composes https://{shareHost}/s/#{base64url secret}; legacy routePath links remain readable. Ownership comes from the
         verified session, never from the request body. A replay with the same Idempotency-Key and the same
         request hash returns the original outcome without repeating work.
       security:
@@ -397,7 +397,8 @@ components:
     ResolveShareRequest:
       type: object
       additionalProperties: false
-      required: [shareId, token, supportedSchemaVersions]
+      description: Compact links omit shareId and resolve by the full capability digest; legacy links provide shareId as an additional scope.
+      required: [token, supportedSchemaVersions]
       properties:
         shareId: { type: string, format: uuid }
         token:

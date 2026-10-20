@@ -112,6 +112,7 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
     try {
       final created = await ref.read(shareSenderProvider).create(payload, validity: _validity);
       if (mounted) setState(() { _created = created; _creating = false; });
+      if (mounted) await _sendOnline(created.link);
     } on ShareApiException catch (e) {
       // Any attempt the sender kept (uncertain, expired, or rejected for
       // auth/rate limits) must be retried or discarded before a new link.
@@ -145,11 +146,12 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
           SelectableText(created.link.toString()),
           const SizedBox(height: Tokens.md),
           Text('Expires ${Formats.of(context).fullDate(LocalDate.fromDateTime(created.share.expiresAt.toLocal()))}'),
+          FilledButton(onPressed: () => _sendOnline(created.link), child: const Text('Send link')),
           FilledButton(onPressed: () async {
             await Clipboard.setData(ClipboardData(text: created.link.toString()));
             if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied')));
           }, child: const Text('Copy link')),
-          const Text('Anyone with this link can view these schedules. Revocation cannot remove copies already added.'),
+          const Text('Anyone with the link can import a copy.'),
         ])
         : all == null ? (_error == null ? const Center(child: CircularProgressIndicator.adaptive())
           : EmptyState(title: _error!, action: TextButton(onPressed: _load, child: const Text('Try again'))))
@@ -209,17 +211,31 @@ class _CreateShareScreenState extends ConsumerState<CreateShareScreen> {
           Row(children: [
             if (enabled) ...[
               Expanded(child: FilledButton(onPressed: !_creating && !_uncertain && payload != null ? () => _create(payload) : null,
-                child: Text(_creating ? 'Creating…' : 'Create link'))),
+                child: Text(_creating ? 'Creating…' : 'Send link'))),
               const SizedBox(width: Tokens.sm),
             ],
             Expanded(child: enabled
-                ? FilledButton.tonal(key: const ValueKey('send-direct'), onPressed: !_creating && payload != null ? () => _sendDirect(payload) : null,
-                    child: const Text('Send link'))
+                ? TextButton(key: const ValueKey('send-direct'), onPressed: !_creating && payload != null ? () => _sendDirect(payload) : null,
+                    child: const Text('Send offline link'))
                 : FilledButton(key: const ValueKey('send-direct'), onPressed: payload != null ? () => _sendDirect(payload) : null,
                     child: const Text('Send link'))),
           ]),
         ]))),
     ));
+  }
+  Future<void> _sendOnline(Uri link) async {
+    // Creation already succeeded. A share-sheet failure must never turn it
+    // into an uncertain creation or create another server snapshot.
+    final message = 'Schedules from Schediel\n$link';
+    try {
+      final sent = await ref.read(nativeBridgeProvider).shareText(message, subject: 'Schediel schedules');
+      if (!sent) {
+        await Clipboard.setData(ClipboardData(text: message));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link copied')));
+      }
+    } on Object {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not send. Use Copy link.')));
+    }
   }
   /// Offline link through the system share sheet; copied when nothing can
   /// receive it.

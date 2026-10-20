@@ -33,7 +33,7 @@ class DeferredShareApi implements ShareApi, BackendDataApi {
       throw const ShareApiException(status: 0, code: 'network');
     }
   }
-  @override Future<ResolvedShare> resolve({required String shareId, required String token}) async =>
+  @override Future<ResolvedShare> resolve({required String? shareId, required String token}) async =>
       (await _api()).resolve(shareId: shareId, token: token);
   @override Future<String> prepareCreateOwner() async => (await _api()).prepareCreateOwner();
   @override Future<String?> currentOwnerId() async => (await _api()).currentOwnerId();

@@ -62,8 +62,10 @@ export function createHandler(deps: Dependencies) {
         headers.set('Access-Control-Allow-Headers', 'authorization, apikey, content-type, idempotency-key');
         return new Response(null, { status: 204, headers });
       }
-      if (!url.pathname.startsWith('/functions/v1/')) throw new ApiError('not_found');
-      const path = url.pathname.slice('/functions/v1'.length);
+      // The hosted gateway strips /functions/v1 before invoking the worker.
+      // Keep the external form for local HTTP/contract tests as well.
+      const path = url.pathname.startsWith('/functions/v1/')
+        ? url.pathname.slice('/functions/v1'.length) : url.pathname;
       if (path === '/health' && req.method === 'GET') {
         if (url.search) throw new ApiError('invalid_request');
         return reply({ status: 'ok' });
@@ -72,12 +74,12 @@ export function createHandler(deps: Dependencies) {
         if (req.method !== 'POST') throw new ApiError('not_found');
         if (url.search) throw new ApiError('invalid_request');
         const body = await jsonBody(req, 4096);
-        shape(body, ['shareId', 'token', 'supportedSchemaVersions']);
+        shape(body, Object.hasOwn(body ?? {}, 'shareId') ? ['shareId', 'token', 'supportedSchemaVersions'] : ['token', 'supportedSchemaVersions']);
         const digest = await digestToken(body.token);
         if (!digest) throw new ApiError('invalid_token');
-        if (typeof body.shareId !== 'string' || !UUID.test(body.shareId) || !Array.isArray(body.supportedSchemaVersions) || body.supportedSchemaVersions.length < 1 || body.supportedSchemaVersions.length > 5 || body.supportedSchemaVersions.some((v: unknown) => typeof v !== 'string' || [...v].length > 10)) throw new ApiError('invalid_request');
+        if (Object.hasOwn(body, 'shareId') && (typeof body.shareId !== 'string' || !UUID.test(body.shareId)) || !Array.isArray(body.supportedSchemaVersions) || body.supportedSchemaVersions.length < 1 || body.supportedSchemaVersions.length > 5 || body.supportedSchemaVersions.some((v: unknown) => typeof v !== 'string' || [...v].length > 10)) throw new ApiError('invalid_request');
         const addressHash = await deps.addressHash(req);
-        return reply(checked(await deps.store.resolve(body.shareId, digest, body.supportedSchemaVersions, addressHash)));
+        return reply(checked(await deps.store.resolve(body.shareId ?? null, digest, body.supportedSchemaVersions, addressHash)));
       }
       const scan = (path === '/scan/assets' && req.method === 'POST') || (path === '/scan/jobs' && req.method === 'POST') || (/^\/scan\/assets\/[^/]+$/.test(path) && req.method === 'DELETE') || (/^\/scan\/jobs\/[^/]+$/.test(path) && ['GET', 'DELETE'].includes(req.method));
       if (!scan && !/^\/share-links(?:\/[^/]+)?$/.test(path) && path !== '/privacy/delete-backend-data' && !/^\/privacy\/deletion-jobs\/[^/]+$/.test(path)) throw new ApiError('not_found');

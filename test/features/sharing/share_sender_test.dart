@@ -81,7 +81,7 @@ class FakeShareApi implements ShareApi {
   Future<OwnedShare> revoke(String shareId) => throw UnimplementedError();
 
   @override
-  Future<ResolvedShare> resolve({required String shareId, required String token}) => throw UnimplementedError();
+  Future<ResolvedShare> resolve({required String? shareId, required String token}) => throw UnimplementedError();
 }
 
 void main() {
@@ -183,8 +183,8 @@ void main() {
     final s = sender(api);
     final created = await s.create(s.build([weekly()], const {}, policy).payload!, validity: const Duration(days: 7));
 
-    expect(created.link.toString(), startsWith('https://share.example/s/$shareId#token='));
-    final token = created.link.fragment.substring('token='.length);
+    expect(created.link.toString(), startsWith('https://share.example/s/#'));
+    final token = created.link.fragment;
     expect(ShareSecret.tryParse(token)!.digest, api.creates.single.$2);
     expect(api.creates.single.$3, now.add(const Duration(days: 7)));
     expect(await db.select(db.pendingShareCreations).get(), isEmpty);
