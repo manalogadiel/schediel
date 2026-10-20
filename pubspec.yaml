@@ -90,10 +90,14 @@ flutter:
     - assets/branding/splash_logo.png
     - assets/fonts/LICENSE-Silkscreen.txt
     - assets/fonts/LICENSE-Caveat.txt
+    - assets/fonts/LICENSE-Inter.txt
 
-  # Display fonts for the Pixel and Sketch themes (SIL OFL 1.1, see
-  # assets/fonts/SOURCES.md). Body text always uses the system font.
+  # Inter is the UI font; Silkscreen and Caveat are display fonts for the
+  # Pixel and Sketch themes (all SIL OFL 1.1, see assets/fonts/SOURCES.md).
   fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
     - family: Silkscreen
       fonts:
         - asset: assets/fonts/Silkscreen-Regular.ttf

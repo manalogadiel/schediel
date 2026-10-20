@@ -6,6 +6,7 @@ import '../../../app/providers.dart';
 import '../../../app/shell.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/art.dart';
 import '../../../app/widgets/common.dart';
 import '../../../core/schedule/occurrence.dart';
 import '../../../core/time/local_date.dart';
@@ -35,44 +36,49 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     const pad = EdgeInsets.symmetric(horizontal: Tokens.md);
 
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: CustomScrollView(
-          slivers: [
-            const SliverPadding(
-              padding: EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.sm, 0),
-              sliver: SliverToBoxAdapter(child: TodayHeader()),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, 0),
-              sliver: SliverToBoxAdapter(child: DateHeading(onPick: () => _pickDate(context, date))),
-            ),
-            const SliverPadding(
-              padding: EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, Tokens.sm),
-              sliver: SliverToBoxAdapter(child: DayStrip()),
-            ),
-            ...view.when(
-              loading: () => [
-                const SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator.adaptive())),
-              ],
-              error: (_, _) => [
-                SliverToBoxAdapter(
-                  child: EmptyState(
-                    title: 'Unable to load schedules',
-                    action: OutlinedButton(onPressed: () => ref.invalidate(allSeriesProvider), child: const Text('Try again')),
-                  ),
+      body: Stack(
+        children: [
+          const Positioned(top: 0, left: 0, right: 0, child: AuraBackdrop()),
+          SafeArea(
+            bottom: false,
+            child: CustomScrollView(
+              slivers: [
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.sm, 0),
+                  sliver: SliverToBoxAdapter(child: TodayHeader()),
                 ),
-              ],
-              data: (v) => [
                 SliverPadding(
-                  padding: pad,
-                  sliver: SliverList.list(children: _content(context, v)),
+                  padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, 0),
+                  sliver: SliverToBoxAdapter(child: DateHeading(onPick: () => _pickDate(context, date))),
                 ),
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(Tokens.sm, Tokens.md, Tokens.sm, Tokens.md),
+                  sliver: SliverToBoxAdapter(child: DayStrip(arched: true)),
+                ),
+                ...view.when(
+                  loading: () => [
+                    const SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator.adaptive())),
+                  ],
+                  error: (_, _) => [
+                    SliverToBoxAdapter(
+                      child: EmptyState(
+                        title: 'Unable to load schedules',
+                        action: OutlinedButton(onPressed: () => ref.invalidate(allSeriesProvider), child: const Text('Try again')),
+                      ),
+                    ),
+                  ],
+                  data: (v) => [
+                    SliverPadding(
+                      padding: pad,
+                      sliver: SliverList.list(children: _content(context, v)),
+                    ),
+                  ],
+                ),
+                SliverToBoxAdapter(child: SizedBox(height: AppShell.bottomInset(context))),
               ],
             ),
-            SliverToBoxAdapter(child: SizedBox(height: AppShell.bottomInset(context))),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -88,12 +94,14 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       ];
     }
     final a = v.agenda;
+    // The hero always shows what comes next, even when browsing other days.
+    final upNext = ref.watch(upNextProvider);
     final showNext = v.isToday && a.next != null;
     final children = <Widget>[
-      if (showNext)
+      if (upNext != null)
         Padding(
-          padding: const EdgeInsets.only(top: Tokens.xs, bottom: Tokens.md),
-          child: NextCard(next: a.next!),
+          padding: const EdgeInsets.only(top: Tokens.xs, bottom: Tokens.lg),
+          child: NextCard(next: upNext.occurrence, date: upNext.date),
         ),
       _SectionHeader(title: v.isToday ? 'Today' : 'Schedule', trailing: const FilterPill()),
     ];
@@ -130,7 +138,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       // The next item is the Next card; the timeline lists the rest.
       final active = [for (final o in a.ongoing) row(o, RowEmphasis.now), for (final o in a.upcoming) row(o, RowEmphasis.normal)];
       children.addAll(active);
-      if (active.isEmpty && !showNext && a.past.isNotEmpty) {
+      if (active.isEmpty && !showNext && a.past.isNotEmpty && upNext == null) {
         children.add(const EmptyState(title: 'Nothing else today', illustration: ScheduleEmptyArt()));
       }
       if (a.past.isNotEmpty) {
@@ -153,10 +161,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       children.add(
         Padding(
           padding: const EdgeInsets.only(top: Tokens.sm),
-          child: Text(
-            'Some entries are not shown. Open the week view or narrow the filter.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          child: Text('Some entries are not shown. Open the week view or narrow the filter.', style: Theme.of(context).textTheme.bodySmall),
         ),
       );
     }

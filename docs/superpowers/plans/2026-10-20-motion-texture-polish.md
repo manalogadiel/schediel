@@ -105,3 +105,32 @@ Why it looks blurry: Android 12+ splash uses the **raster** `mipmap/ic_launcher_
 1. UI font: **Inter** (neutral, iOS-like) or **Plus Jakarta Sans** (rounder)?
 2. Textures on cards/widgets too, or background only?
 3. Splash tagline — e.g. "Your week, in order."?
+
+---
+
+## 6. Auto-mode brief (2026-10-20, user away — no questions)
+
+**Goal:** a release build on the user's phone that looks designed, not default. References: glass card with
+huge date + arched day strip (pink/orange aura), timeline with node line and filled "current" card,
+gradient hero card with big start→end times, soft neumorphic light UI.
+
+**Design language — "Soft Aura"**
+- Inter for Soft themes; Caveat/Silkscreen kept for Sketch/Pixel.
+- Today header: small weekday overline + oversized date ("October 20"), greeting demoted.
+- Ambient aura: blurred accent/category blobs behind the header (Soft style only).
+- Arched 7-day strip: days ride a gentle arc, selected day = gradient orb.
+- Timeline: vertical rail with nodes; rows are cards (title left, time right, details below);
+  ongoing row is accent-filled.
+- **Next card always visible** (searches today → next 14 days), gradient hero with big
+  `09:24 → 12:41` numerals, countdown chip, location.
+- Own illustration for empty states (theme-colored painter, no stock art).
+- Glass (blurred) floating nav bar.
+
+**Also**
+- Editor: replace "1 / 3" with a small segmented step indicator + step name.
+- Appearance: Lightroom-style rows (label · thin hue/lightness track · value).
+- Sharing: works without a server — schedules packed into a `schediel://import` link via the
+  Android share sheet; receiver opens the existing import review. Cloud links stay when configured.
+- Textures E, categories F, splash G (vector logo + typed wordmark + tagline "Your week, in order."),
+  cold start.
+- Ship: analyze, full tests, release APK installed with `adb install -r` (debug-key signed, keeps data).

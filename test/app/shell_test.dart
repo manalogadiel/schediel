@@ -28,10 +28,10 @@ void main() {
   appTest('tapping Today while on Today returns to today', (h) async {
     await h.run(() async => h.read(selectedDateProvider.notifier).select(LocalDate(2026, 11, 5)));
     await h.settle();
-    expect(find.text('Thursday, November 5'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Thursday, November 5')), findsOneWidget);
     await h.tester.tap(find.byKey(const ValueKey('nav-today')));
     await h.settle();
-    expect(find.text('Monday, November 2'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Monday, November 2')), findsOneWidget);
   });
 
   test('Today and Week use distinct icons', () {

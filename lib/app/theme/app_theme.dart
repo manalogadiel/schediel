@@ -87,8 +87,8 @@ extension ScheduleThemeContext on BuildContext {
 /// The app's theme mode: Midnight has no light variant.
 ThemeMode effectiveThemeMode(SchedielTheme theme, ThemeMode mode) => theme.darkOnly ? ThemeMode.dark : mode;
 
-/// Text styles from the DESIGN.md typography tokens. Body text always uses the
-/// platform font; only display styles take the theme's bundled display font.
+/// Text styles from the DESIGN.md typography tokens. Body text uses Inter;
+/// display styles take the theme's display font when it has one.
 TextTheme _textTheme(SchedielTheme theme, Color ink, Color secondaryInk) {
   final font = theme.displayFont;
   // Caveat runs small and Silkscreen wide; scale so headings keep their size.
@@ -111,6 +111,8 @@ TextTheme _textTheme(SchedielTheme theme, Color ink, Color secondaryInk) {
     color: ink,
   );
   return TextTheme(
+    displayLarge: display(46, 1.0, -1.8).copyWith(fontWeight: font == null ? FontWeight.w800 : weight),
+    displaySmall: display(28, 1.1, -0.8).copyWith(fontWeight: font == null ? FontWeight.w700 : weight),
     headlineLarge: display(34, 1.1, -0.8),
     headlineMedium: display(30, 1.15, -0.6),
     titleLarge: display(22, 1.25, -0.22),
@@ -206,6 +208,7 @@ ThemeData buildTheme({
     colorScheme: scheme,
     scaffoldBackgroundColor: texture == ThemeTexture.none ? canvas : Colors.transparent,
     canvasColor: canvas,
+    fontFamily: 'Inter',
     textTheme: text,
     dividerTheme: DividerThemeData(color: divider, thickness: 1, space: 1),
     visualDensity: density == Density.compact ? VisualDensity.compact : VisualDensity.standard,

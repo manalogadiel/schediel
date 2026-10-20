@@ -27,6 +27,9 @@ class Formats {
   /// "Monday, November 2"
   String dayTitle(LocalDate d) => DateFormat.MMMMEEEEd(locale).format(_dt(d));
 
+  /// "November"
+  String monthName(LocalDate d) => DateFormat.MMMM(locale).format(_dt(d));
+
   /// "Mon, Nov 2"
   String shortDate(LocalDate d) => DateFormat.MMMEd(locale).format(_dt(d));
 

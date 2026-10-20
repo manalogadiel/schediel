@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/categories/domain/category.dart';
@@ -10,6 +9,7 @@ import '../providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/schediel_theme.dart';
 import '../theme/tokens.dart';
+import 'art.dart';
 import 'sketch_border.dart';
 import 'themed.dart';
 
@@ -139,19 +139,12 @@ class SoftIcon extends StatelessWidget {
   }
 }
 
-/// Original decorative calendar and clock for an empty schedule.
+/// Original empty-day illustration in the theme's colors.
 class ScheduleEmptyArt extends StatelessWidget {
   const ScheduleEmptyArt({super.key});
 
   @override
-  Widget build(BuildContext context) => SvgPicture.asset(
-    'assets/illustrations/schedule-empty.svg',
-    key: const ValueKey('schedule-empty-art'),
-    width: 88,
-    height: 72,
-    colorFilter: ColorFilter.mode(context.scheduleColors.accentText, BlendMode.srcIn),
-    excludeFromSemantics: true,
-  );
+  Widget build(BuildContext context) => const DayArt(key: ValueKey('schedule-empty-art'), width: 148, height: 113);
 }
 
 /// A genuine empty or problem state, optionally illustrated.

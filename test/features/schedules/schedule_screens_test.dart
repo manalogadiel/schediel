@@ -35,7 +35,7 @@ void main() {
   appTest('first launch shows an honest empty Today with one clear action', (h) async {
     expect(find.text('No schedules yet'), findsOneWidget);
     expect(find.text('Create schedule'), findsOneWidget);
-    expect(find.text('Monday, November 2'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Selected date Monday, November 2')), findsOneWidget);
     expect(find.text('Next'), findsNothing);
     expect(find.text('Now'), findsNothing);
   });
