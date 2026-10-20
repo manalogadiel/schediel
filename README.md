@@ -35,7 +35,32 @@ Keep these build-time defines absent for offline development; the app then expla
 - `SCHEDIEL_SHARE_HOST`: hostname only, without `https://` or a path.
 - `SCHEDIEL_APP_LINK_HOST` (optional): a second owned hostname, different from the share host, that the browser preview's **Open in Schediel** button hands off to. Set the Gradle property `schediel.appLinkHost` to the same value.
 
-Pass them using Flutter's `--dart-define=NAME=value` options. Configure the Android Gradle property `schediel.shareHost` to the same hostname (for example in local `android/gradle.properties`); its default is deliberately `schediel.invalid`. Configure real signing associations and iOS Associated Domains on the owned host before claiming verified links.
+Put them in `env/sharing.json` (git-ignored; copy `env/sharing.example.json`) and build with `--dart-define-from-file=env/sharing.json`. Android reads the App Link host from the same file; the Gradle properties `schediel.shareHost` / `schediel.appLinkHost` override it, and without either the host is deliberately `schediel.invalid`. Configure real signing associations and iOS Associated Domains on the owned host before claiming verified links.
+
+### Online sharing setup (Supabase + Vercel)
+
+Account steps (only you can do these):
+
+1. Create the release key first (see [Release signing](#release-signing)); App Links are verified against it.
+2. Create a free project at [supabase.com](https://supabase.com) (region: Southeast Asia (Singapore)). Save the database password in a password manager.
+3. In the project: **Authentication → Sign In / Providers → Allow anonymous sign-ins** → on → Save.
+4. **Project Settings → API Keys**: copy the **publishable** key (`sb_publishable_…`). Never copy the secret key anywhere.
+5. **Database → Settings → SSL Configuration → Download certificate** (saves `prod-ca-2021.crt`).
+6. Create a free account at [vercel.com](https://vercel.com) and pick a project name (lowercase, e.g. `schediel-share`). The page will live at `https://<name>.vercel.app`.
+7. In this repo's terminal (Node 22+): `npx supabase login` and `npx vercel login`; each opens the browser once.
+
+Then:
+
+```powershell
+copy env\sharing.example.json env\sharing.json   # fill in the five values
+powershell -ExecutionPolicy Bypass -File tools\deploy_sharing.ps1 -DatabaseCaPath $HOME\Downloads\prod-ca-2021.crt
+flutter build apk --release --split-per-abi --dart-define-from-file=env/sharing.json
+adb install -r build\app\outputs\flutter-apk\app-arm64-v8a-release.apk
+```
+
+The script links the project and asks for the database password, pushes the migration, sets the function secrets (it generates the rate-limit key and never prints it), deploys the five functions, checks that an unknown link gives 404, then builds the share page with `assetlinks.json` from your release key and deploys it to Vercel. Re-run any part with `-SkipDatabase`, `-SkipSecrets`, `-SkipFunctions` or `-SkipWeb`. If the resolve check reports 503, follow its hint (certificate or `-IpHeader x-forwarded-for`). If Vercel gives the project a different domain than `<name>.vercel.app`, put that domain in `SCHEDIEL_SHARE_HOST` and run again with `-SkipDatabase -SkipFunctions`.
+
+On the phone: create a link → open it (it should open Schediel, not the browser) → review → confirm adds; revoke it → reopening says the link was revoked; in airplane mode **Create link** reports an error and **Send link** still works.
 
 The backend stores only the selected snapshot and the secret's digest; it is not a sync database for all local schedules. The device retains the random bearer secret in platform-protected storage. An anonymous online identity is created only for explicit share creation; ordinary local use and public link resolution do not create an identity. Anyone with a link can view it until expiry/revocation. Recipient imports are independent copies; revocation cannot recall downloaded copies. Losing the online identity/session can lose management of old links.
 

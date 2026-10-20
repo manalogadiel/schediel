@@ -6,14 +6,24 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Sharing settings the app also builds with (--dart-define-from-file=env/sharing.json;
+// git-ignored, see README "Online sharing"). Gradle properties override them.
+val sharingDefines: Map<*, *> = rootProject.file("../env/sharing.json").let { file ->
+    if (file.exists()) groovy.json.JsonSlurper().parse(file) as Map<*, *> else emptyMap<String, String>()
+}
+
 // Host used for verified share links (Android App Links). Sharing stays off until a real
 // owned domain is deployed and configured; ".invalid" is reserved and never resolves.
-val shareHost: String = (project.findProperty("schediel.shareHost") as String?) ?: "schediel.invalid"
+val shareHost: String = (project.findProperty("schediel.shareHost") as String?)
+    ?: (sharingDefines["SCHEDIEL_SHARE_HOST"] as String?)?.takeIf { it.isNotBlank() }
+    ?: "schediel.invalid"
 // Optional second owned host the browser preview hands off to. Browsers keep same-host
 // navigation in the browser, so it must differ from shareHost. When unset it repeats
 // shareHost: on Android 11 and lower every autoVerify host must verify, so an
 // unresolvable placeholder would stop the real share host from opening the app.
-val appLinkHost: String = (project.findProperty("schediel.appLinkHost") as String?) ?: shareHost
+val appLinkHost: String = (project.findProperty("schediel.appLinkHost") as String?)
+    ?: (sharingDefines["SCHEDIEL_APP_LINK_HOST"] as String?)?.takeIf { it.isNotBlank() }
+    ?: shareHost
 
 // Release signing comes from android/key.properties (git-ignored; see README
 // "Release signing"). A relative storeFile is read from android/, next to

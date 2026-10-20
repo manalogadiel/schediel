@@ -27,6 +27,7 @@ Supply credentials through the platform secret manager, never Flutter, browser J
 | `SUPABASE_PUBLISHABLE_KEYS` | Platform-provided JSON mapping with the `default` public key, when available |
 | `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_ANON_KEY` | Public-key fallback when the mapping is absent |
 | `SCHEDIEL_DATABASE_URL` / `SUPABASE_DB_URL` | Private Postgres connection for a role allowed to `SET ROLE service_role`; a TLS connection is required except localhost |
+| `SCHEDIEL_DATABASE_CA` | PEM of the Supabase database root certificate (Dashboard → Database → Settings → SSL Configuration → Download certificate). Supabase certificates are not signed by a public CA, so verified TLS needs it; public, not a secret |
 | `SCHEDIEL_ALLOWED_ORIGINS` | Comma-separated exact browser origins, including the owned share site |
 | `SCHEDIEL_RATE_HASH_SECRET` | Server-only random HMAC key of at least 32 UTF-8 bytes; never publish it |
 | `SCHEDIEL_TRUST_PROXY_HEADERS` | Must be explicitly `true` **only after** the ingress header overwrite behavior is verified |

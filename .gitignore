@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Local sharing settings (see README "Online sharing"); keystores anywhere
+/env/sharing.json
+*.jks
+*.keystore
+.vercel/

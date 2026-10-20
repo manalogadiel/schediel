@@ -54,6 +54,13 @@ test('configuration creates a self-contained static tree with restrictive routin
   const headers = await readFile(join(out, '_headers'), 'utf8');
   for (const header of ['Cache-Control: no-store, private', 'Referrer-Policy: no-referrer', 'X-Content-Type-Options: nosniff', "frame-ancestors 'none'"]) assert.ok(headers.includes(header), header);
   assert.ok(headers.includes(policy));
+  const vercel = JSON.parse(await readFile(join(out, 'vercel.json'), 'utf8'));
+  assert.deepEqual(vercel.rewrites, [{ source: '/s/:id*', destination: '/s/index.html' }]);
+  const all = Object.fromEntries(vercel.headers.find(h => h.source === '/(.*)').headers.map(h => [h.key, h.value]));
+  assert.equal(all['Cache-Control'], 'no-store, private');
+  assert.equal(all['Referrer-Policy'], 'no-referrer');
+  assert.equal(all['X-Content-Type-Options'], 'nosniff');
+  assert.equal(all['Content-Security-Policy'], `${policy}; frame-ancestors 'none'`);
   assert.equal(await exists(join(out, '.well-known/assetlinks.json')), false);
   assert.equal(await exists(join(out, '.well-known/apple-app-site-association')), false);
 });
@@ -110,6 +117,11 @@ test('associations default to the actual app package when no override is supplie
   const android = JSON.parse(await readFile(join(out, '.well-known/assetlinks.json'), 'utf8'));
   assert.equal(android[0].target.package_name, 'com.example.fixture');
   assert.match(await readFile(join(out, '_headers'), 'utf8'), /\/\.well-known\/assetlinks\.json\n\s+Content-Type: application\/json/);
+  const vercel = JSON.parse(await readFile(join(out, 'vercel.json'), 'utf8'));
+  for (const name of ['assetlinks.json', 'apple-app-site-association']) {
+    const rule = vercel.headers.find(h => h.source === `/.well-known/${name}`);
+    assert.deepEqual(rule?.headers, [{ key: 'Content-Type', value: 'application/json' }], name);
+  }
 });
 test('reconfiguration without signing inputs removes stale generated associations', async t => {
   const { out } = await target(t);

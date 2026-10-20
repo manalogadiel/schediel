@@ -43,6 +43,21 @@ async function configure() {
   await writeFile(join(out, '_redirects'), '/s/* /s/index.html 200\n', 'utf8');
   const associationHeaders = associations.map(([name]) => `\n/.well-known/${name}\n  Content-Type: application/json\n`).join('');
   await writeFile(join(out, '_headers'), `/*\n  Cache-Control: no-store, private\n  Referrer-Policy: no-referrer\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Content-Security-Policy: ${policy}; frame-ancestors 'none'\n${associationHeaders}`, 'utf8');
+  // Vercel ignores _redirects/_headers; the same rules as its own config.
+  const vercel = {
+    rewrites: [{ source: '/s/:id*', destination: '/s/index.html' }],
+    headers: [
+      { source: '/(.*)', headers: [
+        { key: 'Cache-Control', value: 'no-store, private' },
+        { key: 'Referrer-Policy', value: 'no-referrer' },
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'X-Frame-Options', value: 'DENY' },
+        { key: 'Content-Security-Policy', value: `${policy}; frame-ancestors 'none'` },
+      ] },
+      ...associations.map(([name]) => ({ source: `/.well-known/${name}`, headers: [{ key: 'Content-Type', value: 'application/json' }] })),
+    ],
+  };
+  await writeFile(join(out, 'vercel.json'), `${JSON.stringify(vercel, null, 2)}\n`, 'utf8');
   // Only remove these two known generated files, never other output content.
   for (const name of ['assetlinks.json', 'apple-app-site-association']) await rm(join(out, '.well-known', name), { force: true });
   if (associations.length) await mkdir(join(out, '.well-known'), { recursive: true });
