@@ -10,6 +10,15 @@
     <string name="widget_label">Schedules</string>
     <string name="widget_description">Your next and upcoming schedules</string>
     <string name="widget_open_app">Open Schediel</string>
+    <string name="widget_preview_next_time">Next · 9:00 am – 10:00 am</string>
+    <string name="widget_preview_first_title">Automata Theory</string>
+    <string name="widget_preview_first_details">Room 103 · CS 311</string>
+    <string name="widget_preview_second_time">10:30 am – 12:00 pm</string>
+    <string name="widget_preview_second_title">Mobile Computing</string>
+    <string name="widget_preview_second_details">Room 105 · CS 312</string>
+    <string name="widget_preview_third_time">Tomorrow · 1:00 pm – 2:30 pm</string>
+    <string name="widget_preview_third_title">Web Systems</string>
+    <string name="widget_preview_third_details">Room 104 · IT 314</string>
     <string name="widget_open_app_to_update">Open Schediel to update</string>
     <string name="widget_no_schedules">No schedules yet</string>
     <string name="widget_none_in_filter">No schedules in this filter</string>

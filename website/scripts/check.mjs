@@ -8,6 +8,7 @@ const assets=[...html.matchAll(/(?:src|href)="([^"#]+)"/g)].map(m=>m[1]).filter(
 for(const file of new Set(assets))await stat(new URL(file,root));
 for(const [,file] of css.matchAll(/url\(['"]?([^)'"\s]+)['"]?\)/g))await stat(new URL(file,root));
 const manifest=JSON.parse(await readFile(new URL('downloads/manifest.json',root),'utf8'));
+if(manifest.filename!=='Schediel.apk'||!html.includes('download="Schediel.apk"'))throw new Error('The download must be named Schediel.apk');
 const hash=createHash('sha256');
 let size=0;
 for(const part of manifest.parts){const data=await readFile(new URL('downloads/'+part.file,root));if(data.length!==part.size)throw new Error('Wrong part size');hash.update(data);size+=data.length;}

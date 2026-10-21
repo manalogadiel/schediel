@@ -20,7 +20,9 @@ import '../../../core/time/local_time.dart';
 import '../../categories/domain/category.dart';
 import '../../imports/domain/import_entry.dart';
 import '../../reminders/domain/alert_rule.dart';
+import '../../reminders/application/clock_handoff.dart';
 import '../../reminders/presentation/alert_editor.dart';
+import '../../../integrations/native/native_bridge.dart';
 import '../data/schedule_repository.dart';
 import 'month_sheet.dart';
 
@@ -86,6 +88,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   bool _alertsOpen = false;
   late AlertPreference _notification;
   late AlertPreference _alarm;
+  bool _openClock = false;
   Map<String, String> _errors = {};
 
   @override
@@ -209,6 +212,31 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
 
   bool get _isOccurrence => widget.scope == EditorScope.occurrence;
 
+  ({Occurrence occurrence, ClockHandoffPlan plan})? get _clockTarget {
+    if (!_initialized ||
+        !_alarm.enabled ||
+        _isOccurrence ||
+        widget.scope == EditorScope.review ||
+        !ref.read(clockHandoffAvailableProvider)) {
+      return null;
+    }
+    final draft = _draft();
+    if (_validate(draft).isNotEmpty) return null;
+    return ref
+        .read(clockHandoffProvider)
+        .nextFor(
+          ScheduleSeries(
+            id: _original?.id ?? 'draft',
+            revision: _original?.revision ?? 1,
+            title: draft.title,
+            time: draft.time,
+            recurrence: draft.recurrence,
+            exceptions: _original?.exceptions ?? const [],
+          ),
+          _alarm.offsetMinutes,
+        );
+  }
+
   int? get _endDayOffset {
     if (_dateOnly || !_hasEnd) return null;
     final original = _original?.time;
@@ -222,7 +250,10 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     if (_dateOnly) return DateOnlySpec(startDate: _date, endDateExclusive: _lastDate.addDays(1));
     final original = _original?.time;
     final sameWall =
-        original is TimedSpec && original.startDate == _date && original.startTime == _start && original.timeZone == _zone;
+        original is TimedSpec &&
+        original.startDate == _date &&
+        original.startTime == _start &&
+        original.timeZone == _zone;
     return TimedSpec(
       startDate: _date,
       startTime: _start,
@@ -249,7 +280,12 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     categoryId: _categoryId,
     time: _timeSpec(),
     recurrence: _recurrence(),
-    details: ScheduleDetails(location: _location.text, professor: _professor.text, subtitle: _subtitle.text, notes: _notes.text),
+    details: ScheduleDetails(
+      location: _location.text,
+      professor: _professor.text,
+      subtitle: _subtitle.text,
+      notes: _notes.text,
+    ),
   ).normalized();
 
   Map<String, String> _messages(List<ValidationIssue> issues) {
@@ -365,6 +401,8 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
     });
     final repo = ref.read(scheduleRepositoryProvider);
     final alerts = [_notification, _alarm];
+    final clockTarget = _openClock ? _clockTarget : null;
+    String? savedId = _original?.id;
     if (widget.scope == EditorScope.review) {
       setState(() => _dirty = false);
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -377,7 +415,7 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
         case EditorScope.review:
           return;
         case EditorScope.create:
-          await repo.create(draft, alerts: alerts);
+          savedId = await repo.create(draft, alerts: alerts);
         case EditorScope.occurrence:
           await repo.overrideOccurrence(
             _original!.id,
@@ -413,6 +451,27 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       }
       if (!mounted) return;
       _dirty = false;
+      // Persistence succeeded. Clock errors must never look like save errors
+      // or leave the user in an editor that could create the same schedule twice.
+      String? clockMessage;
+      if (clockTarget != null && savedId != null) {
+        try {
+          final saved = await repo.load(savedId);
+          if (saved != null) {
+            final result = await ref.read(clockHandoffProvider).send(saved, clockTarget.occurrence, clockTarget.plan);
+            clockMessage = switch (result) {
+              ClockLaunchResult.launched => 'Schedule saved. Confirm your alarm in Clock.',
+              ClockLaunchResult.unavailable =>
+                'Schedule saved. No Clock app is available; your Schediel alarm is still enabled.',
+              ClockLaunchResult.failed => 'Schedule saved. Could not open Clock; your Schediel alarm is still enabled.',
+            };
+          }
+        } catch (_) {
+          clockMessage = 'Schedule saved. Could not open Clock; your Schediel alarm is still enabled.';
+        }
+      }
+      if (!mounted) return;
+      if (clockMessage != null) showMessage(context, clockMessage);
       Navigator.of(context).pop(true);
     } on ScheduleValidationException catch (e) {
       if (!mounted) return;
@@ -462,7 +521,11 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(tooltip: 'Close', icon: const AppIcon(AppIcons.close), onPressed: _saving ? null : _close),
+          leading: IconButton(
+            tooltip: 'Close',
+            icon: const AppIcon(AppIcons.close),
+            onPressed: _saving ? null : _close,
+          ),
           title: Text(title),
         ),
         body: _loadFailed
@@ -499,16 +562,26 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                     child: const Text('Back'),
                   ),
                 const Spacer(),
-                FilledButton(
-                  onPressed: _initialized && !_saving ? _advance : null,
-                  child: Text(
-                    _saving
-                        ? 'Saving…'
-                        : _step == _EditorStep.alerts
-                        ? widget.scope == EditorScope.review
-                              ? 'Use changes'
-                              : 'Save'
-                        : 'Next',
+                Flexible(
+                  flex: 4,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    heightFactor: 1,
+                    child: FilledButton(
+                      onPressed: _initialized && !_saving ? _advance : null,
+                      child: Text(
+                        _saving
+                            ? 'Saving…'
+                            : _step == _EditorStep.alerts
+                            ? widget.scope == EditorScope.review
+                                  ? 'Use changes'
+                                  : _openClock && _clockTarget != null
+                                  ? 'Save & open Clock'
+                                  : 'Save'
+                            : 'Next',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -572,7 +645,10 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (category != null) CategoryDot(colorKey: category.colorKey),
-                      Text(category?.name ?? 'Uncategorized', style: text.bodyMedium?.copyWith(color: colors.secondaryInk)),
+                      Text(
+                        category?.name ?? 'Uncategorized',
+                        style: text.bodyMedium?.copyWith(color: colors.secondaryInk),
+                      ),
                     ],
                   ),
                   onTap: () => _pickCategory(categories),
@@ -610,13 +686,20 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
               dateOnly: _dateOnly,
               deviceZone: ref.read(deviceZoneProvider),
               errors: _errors,
+              clockAvailable: widget.scope != EditorScope.review && ref.watch(clockHandoffAvailableProvider),
+              clockEligible: _clockTarget != null,
+              openClock: _openClock,
+              onOpenClockChanged: (v) => _change(() => _openClock = v),
               onChanged: (n, a) => _change(() {
                 _notification = n;
+                if (!_alarm.enabled && a.enabled) _openClock = true;
                 _alarm = a;
               }),
             ),
           ),
-        if (_step == _EditorStep.time && widget.scope == EditorScope.series && (_original?.exceptions.isNotEmpty ?? false))
+        if (_step == _EditorStep.time &&
+            widget.scope == EditorScope.series &&
+            (_original?.exceptions.isNotEmpty ?? false))
           _changedOccurrences(context, f),
         if (_step == _EditorStep.time) _overlapWarning(context, f),
       ],
@@ -773,7 +856,11 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
   }
 
   Widget _detailsSection(BuildContext context) {
-    final parts = [_location.text.trim(), _professor.text.trim(), _subtitle.text.trim()].where((s) => s.isNotEmpty).toList();
+    final parts = [
+      _location.text.trim(),
+      _professor.text.trim(),
+      _subtitle.text.trim(),
+    ].where((s) => s.isNotEmpty).toList();
     Widget field(TextEditingController c, String label, String path, {int maxLines = 1, AppIcons? icon}) => Padding(
       padding: const EdgeInsets.fromLTRB(Tokens.md, Tokens.sm, Tokens.md, Tokens.sm),
       child: LabeledField(
@@ -843,7 +930,9 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
       time: draft.time,
       recurrence: draft.recurrence,
     );
-    if (ref.read(seriesValidatorProvider).validate(probe.copyWith(title: 'x')).isNotEmpty) return const SizedBox.shrink();
+    if (ref.read(seriesValidatorProvider).validate(probe.copyWith(title: 'x')).isNotEmpty) {
+      return const SizedBox.shrink();
+    }
     final engine = ref.read(occurrenceEngineProvider);
     final zones = ref.read(zoneResolverProvider);
     final zone = ref.read(deviceZoneProvider);
@@ -863,7 +952,10 @@ class _ScheduleEditorScreenState extends ConsumerState<ScheduleEditorScreen> {
             final day = zones.localDateOf((a.timing as TimedTiming).startUtc, zone);
             return Padding(
               padding: const EdgeInsets.only(top: Tokens.sm),
-              child: DetailLine(icon: AppIcons.warning, text: 'Overlaps “${b.title}” on ${f.fullDate(day)}. You can still save.'),
+              child: DetailLine(
+                icon: AppIcons.warning,
+                text: 'Overlaps “${b.title}” on ${f.fullDate(day)}. You can still save.',
+              ),
             );
           }
         }
@@ -1007,10 +1099,10 @@ class _ZonePickerSheetState extends State<ZonePickerSheet> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(Tokens.md, 0, Tokens.md, Tokens.sm),
-            child: FieldLabel(label: 'Search time zones', child: TextField(
-              autofocus: true,
-              onChanged: (v) => setState(() => _query = v),
-            )),
+            child: FieldLabel(
+              label: 'Search time zones',
+              child: TextField(autofocus: true, onChanged: (v) => setState(() => _query = v)),
+            ),
           ),
           Expanded(
             child: ListView.builder(
@@ -1055,7 +1147,9 @@ class _StepIndicator extends StatelessWidget {
               width: i == index ? 26 : 8,
               height: 8,
               decoration: BoxDecoration(
-                color: i <= index ? c.palette.accent.withValues(alpha: i == index ? 1 : .45) : c.ink.withValues(alpha: .14),
+                color: i <= index
+                    ? c.palette.accent.withValues(alpha: i == index ? 1 : .45)
+                    : c.ink.withValues(alpha: .14),
                 borderRadius: BorderRadius.circular(pixel ? 0 : 4),
               ),
             ),
@@ -1065,12 +1159,16 @@ class _StepIndicator extends StatelessWidget {
             duration: duration,
             transitionBuilder: (child, a) => FadeTransition(
               opacity: a,
-              child: SlideTransition(position: Tween(begin: const Offset(0, .4), end: Offset.zero).animate(a), child: child),
+              child: SlideTransition(
+                position: Tween(begin: const Offset(0, .4), end: Offset.zero).animate(a),
+                child: child,
+              ),
             ),
             child: Text(
               label,
               key: ValueKey(label),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: c.secondaryInk, fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: c.secondaryInk, fontWeight: FontWeight.w600),
             ),
           ),
         ],

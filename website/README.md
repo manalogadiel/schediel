@@ -10,6 +10,8 @@ The poster-style theme gallery displays real, unmodified app and home-screen cap
 
 The logo and bundled fonts are Schediel assets. Inter, Caveat, and Silkscreen license files are retained in `dist/assets/`. The home-screen captures were explicitly authorized by the user. The APK supplied for this site is ARM64, minimum Android 8.0; other architectures are not included in this download.
 
+The current download is Schediel 1.0.1 (ARM64 build 4007), saved as `Schediel.apk`. It adds populated widget-picker previews and an optional **Save & open Clock** action when enabling an eligible alarm in the schedule editor. Clock alarms are managed separately from Schediel alarms. The APK parts are checked against the release file's SHA-256 before publication.
+
 The initial Sites deployment is owner-private for review. A public APK distribution link requires making the site public or deploying `dist/` to your chosen public host.
 
 ## Vercel

@@ -23,13 +23,13 @@ downloadButton.addEventListener('click',async()=> {
   progress.hidden=false;
   progress.value=0;
   try {
-    const response=await fetch('downloads/manifest.json');
+    const response=await fetch('downloads/manifest.json',{cache:'no-store'});
     if(!response.ok)throw new Error('The download is temporarily unavailable. Please try again.');
     const manifest=await response.json();
     const chunks=[];
     let received=0;
     for(const part of manifest.parts){
-      const result=await fetch(`downloads/${part.file}`);
+      const result=await fetch(`downloads/${part.file}?v=${manifest.sha256}`);
       if(!result.ok)throw new Error('The download was interrupted. Check your connection and try again.');
       const bytes=new Uint8Array(await result.arrayBuffer());
       if(bytes.byteLength!==part.size)throw new Error('The download was incomplete. Please try again.');
@@ -58,4 +58,4 @@ downloadButton.addEventListener('click',async()=> {
     downloadButton.querySelector('span').textContent='Try again';
   } finally {downloadButton.disabled=false;}
 });
-fetch('downloads/manifest.json').then(r=>r.ok?r.json():null).then(manifest=>{if(manifest)document.querySelectorAll('[data-apk-size]').forEach(el=>el.textContent=`${(manifest.size/1024/1024).toFixed(1)} MB`);}).catch(()=>{});
+fetch('downloads/manifest.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(manifest=>{if(manifest)document.querySelectorAll('[data-apk-size]').forEach(el=>el.textContent=`${(manifest.size/1024/1024).toFixed(1)} MB`);}).catch(()=>{});

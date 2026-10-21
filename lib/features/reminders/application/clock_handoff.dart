@@ -31,6 +31,40 @@ class ClockHandoffService {
 
   final Ref _ref;
 
+  /// Resolve the next future alarm for the editor, rather than handing a
+  /// past occurrence (or an arbitrary selected day) to Android Clock.
+  ({Occurrence occurrence, ClockHandoffPlan plan})? nextFor(ScheduleSeries series, int offsetMinutes) {
+    final now = _ref.read(clockProvider)().toUtc();
+    final zone = _ref.read(deviceZoneProvider);
+    final occurrences = _ref
+        .read(occurrenceEngineProvider)
+        .expand(series, windowStart: now, windowEnd: now.add(const Duration(days: 8)), viewZone: zone)
+        .occurrences;
+    for (final occurrence in occurrences) {
+      final timing = occurrence.timing;
+      if (timing is! TimedTiming || !timing.startUtc.subtract(Duration(minutes: offsetMinutes)).isAfter(now)) continue;
+      final plan = planFor(series, occurrence, offsetMinutes);
+      if (plan == null) return null;
+      // Clock cannot express a future start date, skipped dates or an until
+      // date. Do not let an editor hand-off ring before the next occurrence.
+      if (plan.weekdays != null) {
+        final localNow = _ref.read(zoneResolverProvider).toLocal(now, zone);
+        for (var day = 0; day <= 7; day++) {
+          final date = localNow.date.addDays(day);
+          if (!plan.weekdays!.contains(date.weekday)) continue;
+          if (day == 0 && plan.time.minutesOfDay <= localNow.time.minutesOfDay) continue;
+          final trigger = _ref
+              .read(zoneResolverProvider)
+              .toLocal(timing.startUtc.subtract(Duration(minutes: offsetMinutes)), zone);
+          if (date != trigger.date) return null;
+          break;
+        }
+      }
+      return (occurrence: occurrence, plan: plan);
+    }
+    return null;
+  }
+
   /// Only schedules a time/weekday Clock alarm can represent exactly: a
   /// daily or weekly series in the device zone, or a one-time schedule
   /// within the next 24 hours. Anything else returns null.
@@ -67,20 +101,24 @@ class ClockHandoffService {
     if (result == ClockLaunchResult.launched) {
       final db = _ref.read(databaseProvider);
       final now = _ref.read(clockProvider)().toUtc();
-      await db.into(db.scheduledAlerts).insertOnConflictUpdate(ScheduledAlertsCompanion.insert(
-            requestKey: 'clock|${series.id}',
-            ruleId: 'clock',
-            seriesId: series.id,
-            occurrenceKey: occurrence.originalKey.toIso(),
-            kind: 'clock',
-            platform: 'android',
-            sourceRevision: series.revision,
-            nativeRequestId: const Value(null),
-            triggerAt: now,
-            status: AlertStatus.externalUnverified,
-            errorCode: const Value(null),
-            lastReconciledAt: now,
-          ));
+      await db
+          .into(db.scheduledAlerts)
+          .insertOnConflictUpdate(
+            ScheduledAlertsCompanion.insert(
+              requestKey: 'clock|${series.id}',
+              ruleId: 'clock',
+              seriesId: series.id,
+              occurrenceKey: occurrence.originalKey.toIso(),
+              kind: 'clock',
+              platform: 'android',
+              sourceRevision: series.revision,
+              nativeRequestId: const Value(null),
+              triggerAt: now,
+              status: AlertStatus.externalUnverified,
+              errorCode: const Value(null),
+              lastReconciledAt: now,
+            ),
+          );
     }
     return result;
   }

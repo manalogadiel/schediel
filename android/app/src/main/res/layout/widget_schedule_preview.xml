@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker-only example content. Never loaded into the user's schedule data. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="@android:color/transparent">
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="10dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/widget_preview_next">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_preview_next_time" android:textSize="11sp"
+            android:maxLines="1" android:ellipsize="end" android:textColor="#FFFFFFFF" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_preview_first_title" android:textSize="15sp"
+            android:fontFamily="sans-serif-medium" android:maxLines="1" android:ellipsize="end" android:textColor="#FFFFFFFF" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_preview_first_details" android:textSize="11sp"
+            android:maxLines="1" android:ellipsize="end" android:textColor="#FFF4ECFF" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="10dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/widget_preview_upcoming">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_preview_second_time" android:textSize="11sp"
+            android:maxLines="1" android:ellipsize="end" android:textColor="#FF42434C" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_preview_second_title" android:textSize="15sp"
+            android:fontFamily="sans-serif-medium" android:maxLines="1" android:ellipsize="end" android:textColor="#FF252630" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_preview_second_details" android:textSize="11sp"
+            android:maxLines="1" android:ellipsize="end" android:textColor="#FF42434C" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="10dp"
+        android:background="@drawable/widget_preview_upcoming">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_preview_third_time" android:textSize="11sp"
+            android:maxLines="1" android:ellipsize="end" android:textColor="#FF42434C" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_preview_third_title" android:textSize="15sp"
+            android:fontFamily="sans-serif-medium" android:maxLines="1" android:ellipsize="end" android:textColor="#FF252630" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_preview_third_details" android:textSize="11sp"
+            android:maxLines="1" android:ellipsize="end" android:textColor="#FF42434C" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,7 +1,7 @@
 {
   "filename": "Schediel.apk",
-  "size": 41653356,
-  "sha256": "6da3fca18caa5ac39cd3f4e3912a1bdbb4096dfca66eb2e72b2da6085f371ad4",
+  "size": 41709872,
+  "sha256": "6cf4a006e8517808f7c9f9de5db73e0fea99d543ab3894f21b624ce84fe7ca98",
   "parts": [
     {
       "file": "schediel-1.part",
@@ -13,7 +13,7 @@
     },
     {
       "file": "schediel-3.part",
-      "size": 8098924
+      "size": 8155440
     }
   ]
 }

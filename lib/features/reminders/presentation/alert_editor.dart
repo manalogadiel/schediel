@@ -27,6 +27,10 @@ class AlertEditor extends ConsumerWidget {
     required this.deviceZone,
     required this.errors,
     required this.onChanged,
+    this.clockAvailable = false,
+    this.clockEligible = false,
+    this.openClock = false,
+    this.onOpenClockChanged,
   });
 
   final AlertPreference notification;
@@ -35,6 +39,10 @@ class AlertEditor extends ConsumerWidget {
   final String deviceZone;
   final Map<String, String> errors;
   final void Function(AlertPreference notification, AlertPreference alarm) onChanged;
+  final bool clockAvailable;
+  final bool clockEligible;
+  final bool openClock;
+  final ValueChanged<bool>? onOpenClockChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -66,6 +74,18 @@ class AlertEditor extends ConsumerWidget {
           deviceZone: deviceZone,
           error: errors['alerts/alarm'],
           onChanged: (p) => onChanged(notification, p),
+          clockControl: alarm.enabled && clockAvailable
+              ? SwitchListTile(
+                  title: const Text('Open Android Clock after saving'),
+                  subtitle: Text(
+                    clockEligible
+                        ? 'Confirm the system alarm in Clock. Your Schediel alarm also stays enabled. Clock alarms must be changed separately; repeat end dates and skipped dates are not synced.'
+                        : 'Clock needs a timed schedule in your device time zone: a one-time alarm within 24 hours, or the next matching daily or weekly alarm. Your Schediel alarm still works.',
+                  ),
+                  value: openClock && clockEligible,
+                  onChanged: clockEligible ? onOpenClockChanged : null,
+                )
+              : null,
         ),
         const SizedBox(height: Tokens.sm),
       ],
@@ -83,6 +103,7 @@ class _AlertBlock extends StatelessWidget {
     required this.deviceZone,
     required this.error,
     required this.onChanged,
+    this.clockControl,
   });
 
   final AlertPreference preference;
@@ -93,6 +114,7 @@ class _AlertBlock extends StatelessWidget {
   final String deviceZone;
   final String? error;
   final ValueChanged<AlertPreference> onChanged;
+  final Widget? clockControl;
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +132,7 @@ class _AlertBlock extends StatelessWidget {
           onChanged: (v) => onChanged(p.copyWith(enabled: v)),
         ),
         if (p.enabled) ...[
+          ?clockControl,
           CapabilityNote(kind: p.kind),
           ListTile(
             title: Text('$title timing'),
@@ -156,13 +179,17 @@ class _AlertBlock extends StatelessWidget {
               style: TextStyle(color: secondary),
             ),
             value: p.lockScreenDetails == LockScreenDetails.detailsRequested,
-            onChanged: (v) =>
-                onChanged(p.copyWith(lockScreenDetails: v ? LockScreenDetails.detailsRequested : LockScreenDetails.titleOnly)),
+            onChanged: (v) => onChanged(
+              p.copyWith(lockScreenDetails: v ? LockScreenDetails.detailsRequested : LockScreenDetails.titleOnly),
+            ),
           ),
           if (isAlarm && prominentAvailable)
             SwitchListTile(
               title: const Text('Prominent alarm when allowed'),
-              subtitle: Text('Uses a full-screen alarm only where the device permits it.', style: TextStyle(color: secondary)),
+              subtitle: Text(
+                'Uses a full-screen alarm only where the device permits it.',
+                style: TextStyle(color: secondary),
+              ),
               value: p.presentationPreference == PresentationPreference.prominentIfSupported,
               onChanged: (v) => onChanged(
                 p.copyWith(
@@ -235,13 +262,16 @@ class _AlertBlock extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) => AlertDialog(
             title: const Text('Minutes before'),
-            content: FieldLabel(label: 'Minutes', child: TextField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(errorText: error),
-            )),
+            content: FieldLabel(
+              label: 'Minutes',
+              child: TextField(
+                controller: controller,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(errorText: error),
+              ),
+            ),
             actions: [
               TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
               TextButton(
