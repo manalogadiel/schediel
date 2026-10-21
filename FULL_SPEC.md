@@ -1913,6 +1913,14 @@ Schediel now has a Flutter implementation, Android native code, iOS source, a lo
 
 Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
 
+## October 21: release-only scanner initialization failure
+
+The reported failure was reproduced on the user's Samsung SM-A326B (Android 13), running the installed ARM64 release **4008**, using the supplied 922 × 1012 university timetable. Device startup logs showed `NoSuchMethodException` for the public no-argument constructors of `CommonComponentRegistrar`, `VisionCommonRegistrar` and `TextRegistrar`. R8's removal report confirmed all three constructors were removed. ML Kit then threw a native null-pointer exception while preparing the image, before text recognition. The earlier profile scan and mocked/native-adapter tests did not exercise this minified-release failure.
+
+The app's R8 rules now explicitly retain the constructors of ML Kit component registrars discovered through manifest names. `python tools/check_release_scanner.py <apk>` inspects actual DEX methods: it failed against build 4008 with all three constructors missing and passed against the rebuilt release. Shrinking remains enabled; no whole-library keep or debug-build substitution was used.
+
+All **416 Flutter tests passed**, whole-project analysis reported **no issues**, and all three split release APKs built. The ARM64 APK reports **1.0.1 / 4009**, with the same existing signing certificate. `adb install -r` updated the phone successfully. A fresh scan through the normal release UI produced **14 meeting cards**, reached Continue to review, and showed both **One time / Weekly** controls. The first course showed Thursday 08:30–10:00 in room 105 and Friday 16:00–17:30 in room 402. No schedule import/save confirmation was pressed, no data was cleared, and no image/OCR text was uploaded. This verifies the supplied table on this phone; it does not certify every image, language or device.
+
 ## October 21: scanned class repeat choices
 
 The newly attached table has identical pixels to the previously device-scanned university image. Its saved local OCR was rechecked against all **14 meetings**, including course codes, weekdays, both times and rooms; the first title/professor and all School/blank-notes defaults also passed. This is a regression using earlier real-device OCR, not a claim that a new phone scan was performed today. The personal source/OCR diagnostics remain ignored and absent from release assets.

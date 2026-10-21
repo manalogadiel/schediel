@@ -28,6 +28,8 @@ Android JVM tests and lint (from `android/`; Windows uses `cmd.exe /c "gradlew.b
 
 The pinned `home_widget` plugin currently emits a Kotlin Gradle Plugin deprecation warning. The debug APK is for testing and uses debug signing; production signing, permissions/store eligibility and dependency updates must be reviewed before release. Do not distribute it as a signed production release.
 
+After each minified Android release build, run `python tools/check_release_scanner.py build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`. This checks the APK's actual DEX code for the three ML Kit registrar constructors loaded through reflection; debug and mocked OCR tests cannot catch their removal by R8. Then verify scanning on a device using that release APK.
+
 ## Share schedules
 
 Tap **Share → Categories** to choose School, Personal, or other categories from one grouped list. Location, person and subtitle are included by default; Notes stays off unless checked under Details. Only checked schedules and details are shared.
