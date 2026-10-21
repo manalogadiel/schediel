@@ -6,6 +6,8 @@ Offline-first Flutter scheduling app for Android and iOS. Repeating schedules, r
 
 ## Run locally
 
+The Schediel landing page is in [`website/`](website/README.md). It uses vanilla JavaScript and includes its own Vercel configuration. For Vercel imports, set the project root directory to `website`.
+
 Use the Flutter/Dart toolchain compatible with the committed `pubspec.lock` (Dart SDK constraint `^3.13.3`), Android SDK and Java 17. Android minimum is API 26; iOS minimum is 17, with app-owned AlarmKit alarms limited to iOS 26+ and the corresponding SDK.
 
 ```sh

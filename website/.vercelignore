@@ -1,0 +1,8 @@
+captures
+*-preview.png
+verified-download.apk
+scripts/capture-phone.py
+.openai
+.sites-checkout
+.sites-runtime
+*.tar.gz
