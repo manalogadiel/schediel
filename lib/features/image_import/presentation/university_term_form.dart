@@ -6,6 +6,7 @@ import '../../../core/time/local_date.dart';
 import '../application/image_import_controller.dart';
 import '../domain/candidate_resolution.dart';
 import 'scan_repeat_picker.dart';
+import 'scan_date_field.dart';
 
 class UniversityTermForm extends StatefulWidget {
   const UniversityTermForm({super.key, required this.controller, required this.initialZone});
@@ -16,14 +17,14 @@ class UniversityTermForm extends StatefulWidget {
 }
 
 class _UniversityTermFormState extends State<UniversityTermForm> {
-  final _start = TextEditingController(), _end = TextEditingController();
+  LocalDate? _start, _end;
   late final _zone = TextEditingController(text: widget.initialZone);
   bool _checked = false;
   CandidateRepeat _repeat = CandidateRepeat.weekly;
   String? _error;
 
   @override
-  void dispose() { _start.dispose(); _end.dispose(); _zone.dispose(); super.dispose(); }
+  void dispose() { _zone.dispose(); super.dispose(); }
 
   void _invalidate() {
     widget.controller.invalidateUniversityContext();
@@ -32,17 +33,13 @@ class _UniversityTermFormState extends State<UniversityTermForm> {
 
   void _apply() {
     FocusScope.of(context).unfocus();
-    final start = LocalDate.tryParse(_start.text.trim());
-    final end = _repeat == CandidateRepeat.weekly ? LocalDate.tryParse(_end.text.trim()) : null;
+    final start = _start;
+    final end = _repeat == CandidateRepeat.weekly ? _end : null;
     setState(() => _error = start == null || (_repeat == CandidateRepeat.weekly && end == null)
       ? (_repeat == CandidateRepeat.weekly ? 'Choose your term start and end dates.' : 'Choose a starting date.')
       : widget.controller.applyUniversityTerm(start: start, end: end, repeat: _repeat,
           zone: _zone.text.trim(), checked: _checked));
   }
-
-  Widget _date(String label, String key, TextEditingController controller) => FieldLabel(
-    label: label, child: TextField(key: Key(key), controller: controller,
-      onChanged: (_) => _invalidate(), keyboardType: TextInputType.datetime, decoration: const InputDecoration(hintText: 'YYYY-MM-DD')));
 
   @override
   Widget build(BuildContext context) => Card(child: Padding(
@@ -56,10 +53,14 @@ class _UniversityTermFormState extends State<UniversityTermForm> {
         _invalidate();
       }),
       const SizedBox(height: Tokens.md),
-      _date(_repeat == CandidateRepeat.weekly ? 'Term starts' : 'Starting date', 'university-term-start', _start),
+      ScanDateField(key: const Key('university-term-start'),
+        label: _repeat == CandidateRepeat.weekly ? 'Term starts' : 'Starting date',
+        value: _start, onChanged: (value) { _start = value; _invalidate(); }),
       if (_repeat == CandidateRepeat.weekly) ...[
         const SizedBox(height: Tokens.md),
-        _date('Term ends', 'university-term-end', _end),
+        ScanDateField(key: const Key('university-term-end'), label: 'Term ends',
+          value: _end, firstDate: _start, focusDate: _start,
+          onChanged: (value) { _end = value; _invalidate(); }),
       ] else ...[
         const SizedBox(height: Tokens.sm),
         const Text('Adds each meeting once, from this date.'),

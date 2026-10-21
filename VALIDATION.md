@@ -1,12 +1,20 @@
 # Implementation and documentation validation
 
-**Recorded:** October 18–21, 2026 (Windows 11, UTC+08:00).
+**Recorded:** October 18–22, 2026 (Windows 11, UTC+08:00).
 
 ## Status and boundaries
 
 Schediel now has a Flutter implementation, Android native code, iOS source, a locally tested optional sharing backend and a static browser preview. **This is a development build, not a production or real-device certification.** The optional sharing backend and HTTPS domains were deployed on October 20; the live checks below are distinct from production certification. Cloud scanning stays off. No schedule data, credentials or signing identities were invented to make a test look deployed.
 
 Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
+
+## October 22: calendar selectors for scanned dates
+
+The shared class form and individual Resolve fields screen now use calendar selectors for start, term-end and optional last dates. Labels stay above the controls, dates display with month names and years, and the calendar opens without a text-entry mode or numeric keyboard. Its month/year heading opens a year selector. Done commits the selected day to the inactive draft; Cancel and accepting an unchanged date preserve existing confirmation. Optional last dates can be cleared. End/last-date calendars exclude days before the selected start; changing the start still requires applying and validating the new context before review.
+
+Widget checks exercise actual calendar day/month/year selection, cancellation, date bounds, optional clearing, 200% text, and the shared form's reconfirmation behavior. Existing weekly and one-time import tests now choose dates through the calendar and retain their no-write-before-Add assertions.
+
+All **419 Flutter tests passed**, whole-project analysis reported **no issues**, and all three split release APKs built. The release scanner constructor check passed for each ABI. ARM64 build **4010** retained the existing signing certificate and installed successfully with `adb install -r`. On the user's Samsung SM-A326B, a fresh scan opened the new start/end calendars and year selector without a keyboard. Both dialogs were cancelled, leaving the dates unselected and the scan draft open for the user's choices. No schedules were added, no data was cleared, and the unsaved pre-update scan was replaced by a fresh scan of the supplied image as disclosed before installation.
 
 ## October 21: release-only scanner initialization failure
 

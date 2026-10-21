@@ -12,6 +12,7 @@ import 'package:schediel/features/image_import/domain/candidate_resolution.dart'
 import 'package:schediel/features/image_import/domain/conservative_parser.dart';
 import 'package:schediel/features/image_import/application/image_import_controller.dart';
 import 'package:schediel/features/image_import/presentation/candidate_resolution_screen.dart';
+import 'package:schediel/features/image_import/presentation/scan_date_field.dart';
 import 'package:schediel/core/time/local_date.dart';
 import 'package:schediel/features/imports/presentation/import_review_screen.dart';
 
@@ -36,8 +37,8 @@ void main() {
     await h.tester.ensureVisible(find.text('Resolve fields'));
     await h.tapText('Resolve fields');
     final date = find.byKey(const Key('candidate-date'));
-    expect(h.tester.widget<TextFormField>(date).initialValue, isEmpty);
-    await h.tester.enterText(date, '2027-03-05');
+    expect(h.tester.widget<ScanDateField>(date).value, isNull);
+    await selectScanDate(h.tester, date, LocalDate(2027,3,5));
     await h.tester.scrollUntilVisible(find.byKey(const Key('confirm-association')), 300,
       scrollable: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last);
     await h.tester.tap(find.byKey(const Key('confirm-association'))); await h.settle();
@@ -62,14 +63,29 @@ void main() {
     final scrollable = find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last;
     Future<void> reach(Finder finder) => h.tester.scrollUntilVisible(finder, 300, scrollable: scrollable);
     await reach(find.byKey(const Key('university-term-start')));
-    await h.tester.enterText(find.byKey(const Key('university-term-start')), '2026-10-19');
+    await selectScanDate(h.tester, find.byKey(const Key('university-term-start')), LocalDate(2026,10,19));
     await reach(find.byKey(const Key('university-term-end')));
-    await h.tester.enterText(find.byKey(const Key('university-term-end')), '2026-12-18');
+    await selectScanDate(h.tester, find.byKey(const Key('university-term-end')), LocalDate(2026,12,18));
     await reach(find.byKey(const Key('university-check')));
     await h.tester.tap(find.byKey(const Key('university-check')));
     await reach(find.text('Apply to selected classes'));
     await h.tapText('Apply to selected classes');
     expect(await h.run(h.read(scheduleRepositoryProvider).loadAll), isEmpty);
+    final controller = h.read(imageImportControllerProvider);
+    expect(controller.resolved, hasLength(6));
+    await reach(find.byKey(const Key('university-term-start')));
+    await h.tester.pumpAndSettle();
+    await h.tester.tap(find.byKey(const Key('university-term-start')));
+    await h.tester.pumpAndSettle();
+    await h.tester.tap(find.text('20'));
+    await h.tester.tap(find.text('Cancel'));
+    await h.tester.pumpAndSettle();
+    expect(controller.resolved, hasLength(6), reason: 'Cancelling a picker must preserve applied class context.');
+    await selectScanDate(h.tester, find.byKey(const Key('university-term-start')), LocalDate(2026,10,20));
+    expect(controller.resolved, isEmpty, reason: 'Changing the date requires applying the new context.');
+    await reach(find.text('Apply to selected classes'));
+    await h.tapText('Apply to selected classes');
+    expect(controller.resolved, hasLength(6));
     await reach(find.text('Continue to review'));
     await h.tapText('Continue to review');
     expect(find.byType(ImportReviewScreen), findsOneWidget);
@@ -95,7 +111,7 @@ void main() {
     await h.tapText('One time');
     expect(find.byKey(const Key('university-term-end')), findsNothing);
     await reach(find.byKey(const Key('university-term-start')));
-    await h.tester.enterText(find.byKey(const Key('university-term-start')), '2026-10-19');
+    await selectScanDate(h.tester, find.byKey(const Key('university-term-start')), LocalDate(2026,10,19));
     await reach(find.byKey(const Key('university-check')));
     await h.tester.tap(find.byKey(const Key('university-check')));
     await reach(find.text('Apply to selected classes'));
@@ -143,4 +159,22 @@ void main() {
 class _UniversityOcr implements OnDeviceOcr {
   @override
   Future<OcrDocument> recognize(PreparedImageFile image) async => universityFixture(width: image.width, height: image.height);
+}
+
+Future<void> selectScanDate(WidgetTester tester, Finder field, LocalDate date) async {
+  await tester.ensureVisible(field);
+  await tester.pumpAndSettle();
+  await tester.tap(field);
+  await tester.pumpAndSettle();
+  final calendar = tester.widget<CalendarDatePicker>(find.byType(CalendarDatePicker));
+  final initial = calendar.initialDate!;
+  final months = (date.year - initial.year) * 12 + date.month - initial.month;
+  for (var i = 0; i < months.abs(); i++) {
+    await tester.tap(find.byTooltip(months > 0 ? 'Next month' : 'Previous month'));
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.descendant(of: find.byType(CalendarDatePicker), matching: find.text('${date.day}')));
+  await tester.tap(find.text('Done'));
+  await tester.pumpAndSettle();
+  expect(tester.testTextInput.isVisible, isFalse);
 }
