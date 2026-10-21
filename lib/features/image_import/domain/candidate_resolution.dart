@@ -9,10 +9,13 @@ import 'image_candidate.dart';
 
 enum CandidateEndChoice { noEnd, sameDay, nextDay }
 
+enum CandidateRepeat { oneTime, weekly }
+
 /// Raw form data lives in memory even when validation or OCR retries fail.
 class CandidateEdits {
-  CandidateEdits({this.title = '', this.date = '', this.lastDate = '', this.startTime = '', this.endTime = '', this.timeZone = '', this.termEnd = '', this.location = '', this.professor = '', this.subtitle = '', this.kind, this.endChoice, this.associationConfirmed = false, this.weekdays = const [], this.seedResolution, this.endResolution});
+  CandidateEdits({this.repeat = CandidateRepeat.oneTime, this.title = '', this.date = '', this.lastDate = '', this.startTime = '', this.endTime = '', this.timeZone = '', this.termEnd = '', this.location = '', this.professor = '', this.subtitle = '', this.kind, this.endChoice, this.associationConfirmed = false, this.weekdays = const [], this.seedResolution, this.endResolution});
   String title, date, lastDate, startTime, endTime, timeZone, termEnd, location, professor, subtitle;
+  CandidateRepeat repeat;
   CandidateTimeKind? kind;
   CandidateEndChoice? endChoice;
   bool associationConfirmed;
@@ -20,6 +23,7 @@ class CandidateEdits {
   TimeResolution? seedResolution, endResolution;
 
   factory CandidateEdits.fromCandidate(ImageCandidate c) => CandidateEdits(
+    repeat: (c.weekdays.value?.isNotEmpty ?? false) ? CandidateRepeat.weekly : CandidateRepeat.oneTime,
     title: c.title.value ?? '', date: c.date.value?.toIso() ?? '',
     startTime: c.startTime.value?.toHhMm() ?? '', endTime: c.endTime.value?.toHhMm() ?? '',
     timeZone: c.timeZone.value ?? '', termEnd: c.termEnd.value?.toIso() ?? '',
@@ -93,7 +97,7 @@ CandidateResolutionResult resolveImageCandidate(ImageCandidate c, CandidateEdits
       endTimeResolution: endWall?.kind == WallTimeKind.ambiguous ? e.endResolution : null);
   }
   RecurrenceSpec? recurrence;
-  if (e.weekdays.isNotEmpty || (c.weekdays.value?.isNotEmpty ?? false)) {
+  if (e.repeat == CandidateRepeat.weekly) {
     final termEnd = LocalDate.tryParse(e.termEnd.trim());
     if (termEnd == null || termEnd.isBefore(actualDate)) errors['termEnd'] = 'Enter the actual term end as YYYY-MM-DD, on or after the start.';
     if (e.weekdays.isEmpty || e.weekdays.any((d) => d < 1 || d > 7)) errors['weekdays'] = 'Choose the actual recurring weekdays.';
@@ -112,6 +116,7 @@ CandidateResolutionResult resolveImageCandidate(ImageCandidate c, CandidateEdits
   final evidence = <String, CandidateField<Object?>>{
     'title': field(c.title, title), 'date': field(c.date, actualDate),
     'timeKind': field(c.timeKind, e.kind),
+    'repeat': CandidateField(value: e.repeat, origin: FieldOrigin.userSupplied),
     'location': field(c.location, optional(e.location)), 'professor': field(c.professor, optional(e.professor)),
     'subtitle': field(c.subtitle, optional(e.subtitle)),
     'association': const CandidateField(value: true, origin: FieldOrigin.userSupplied),

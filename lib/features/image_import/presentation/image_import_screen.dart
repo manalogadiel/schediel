@@ -8,6 +8,8 @@ import '../../../app/format.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/time/local_time.dart';
+import '../../../core/time/local_date.dart';
+import '../domain/candidate_resolution.dart';
 import '../../imports/presentation/import_review_screen.dart';
 import '../application/image_import_controller.dart';
 import '../application/image_import_providers.dart';
@@ -93,7 +95,9 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
             TextButton(onPressed:c.cancelWork,child:const Text('Cancel scan')),
           ],
           if(c.failure!=null) Semantics(liveRegion:true,child:Padding(padding:const EdgeInsets.symmetric(vertical:Tokens.md),child:Text(c.failure!.message))),
-          if(c.notice!=null) Semantics(liveRegion:true,child:Padding(padding:const EdgeInsets.symmetric(vertical:Tokens.md),child:Text(c.notice!))),
+          // Keep the date form at a stable sliver index when a notice clears.
+          Semantics(liveRegion:true, child:c.notice==null ? const SizedBox.shrink()
+            : Padding(padding:const EdgeInsets.symmetric(vertical:Tokens.md),child:Text(c.notice!))),
           if(c.candidates.any((candidate) => candidate.universityTimetable))
             UniversityTermForm(key: ValueKey(c.imageDraftId), controller: c, initialZone: ref.read(deviceZoneProvider)),
           for(final candidate in c.candidates) Card(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
@@ -123,7 +127,8 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
     final f = Formats.of(context);
     final start = LocalTime.tryParse(e.startTime), end = LocalTime.tryParse(e.endTime);
     return [if(e.subtitle.isNotEmpty) e.subtitle,
-      e.weekdays.map(f.weekdayShort).join(', '),
+      e.repeat == CandidateRepeat.oneTime && LocalDate.tryParse(e.date) != null
+          ? f.fullDate(LocalDate.tryParse(e.date)!) : e.weekdays.map(f.weekdayShort).join(', '),
       if(start != null) '${f.clock(start)}${end == null ? '' : '–${f.clock(end)}'}',
       if(e.location.isNotEmpty) e.location].where((s) => s.isNotEmpty).join(' · ');
   }

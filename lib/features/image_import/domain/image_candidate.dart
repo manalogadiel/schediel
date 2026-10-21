@@ -45,6 +45,6 @@ class CandidateParseResult {
   final List<ImageCandidate> candidates;
   bool get universityTimetable => candidates.any((c) => c.universityTimetable);
   String get layoutNotice => universityTimetable
-    ? 'Check the classes, then set your term dates.'
+    ? 'Check the classes, then choose dates and repeats.'
     : 'Partial interpretation only. Check every entry against the image; complex timetable rows and columns may not be associated correctly.';
 }

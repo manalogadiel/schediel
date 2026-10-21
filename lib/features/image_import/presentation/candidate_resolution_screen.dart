@@ -6,6 +6,7 @@ import '../../../core/schedule/models.dart';
 import '../application/image_import_controller.dart';
 import '../domain/candidate_resolution.dart';
 import '../domain/image_candidate.dart';
+import 'scan_repeat_picker.dart';
 
 /// Unknown fields stay blank. Only explicit user values resolve a candidate;
 /// this child editor never inserts a schedule.
@@ -36,11 +37,14 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
       ExpansionTile(title: const Text('Source text'), children: [SelectableText(widget.candidate.sourceLine.text)]),
       const SizedBox(height: Tokens.md),
       field('title','Title',_edits.title,(v)=>_edits.title=v),
-      FieldLabel(label:'Schedule type', child: DropdownButtonFormField<CandidateTimeKind>(initialValue:_edits.kind,
+      FieldLabel(label:'Schedule type', child: DropdownButtonFormField<CandidateTimeKind>(isExpanded: true, initialValue:_edits.kind,
         decoration: InputDecoration(errorText:_errors['kind']),
         items: const [DropdownMenuItem(value:CandidateTimeKind.timed,child:Text('Timed')),
           DropdownMenuItem(value:CandidateTimeKind.dateOnly,child:Text('All day'))],
         onChanged:(v)=>setState(() { _edits.kind=v; _changed(); }))),
+      const SizedBox(height:Tokens.md),
+      ScanRepeatPicker(key: const Key('candidate-repeat'), value: _edits.repeat,
+        onChanged: (value) => setState(() { _edits.repeat = value; _changed(); })),
       const SizedBox(height:Tokens.md),
       field('date','Start date',_edits.date,(v)=>_edits.date=v,hint:'YYYY-MM-DD · choose the actual year',key:const Key('candidate-date')),
       if (_edits.kind == CandidateTimeKind.dateOnly)
@@ -48,7 +52,7 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
       if (_edits.kind == CandidateTimeKind.timed) ...[
         field('startTime','Start time',_edits.startTime,(v)=>_edits.startTime=v,hint:'24-hour HH:mm'),
         field('timeZone','Source time zone',_edits.timeZone,(v)=>_edits.timeZone=v,hint:'IANA name, for example Asia/Manila'),
-        FieldLabel(label:'End time choice', child: DropdownButtonFormField<CandidateEndChoice>(initialValue:_edits.endChoice,
+        FieldLabel(label:'End time choice', child: DropdownButtonFormField<CandidateEndChoice>(isExpanded: true, initialValue:_edits.endChoice,
           decoration:InputDecoration(errorText:_errors['endChoice']),
           items:const [DropdownMenuItem(value:CandidateEndChoice.noEnd,child:Text('No end time')),
             DropdownMenuItem(value:CandidateEndChoice.sameDay,child:Text('Ends on the same day')),
@@ -62,7 +66,7 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
         if (_errors.containsKey('endResolution') || _edits.endResolution != null)
           _fold('endResolution','Repeated end clock time',_edits.endResolution,(v)=>_edits.endResolution=v),
       ],
-      if (widget.candidate.weekdays.value?.isNotEmpty ?? false) ...[
+      if (_edits.repeat == CandidateRepeat.weekly) ...[
         const Text('Term context · choose the actual weekdays and final date.'),
         Wrap(spacing:4,children:[for(var i=1;i<=7;i++) FilterChip(label:Text(const ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i-1]),
           selected:_edits.weekdays.contains(i),onSelected:(on)=>setState(() {
@@ -84,7 +88,7 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
       FilledButton(onPressed:_use,child:const Text('Use draft values')),
     ]));
   Widget _fold(String name,String label,TimeResolution? value,ValueChanged<TimeResolution?> update) => Padding(
-    padding:const EdgeInsets.only(bottom:Tokens.md),child:FieldLabel(label:label,child:DropdownButtonFormField<TimeResolution>(initialValue:value,
+    padding:const EdgeInsets.only(bottom:Tokens.md),child:FieldLabel(label:label,child:DropdownButtonFormField<TimeResolution>(isExpanded: true, initialValue:value,
       decoration:InputDecoration(errorText:_errors[name]),items:const[
         DropdownMenuItem(value:TimeResolution.earlier,child:Text('Earlier occurrence')),
         DropdownMenuItem(value:TimeResolution.later,child:Text('Later occurrence'))],

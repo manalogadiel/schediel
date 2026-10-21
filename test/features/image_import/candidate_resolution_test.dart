@@ -25,4 +25,32 @@ void main() {
     expect(result.fieldEvidence['date']!.origin, FieldOrigin.userSupplied);
     expect(result.fieldEvidence['timeKind']!.origin, FieldOrigin.observed);
   });
+  test('explicit one-time choice overrides observed weekly weekdays without term dates', () {
+    final candidate = ConservativeCandidateParser().parse(OcrDocument.plain('Class | Thu | 8:30 AM-10:00 AM')).candidates.single;
+    final edits = CandidateEdits.fromCandidate(candidate);
+    expect(edits.repeat, CandidateRepeat.weekly);
+    edits.repeat = CandidateRepeat.oneTime;
+    edits.date = '2026-10-22'; edits.timeZone = 'Asia/Manila';
+    edits.endChoice = CandidateEndChoice.sameDay; edits.associationConfirmed = true;
+    final result = resolveImageCandidate(candidate, edits);
+    expect(result.errors, isEmpty);
+    expect(result.resolved!.draft.recurrence, isNull);
+    expect(edits.weekdays, [4], reason: 'Retain OCR weekdays for later edits, without activating a repeat.');
+    expect(result.resolved!.draft.details.notes, isNull);
+  });
+
+  test('switching from one-time to weekly requires weekdays and a real end date', () {
+    final candidate = ConservativeCandidateParser().parse(OcrDocument.plain('Class | Thu | 8:30 AM-10:00 AM')).candidates.single;
+    final edits = CandidateEdits.fromCandidate(candidate)
+      ..date = '2026-10-22' ..timeZone = 'Asia/Manila' ..associationConfirmed = true
+      ..endChoice = CandidateEndChoice.sameDay ..repeat = CandidateRepeat.oneTime;
+    expect(resolveImageCandidate(candidate, edits).resolved!.draft.recurrence, isNull);
+    edits.repeat = CandidateRepeat.weekly;
+    expect(resolveImageCandidate(candidate, edits).errors, contains('termEnd'));
+    edits.termEnd = '2026-12-18'; edits.weekdays = [];
+    expect(resolveImageCandidate(candidate, edits).errors, contains('weekdays'));
+    edits.weekdays = [4];
+    expect(resolveImageCandidate(candidate, edits).resolved!.draft.recurrence!.frequency, RecurrenceFrequency.weekly);
+  });
+
 }

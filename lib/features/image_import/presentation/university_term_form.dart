@@ -4,6 +4,8 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/labeled_field.dart';
 import '../../../core/time/local_date.dart';
 import '../application/image_import_controller.dart';
+import '../domain/candidate_resolution.dart';
+import 'scan_repeat_picker.dart';
 
 class UniversityTermForm extends StatefulWidget {
   const UniversityTermForm({super.key, required this.controller, required this.initialZone});
@@ -17,38 +19,57 @@ class _UniversityTermFormState extends State<UniversityTermForm> {
   final _start = TextEditingController(), _end = TextEditingController();
   late final _zone = TextEditingController(text: widget.initialZone);
   bool _checked = false;
+  CandidateRepeat _repeat = CandidateRepeat.weekly;
   String? _error;
 
   @override
   void dispose() { _start.dispose(); _end.dispose(); _zone.dispose(); super.dispose(); }
 
+  void _invalidate() {
+    widget.controller.invalidateUniversityContext();
+    setState(() => _error = null);
+  }
+
   void _apply() {
-    final start = LocalDate.tryParse(_start.text.trim()), end = LocalDate.tryParse(_end.text.trim());
-    setState(() => _error = start == null || end == null
-      ? 'Choose your term start and end dates.'
-      : widget.controller.applyUniversityTerm(start: start, end: end,
+    FocusScope.of(context).unfocus();
+    final start = LocalDate.tryParse(_start.text.trim());
+    final end = _repeat == CandidateRepeat.weekly ? LocalDate.tryParse(_end.text.trim()) : null;
+    setState(() => _error = start == null || (_repeat == CandidateRepeat.weekly && end == null)
+      ? (_repeat == CandidateRepeat.weekly ? 'Choose your term start and end dates.' : 'Choose a starting date.')
+      : widget.controller.applyUniversityTerm(start: start, end: end, repeat: _repeat,
           zone: _zone.text.trim(), checked: _checked));
   }
 
   Widget _date(String label, String key, TextEditingController controller) => FieldLabel(
     label: label, child: TextField(key: Key(key), controller: controller,
-      keyboardType: TextInputType.datetime, decoration: const InputDecoration(hintText: 'YYYY-MM-DD')));
+      onChanged: (_) => _invalidate(), keyboardType: TextInputType.datetime, decoration: const InputDecoration(hintText: 'YYYY-MM-DD')));
 
   @override
   Widget build(BuildContext context) => Card(child: Padding(
     padding: const EdgeInsets.all(Tokens.md),
     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('Class term', style: Theme.of(context).textTheme.titleMedium),
+      Text('Class schedule', style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: Tokens.md),
-      _date('Term starts', 'university-term-start', _start),
+      ScanRepeatPicker(key: const Key('university-repeat'), value: _repeat, onChanged: (value) {
+        FocusScope.of(context).unfocus();
+        setState(() => _repeat = value);
+        _invalidate();
+      }),
       const SizedBox(height: Tokens.md),
-      _date('Term ends', 'university-term-end', _end),
+      _date(_repeat == CandidateRepeat.weekly ? 'Term starts' : 'Starting date', 'university-term-start', _start),
+      if (_repeat == CandidateRepeat.weekly) ...[
+        const SizedBox(height: Tokens.md),
+        _date('Term ends', 'university-term-end', _end),
+      ] else ...[
+        const SizedBox(height: Tokens.sm),
+        const Text('Adds each meeting once, from this date.'),
+      ],
       const SizedBox(height: Tokens.md),
       FieldLabel(label: 'School time zone', child: TextField(key: const Key('university-zone'),
-        controller: _zone, decoration: const InputDecoration(helperText: 'Confirm the zone for these classes.'))),
+        controller: _zone, onChanged: (_) => _invalidate(), decoration: const InputDecoration())),
       CheckboxListTile(key: const Key('university-check'), contentPadding: EdgeInsets.zero,
         value: _checked, title: const Text('I checked the class details against the image.'),
-        onChanged: (value) => setState(() => _checked = value == true)),
+        onChanged: (value) { setState(() => _checked = value == true); if (!_checked) _invalidate(); }),
       if (_error != null) Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
       FilledButton.tonal(onPressed: _apply, child: const Text('Apply to selected classes')),
     ]),

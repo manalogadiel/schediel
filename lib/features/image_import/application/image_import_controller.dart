@@ -151,9 +151,9 @@ class ImageImportController extends ChangeNotifier {
 
   /// Explicit, shared term context for spatially recognized class meetings.
   /// Align each seed to its own weekday, preserving separate times and rooms.
-  String? applyUniversityTerm({required LocalDate start, required LocalDate end,
-    required String zone, required bool checked}) {
-    if (end.isBefore(start)) return 'Term end must follow the start.';
+  String? applyUniversityTerm({required LocalDate start, LocalDate? end,
+    required String zone, required bool checked, CandidateRepeat repeat = CandidateRepeat.weekly}) {
+    if (repeat == CandidateRepeat.weekly && (end == null || end.isBefore(start))) return 'Term end must follow the start.';
     if (!ZoneResolver.initialized().isValidZone(zone)) return 'Choose a valid time zone.';
     if (!checked) return 'Check the class details against the image first.';
     final changes = <String, LocalDate>{};
@@ -167,19 +167,32 @@ class ImageImportController extends ChangeNotifier {
         on ArgumentError { return 'Choose a supported term date.'; }
         if (e.weekdays.contains(date.weekday)) { seed = date; break; }
       }
-      if (seed == null || seed.isAfter(end)) return 'The term must include each selected class weekday.';
+      if (seed == null || (repeat == CandidateRepeat.weekly && seed.isAfter(end!))) return 'The term must include each selected class weekday.';
       changes[c.candidateId] = seed;
     }
+    if (changes.isEmpty) return 'Select at least one class.';
     for (final change in changes.entries) {
       final e = edits[change.key]!;
-      e.date = change.value.toIso(); e.termEnd = end.toIso(); e.timeZone = zone;
+      e.repeat = repeat;
+      e.date = change.value.toIso(); e.termEnd = repeat == CandidateRepeat.weekly ? end!.toIso() : ''; e.timeZone = zone;
       e.associationConfirmed = true;
       resolved.remove(change.key);
       final result = resolveImageCandidate(candidates.firstWhere((c) => c.candidateId == change.key), e);
       if (result.resolved != null) resolved[change.key] = result.resolved!;
     }
+    notice = null;
     _emit();
     return null;
+  }
+
+  /// Changing shared date/repeat controls requires applying the new context;
+  /// otherwise Continue could silently reuse the last applied weekly dates.
+  void invalidateUniversityContext() {
+    for (final candidate in candidates.where((c) => c.universityTimetable && selected.contains(c.candidateId))) {
+      edits[candidate.candidateId]!.associationConfirmed = false;
+      resolved.remove(candidate.candidateId);
+    }
+    _emit();
   }
 
   List<ImportEntry>? reviewEntries({String? universityCategoryId}) {

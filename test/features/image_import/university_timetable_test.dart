@@ -148,4 +148,33 @@ void main() {
     expect(entries[0].draft.details.location, '105');
     expect(entries[1].draft.details.location, '402');
   });
+  test('one-time table import keeps separate weekdays and rooms, and changes require reapplying', () {
+    final controller = ImageImportController(picker: FakePicker(), preparer: FakePreparer(), ocr: FakeOcr(), newId: () => 'probe');
+    addTearDown(controller.dispose);
+    controller.candidates = ConservativeCandidateParser().parse(universityFixture()).candidates;
+    for (final row in controller.candidates) {
+      controller.edits[row.candidateId] = CandidateEdits.fromCandidate(row);
+      controller.selected.add(row.candidateId);
+    }
+    final start = LocalDate(2026, 10, 19);
+    expect(controller.applyUniversityTerm(start: start, zone: 'Asia/Manila', checked: true,
+      repeat: CandidateRepeat.oneTime), isNull);
+    final entries = controller.reviewEntries(universityCategoryId: 'school')!;
+    expect(entries, hasLength(6));
+    expect(entries.every((e) => e.draft.recurrence == null && e.draft.categoryId == 'school' &&
+      e.draft.details.notes == null && e.alerts.isEmpty), isTrue);
+    expect((entries[0].draft.time as TimedSpec).startDate, LocalDate(2026, 10, 22));
+    expect((entries[1].draft.time as TimedSpec).startDate, LocalDate(2026, 10, 23));
+    expect(entries[0].draft.details.location, '105');
+    expect(entries[1].draft.details.location, '402');
+    controller.invalidateUniversityContext();
+    expect(controller.reviewEntries(universityCategoryId: 'school'), isNull);
+    expect(controller.applyUniversityTerm(start: start, end: start, zone: 'Asia/Manila', checked: true), isNotNull);
+    expect(controller.edits.values.every((e) => e.repeat == CandidateRepeat.oneTime), isTrue,
+      reason: 'Invalid shared input must not partially change selected classes.');
+    expect(controller.applyUniversityTerm(start: start, end: LocalDate(2026, 12, 18),
+      zone: 'Asia/Manila', checked: true), isNull);
+    expect(controller.reviewEntries()!.every((e) => e.draft.recurrence != null), isTrue);
+  });
+
 }
