@@ -33,6 +33,51 @@ void openReview() => unawaited(
 );
 
 void main() {
+  appTest('bulk Uncategorized clears School without writing before confirmation', (h) async {
+    unawaited(rootNavigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => ImportReviewScreen(
+      entries: [fixture().copyWith(draft: fixture().draft.copyWith(categoryId: () => 'school'))]))));
+    await h.settle();
+    final bulk = find.byKey(const Key('import-bulk-category'));
+    await h.tester.tap(find.descendant(of: bulk, matching: find.byType(DropdownButtonFormField<String>)));
+    await h.settle();
+    await h.tester.tap(find.text('Uncategorized').last);
+    await h.settle();
+    expect(await h.run(h.read(scheduleRepositoryProvider).loadAll), isEmpty);
+    await h.tapText('Add selected schedules');
+    expect((await h.run(h.read(scheduleRepositoryProvider).loadAll)).single.categoryId, isNull);
+  });
+
+  appTest('one category selector assigns all selected entries and preserves unselected entries', (h) async {
+    final entries = [fixture(), fixture().copyWith(draft: fixture().draft.copyWith(title: 'Other meeting'))];
+    final other = ImportEntry(candidateId: 'b', sourceType: 'image', imageDraftId: 'scan',
+      draft: entries.last.draft);
+    unawaited(rootNavigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => ImportReviewScreen(entries: [entries.first, other]))));
+    await h.settle();
+    final bulk = find.byKey(const Key('import-bulk-category'));
+    expect(bulk, findsOneWidget);
+    await h.tester.tap(find.descendant(of: bulk, matching: find.byType(DropdownButtonFormField<String>)));
+    await h.settle();
+    await h.tester.tap(find.text('School').last);
+    await h.settle();
+    expect(await h.run(h.read(scheduleRepositoryProvider).loadAll), isEmpty);
+    await h.tester.ensureVisible(find.text('Other meeting'));
+    await h.tester.tap(find.text('Other meeting'));
+    await h.settle();
+    await h.tester.ensureVisible(bulk);
+    await h.tester.tap(find.descendant(of: bulk, matching: find.byType(DropdownButtonFormField<String>)));
+    await h.settle();
+    await h.tester.tap(find.text('Personal').last);
+    await h.settle();
+    await h.tester.ensureVisible(find.text('Other meeting'));
+    await h.tester.tap(find.text('Other meeting'));
+    await h.settle();
+    await h.tapText('Add selected schedules');
+    final saved = await h.run(h.read(scheduleRepositoryProvider).loadAll);
+    expect(saved, hasLength(2));
+    expect(saved.singleWhere((s) => s.title == 'Fixture poster').categoryId, 'personal');
+    expect(saved.singleWhere((s) => s.title == 'Other meeting').categoryId, 'school');
+  });
+
   appTest('cancelling the typed review editor returns to inactive review safely', (h) async {
     openReview();
     await h.settle();

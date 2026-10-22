@@ -171,8 +171,10 @@ class _ImportReviewScreenState extends ConsumerState<ImportReviewScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const Text(
-                          'Independent copies. Categories and alerts are your choice. Nothing is added until you confirm.',
+                          'Review, then add to your schedules.',
                         ),
+                        const SizedBox(height: Tokens.md),
+                        _bulkCategory(),
                         if (widget.sourceText != null || widget.sourceImagePath != null)
                           ExpansionTile(
                             title: const Text('Source evidence'),
@@ -223,6 +225,37 @@ class _ImportReviewScreenState extends ConsumerState<ImportReviewScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _bulkCategory() {
+    final categories = ref.watch(categoriesProvider);
+    final selected = _entries.where((e) => _selected.contains(e.candidateId));
+    final ids = selected.map((e) => e.draft.categoryId ?? '').toSet();
+    final common = ids.length == 1 ? ids.single : null;
+    return categories.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (_, _) => TextButton(onPressed: () => ref.invalidate(categoriesProvider), child: const Text('Reload categories')),
+      data: (items) => FieldLabel(key: const Key('import-bulk-category'), label: 'Category for selected schedules',
+        child: DropdownButtonFormField<String>(
+          key: ValueKey('bulk:$common:${items.map((c) => c.id).join(",")}'),
+          initialValue: common == '' || items.any((c) => c.id == common) ? common : null,
+          hint: Text(ids.length > 1 ? 'Mixed categories' : 'Choose category'),
+          isExpanded: true,
+          items: [
+            const DropdownMenuItem(value: '', child: Text('Uncategorized')),
+            for (final c in items) DropdownMenuItem(value: c.id, child: Text(c.name)),
+          ],
+          onChanged: _saving || _duplicates == null || _selected.isEmpty ? null : (value) => setState(() {
+            _dirty = true;
+            for (var i = 0; i < _entries.length; i++) {
+              final entry = _entries[i];
+              if (_selected.contains(entry.candidateId)) {
+                _entries[i] = entry.copyWith(draft: entry.draft.copyWith(categoryId: () => value == '' ? null : value));
+              }
+            }
+          }),
+        )),
     );
   }
 

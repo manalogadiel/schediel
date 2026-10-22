@@ -21,6 +21,47 @@ import 'image_import_controller_test.dart' show FakePicker, FakePreparer, FakeOc
 import 'university_timetable_test.dart' show universityFixture;
 
 void main() {
+  appTest('visible Continue applies chosen class dates and reaches review without a separate Apply step', (h) async {
+    unawaited(rootNavigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const ImageImportScreen())));
+    await h.settle();
+    await h.tapText('Choose photo');
+    await h.tapText('Scan on device');
+    final scrollable = find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last;
+    Future<void> reach(Finder finder) => h.tester.scrollUntilVisible(finder, 280, scrollable: scrollable);
+    await reach(find.byKey(const Key('university-term-start')));
+    await selectScanDate(h.tester, find.byKey(const Key('university-term-start')), LocalDate(2026,10,19));
+    await reach(find.byKey(const Key('university-term-end')));
+    await selectScanDate(h.tester, find.byKey(const Key('university-term-end')), LocalDate(2026,12,18));
+    await reach(find.byKey(const Key('university-check')));
+    await h.tester.tap(find.byKey(const Key('university-check')));
+    await h.settle();
+    expect(find.text('Continue to review').hitTestable(), findsOneWidget);
+    await reach(find.text('Cloud AI scanning is disabled. This flow never uploads your image or OCR text.'));
+    await h.settle();
+    await h.tapText('Continue to review');
+    expect(find.byType(ImportReviewScreen), findsOneWidget);
+    expect(await h.run(h.read(scheduleRepositoryProvider).loadAll), isEmpty);
+    await h.tapText('Add selected schedules');
+    final saved = await h.run(h.read(scheduleRepositoryProvider).loadAll);
+    expect(saved, hasLength(6));
+    expect(saved.every((s) => s.categoryId == 'school'), isTrue);
+  }, overrides: [imageSourcePickerProvider.overrideWithValue(FakePicker()), imagePreparerProvider.overrideWithValue(FakePreparer()),
+    onDeviceOcrProvider.overrideWithValue(_UniversityOcr())]);
+
+  appTest('Continue explains missing class context and never imports it', (h) async {
+    unawaited(rootNavigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const ImageImportScreen())));
+    await h.settle();
+    await h.tapText('Choose photo');
+    await h.tapText('Scan on device');
+    await h.tapText('Continue to review');
+    expect(find.byType(ImportReviewScreen), findsNothing);
+    expect(find.text('Choose your term start and end dates.'), findsWidgets);
+    expect(await h.run(h.read(scheduleRepositoryProvider).loadAll), isEmpty);
+    final c = h.read(imageImportControllerProvider);
+    expect(c.edits.values.every((e) => e.date.isEmpty), isTrue);
+  }, overrides: [imageSourcePickerProvider.overrideWithValue(FakePicker()), imagePreparerProvider.overrideWithValue(FakePreparer()),
+    onDeviceOcrProvider.overrideWithValue(_UniversityOcr())]);
+
   final picker = FakePicker(), preparer = FakePreparer(), ocr = FakeOcr();
   appTest('local scan requires explicit resolution and generic confirmation; closing creates nothing', (h) async {
     unawaited(rootNavigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const ImageImportScreen())));
@@ -34,8 +75,7 @@ void main() {
     await h.tapText('Continue to review');
     expect(find.byType(ImportReviewScreen), findsNothing);
     expect(find.textContaining('Resolve the missing fields'), findsOneWidget);
-    await h.tester.ensureVisible(find.text('Resolve fields'));
-    await h.tapText('Resolve fields');
+    await h.tapText('Fix first entry');
     final date = find.byKey(const Key('candidate-date'));
     expect(h.tester.widget<ScanDateField>(date).value, isNull);
     await selectScanDate(h.tester, date, LocalDate(2027,3,5));

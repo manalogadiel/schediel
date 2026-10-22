@@ -13,14 +13,15 @@ import 'scan_date_field.dart';
 /// Unknown fields stay blank. Only explicit user values resolve a candidate;
 /// this child editor never inserts a schedule.
 class CandidateResolutionScreen extends StatefulWidget {
-  const CandidateResolutionScreen({super.key, required this.controller, required this.candidate});
+  const CandidateResolutionScreen({super.key, required this.controller, required this.candidate, this.showErrors = false});
   final ImageImportController controller;
   final ImageCandidate candidate;
+  final bool showErrors;
   @override State<CandidateResolutionScreen> createState() => _CandidateResolutionScreenState();
 }
 class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
   late final CandidateEdits _edits = widget.controller.edits[widget.candidate.candidateId]!;
-  Map<String, String> _errors = {};
+  late Map<String, String> _errors = widget.showErrors ? {...resolveImageCandidate(widget.candidate, _edits).errors} : {};
   void _changed() => widget.controller.edited(widget.candidate.candidateId);
   Widget field(String name, String label, String value, ValueChanged<String> update, {String? hint, Key? key}) => Padding(
     padding: const EdgeInsets.only(bottom: Tokens.md), child: FieldLabel(label: label, child: TextFormField(key: key, initialValue: value,

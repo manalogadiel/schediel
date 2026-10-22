@@ -24,6 +24,10 @@ class ImageImportScreen extends ConsumerStatefulWidget {
 }
 class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
   bool _leaving = false;
+  String? _termDraftId;
+  GlobalKey<UniversityTermFormState> _termKey = GlobalKey<UniversityTermFormState>();
+  String? _reviewError;
+  String? _blockedCandidateId;
   Future<void> _close(ImageImportController c) async {
     if (_leaving) return;
     if (c.image != null || c.candidates.isNotEmpty || c.busy) {
@@ -39,12 +43,28 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) { if(mounted) Navigator.of(context).pop(); });
   }
   Future<void> _review(ImageImportController c) async {
+    setState(() { _reviewError = null; _blockedCandidateId = null; });
+    if (_termKey.currentState?.prepareForReview() == false) {
+      setState(() => _reviewError = _termKey.currentState!.validationMessage);
+      final form = _termKey.currentContext;
+      if (form != null) await Scrollable.ensureVisible(form, alignment: .1, duration: const Duration(milliseconds: 200));
+      return;
+    }
     final categories = await ref.read(categoryRepositoryProvider).loadAll();
     if (!mounted) return;
     final school = categories.where((category) => category.name.trim().toLowerCase() == 'school').firstOrNull
       ?? categories.where((category) => category.id == 'school').firstOrNull;
     final entries = c.reviewEntries(universityCategoryId: school?.id);
-    if(entries==null) return;
+    if(entries==null) {
+      final blocked = c.candidates.where((candidate) => c.selected.contains(candidate.candidateId) &&
+        resolveImageCandidate(candidate, c.edits[candidate.candidateId]!).resolved == null).firstOrNull;
+      setState(() {
+        _reviewError = blocked == null ? 'Select at least one schedule.'
+          : '${c.edits[blocked.candidateId]!.title}: ${resolveImageCandidate(blocked, c.edits[blocked.candidateId]!).errors.values.first}';
+        _blockedCandidateId = blocked?.candidateId;
+      });
+      return;
+    }
     final result = await Navigator.of(context).push<List<String>>(MaterialPageRoute(builder:(_)=>ImportReviewScreen(
       entries:entries,sourceText:c.sourceText,sourceImagePath:c.image?.path)));
     if(result==null || !mounted) return;
@@ -62,7 +82,14 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
   }
   @override Widget build(BuildContext context) {
     final c=ref.watch(imageImportControllerProvider);
-    return ListenableBuilder(listenable:c,builder:(context,_)=>PopScope(canPop:_leaving,
+    return ListenableBuilder(listenable:c,builder:(context,_) {
+      if (_termDraftId != c.imageDraftId) {
+        _termDraftId = c.imageDraftId;
+        _termKey = GlobalKey<UniversityTermFormState>();
+        _reviewError = null;
+        _blockedCandidateId = null;
+      }
+      return PopScope(canPop:_leaving,
       onPopInvokedWithResult:(didPop,_) { if(!didPop) _close(c); },child:Scaffold(
         appBar:AppBar(title:const Text('Import image'),leading:IconButton(tooltip:'Close',onPressed:()=>_close(c),icon:const AppIcon(AppIcons.close))),
         body:ListView(padding:const EdgeInsets.all(Tokens.md),children:[
@@ -99,7 +126,7 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
           Semantics(liveRegion:true, child:c.notice==null ? const SizedBox.shrink()
             : Padding(padding:const EdgeInsets.symmetric(vertical:Tokens.md),child:Text(c.notice!))),
           if(c.candidates.any((candidate) => candidate.universityTimetable))
-            UniversityTermForm(key: ValueKey(c.imageDraftId), controller: c, initialZone: ref.read(deviceZoneProvider)),
+            UniversityTermForm(key: _termKey, controller: c, initialZone: ref.read(deviceZoneProvider)),
           for(final candidate in c.candidates) Card(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
             CheckboxListTile(value:c.selected.contains(candidate.candidateId),title:Text(c.edits[candidate.candidateId]?.title.isNotEmpty == true
                 ? c.edits[candidate.candidateId]!.title : 'Unresolved title'),
@@ -115,11 +142,30 @@ class _ImageImportScreenState extends ConsumerState<ImageImportScreen> {
             TextButton(onPressed:c.busy?null:()=>Navigator.of(context).push<bool>(MaterialPageRoute(builder:(_)=>CandidateResolutionScreen(
               controller:c,candidate:candidate))),child:const Text('Resolve fields')),
           ])),
-          if(c.candidates.isNotEmpty) FilledButton(onPressed:c.busy?null:()=>_review(c),child:const Text('Continue to review')),
           const SizedBox(height:Tokens.lg),
           const Text('Cloud AI scanning is disabled. This flow never uploads your image or OCR text.'),
         ]),
-      )));
+        bottomNavigationBar: c.candidates.isEmpty ? null : Material(
+          color: Theme.of(context).colorScheme.surface,
+          child: SafeArea(child: Padding(padding: const EdgeInsets.all(Tokens.md),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              if (_reviewError != null) Semantics(liveRegion: true, child: Text(_reviewError!,
+                maxLines: 3, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Theme.of(context).colorScheme.error))),
+              if (_blockedCandidateId != null) TextButton(onPressed: c.busy ? null : () async {
+                final candidate = c.candidates.firstWhere((c) => c.candidateId == _blockedCandidateId);
+                await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => CandidateResolutionScreen(
+                  controller: c, candidate: candidate, showErrors: true)));
+                if (mounted) setState(() { _reviewError = null; _blockedCandidateId = null; });
+              }, child: const Text('Fix first entry')),
+              Text('${c.selected.length} selected'),
+              const SizedBox(height: Tokens.sm),
+              FilledButton(onPressed: c.busy || c.selected.isEmpty ? null : () => _review(c),
+                child: const Text('Continue to review')),
+            ]))),
+        ),
+      ));
+    });
   }
 
   String _classSummary(BuildContext context, ImageImportController controller, String id) {
