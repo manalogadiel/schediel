@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:schediel/app/providers.dart';
 import 'package:schediel/app/router.dart';
@@ -14,6 +15,9 @@ import 'package:schediel/features/image_import/application/image_import_controll
 import 'package:schediel/features/image_import/presentation/candidate_resolution_screen.dart';
 import 'package:schediel/features/image_import/presentation/scan_date_field.dart';
 import 'package:schediel/core/time/local_date.dart';
+import 'package:schediel/core/time/local_time.dart';
+import 'package:schediel/core/schedule/models.dart';
+import 'package:schediel/features/image_import/presentation/scan_time_field.dart';
 import 'package:schediel/features/imports/presentation/import_review_screen.dart';
 
 import '../../support/harness.dart';
@@ -21,6 +25,46 @@ import 'image_import_controller_test.dart' show FakePicker, FakePreparer, FakeOc
 import 'university_timetable_test.dart' show universityFixture;
 
 void main() {
+  appTest('class double check uses start and end selectors while preserving the other details', (h) async {
+    final controller = ImageImportController(picker: FakePicker(), preparer: FakePreparer(), ocr: FakeOcr(), newId: () => 'fixture');
+    addTearDown(controller.dispose);
+    controller.candidates = ConservativeCandidateParser().parse(universityFixture()).candidates;
+    for (final row in controller.candidates) {
+      controller.edits[row.candidateId] = CandidateEdits.fromCandidate(row);
+      controller.selected.add(row.candidateId);
+    }
+    controller.applyUniversityTerm(start: LocalDate(2026,10,19), end: LocalDate(2026,12,18), zone: 'Asia/Manila', checked: true);
+    final candidate = controller.candidates.first;
+    final original = controller.resolved[candidate.candidateId]!.draft;
+    unawaited(rootNavigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => CandidateResolutionScreen(
+      controller: controller, candidate: candidate))));
+    await h.settle();
+    for (final (key, hour, minute) in [('candidate-start-time',9,15), ('candidate-end-time',10,45)]) {
+      final control = find.byKey(Key(key));
+      await h.tester.ensureVisible(control);
+      await h.settle();
+      expect(h.tester.widget(control), isA<ScanTimeField>());
+      await h.tester.tap(control);
+      await h.settle();
+      expect(h.tester.testTextInput.isVisible, isFalse);
+      expect(find.text('Keyboard input'), findsNothing);
+      h.tester.widget<CupertinoDatePicker>(find.byType(CupertinoDatePicker))
+        .onDateTimeChanged(DateTime(2000,1,1,hour,minute));
+      await h.tapText('Done');
+    }
+    expect(controller.resolved, isNot(contains(candidate.candidateId)));
+    await h.tester.tap(find.widgetWithText(TextButton, 'Use draft values'));
+    await h.settle();
+    final draft = controller.resolved[candidate.candidateId]!.draft;
+    final time = draft.time as TimedSpec;
+    expect(time.startTime, LocalTime(9,15));
+    expect(time.endTime, LocalTime(10,45));
+    expect(time.startDate, (original.time as TimedSpec).startDate);
+    expect(draft.recurrence, original.recurrence);
+    expect(draft.details, original.details);
+    expect(await h.run(h.read(scheduleRepositoryProvider).loadAll), isEmpty);
+  });
+
   appTest('visible Continue applies chosen class dates and reaches review without a separate Apply step', (h) async {
     unawaited(rootNavigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const ImageImportScreen())));
     await h.settle();

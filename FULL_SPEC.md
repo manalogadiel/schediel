@@ -1913,6 +1913,12 @@ Schediel now has a Flutter implementation, Android native code, iOS source, a lo
 
 Local implementation phases are distinct from the specification's acceptance/release gates. A unit/widget/source test must not be reported as a passing hardware, lifecycle, platform-policy, accessibility or OCR-accuracy scenario. The 48 acceptance IDs remain requirements, not 48 claimed passing device tests.
 
+## October 22: scanned time selectors
+
+The scanned-class resolution screen now uses the app's wheel time selector for both start and end, with no keyboard entry offered in this flow. Labels remain above the controls, displayed times follow the device's 12/24-hour setting, and only Done applies a selection. Blank times stay blank on cancellation. Accepting an unchanged time does not invalidate the draft. Changing a time clears any old daylight-saving fold choice so an ambiguous replacement time must be confirmed again; no-end and explicit next-day validation stay intact.
+
+All **13 targeted selector, scan-screen and shared-picker tests passed**. They cover cancellation, midnight/noon/23:59 in both hour formats, unchanged values, 200% text, both scanned time fields, retention of dates/repeats/details, and no database write while editing. The full suite passed **427 tests** and whole-project analysis reported **no issues**. All three split release APKs built and passed the ML Kit registrar constructor check. ARM64 build **4012** retained the existing signing certificate and installed successfully with `adb install -r`. The paired phone's dropped wireless connection was recovered before installation. The app was not brought to the foreground because the phone was in use, so the new selectors were tested through Flutter widgets rather than manually exercised on the phone in this pass. No app data was cleared or uninstalled. The public APK parts were regenerated and passed byte-count/SHA-256 verification.
+
 ## October 22: scan continuation and bulk import category
 
 The original scan screen placed Continue after every candidate and required a separate Apply action for shared class dates. Validation returned a generic notice near the top, so a missing date or other field could appear to do nothing from the bottom of a long scan. New regressions failed against the original source for the inaccessible Continue action and absent bulk category selector.

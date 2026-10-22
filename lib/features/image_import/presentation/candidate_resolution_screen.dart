@@ -4,11 +4,13 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/labeled_field.dart';
 import '../../../core/schedule/models.dart';
 import '../../../core/time/local_date.dart';
+import '../../../core/time/local_time.dart';
 import '../application/image_import_controller.dart';
 import '../domain/candidate_resolution.dart';
 import '../domain/image_candidate.dart';
 import 'scan_repeat_picker.dart';
 import 'scan_date_field.dart';
+import 'scan_time_field.dart';
 
 /// Unknown fields stay blank. Only explicit user values resolve a candidate;
 /// this child editor never inserts a schedule.
@@ -34,6 +36,12 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
       firstDate: firstDate, focusDate: firstDate, errorText: _errors[name], allowClear: optional,
       onChanged: (date) => setState(() {
         update(date?.toIso() ?? ''); _errors.remove(name); _changed();
+      })));
+  Widget timeField(String name, String label, String value, ValueChanged<String> update, {Key? key}) => Padding(
+    padding: const EdgeInsets.only(bottom: Tokens.md),
+    child: ScanTimeField(key: key, label: label, value: LocalTime.tryParse(value), errorText: _errors[name],
+      onChanged: (time) => setState(() {
+        update(time.toHhMm()); _errors.remove(name); _changed();
       })));
   Future<void> _use() async {
     final result = widget.controller.resolve(widget.candidate.candidateId);
@@ -62,7 +70,9 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
         dateField('lastDate','Last date (optional)',_edits.lastDate,(v)=>_edits.lastDate=v,
           optional: true, firstDate: LocalDate.tryParse(_edits.date)),
       if (_edits.kind == CandidateTimeKind.timed) ...[
-        field('startTime','Start time',_edits.startTime,(v)=>_edits.startTime=v,hint:'24-hour HH:mm'),
+        timeField('startTime','Start time',_edits.startTime,(v) {
+          _edits.startTime=v; _edits.seedResolution=null;
+        }, key:const Key('candidate-start-time')),
         field('timeZone','Source time zone',_edits.timeZone,(v)=>_edits.timeZone=v,hint:'IANA name, for example Asia/Manila'),
         FieldLabel(label:'End time choice', child: DropdownButtonFormField<CandidateEndChoice>(isExpanded: true, initialValue:_edits.endChoice,
           decoration:InputDecoration(errorText:_errors['endChoice']),
@@ -72,7 +82,9 @@ class _CandidateResolutionScreenState extends State<CandidateResolutionScreen> {
           onChanged:(v)=>setState(() { _edits.endChoice=v; _changed(); }))),
         const SizedBox(height:Tokens.md),
         if (_edits.endChoice != CandidateEndChoice.noEnd)
-          field('endTime','End time',_edits.endTime,(v)=>_edits.endTime=v,hint:'24-hour HH:mm'),
+          timeField('endTime','End time',_edits.endTime,(v) {
+            _edits.endTime=v; _edits.endResolution=null;
+          }, key:const Key('candidate-end-time')),
         if (_errors.containsKey('seedResolution') || _edits.seedResolution != null)
           _fold('seedResolution','Repeated start clock time',_edits.seedResolution,(v)=>_edits.seedResolution=v),
         if (_errors.containsKey('endResolution') || _edits.endResolution != null)

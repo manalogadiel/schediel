@@ -72,10 +72,10 @@ CandidateResolutionResult resolveImageCandidate(ImageCandidate c, CandidateEdits
     final start = LocalTime.tryParse(e.startTime.trim());
     final end = e.endChoice == CandidateEndChoice.noEnd ? null : LocalTime.tryParse(e.endTime.trim());
     final zone = e.timeZone.trim();
-    if (start == null) errors['startTime'] = 'Enter a resolved 24-hour HH:mm time. Do not guess AM or PM.';
+    if (start == null) errors['startTime'] = 'Choose a start time and confirm AM or PM.';
     if (!zones.isValidZone(zone)) errors['timeZone'] = 'Enter the source IANA time zone; the device zone is not assumed.';
     if (e.endChoice == null) errors['endChoice'] = 'Choose no end time, same-day end or next-day end.';
-    if (e.endChoice != null && e.endChoice != CandidateEndChoice.noEnd && end == null) errors['endTime'] = 'Enter a valid end time as HH:mm.';
+    if (e.endChoice != null && e.endChoice != CandidateEndChoice.noEnd && end == null) errors['endTime'] = 'Choose an end time.';
     if (errors.isNotEmpty) return CandidateResolutionResult(errors: errors);
     final offset = end == null ? null : (e.endChoice == CandidateEndChoice.nextDay ? 1 : 0);
     if (end != null && offset == 0 && !end.isAfter(start!)) errors['endTime'] = 'End must follow the start. Choose next day explicitly for overnight events.';

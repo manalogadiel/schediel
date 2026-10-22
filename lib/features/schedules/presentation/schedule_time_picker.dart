@@ -5,7 +5,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/common.dart';
 
 /// Wheel and typed input share a temporary value; only Done commits it.
-Future<TimeOfDay?> showScheduleTimePicker(BuildContext context, {required TimeOfDay initialTime}) {
+Future<TimeOfDay?> showScheduleTimePicker(BuildContext context, {required TimeOfDay initialTime, bool allowKeyboardInput = true}) {
   var selected = initialTime;
   final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
   return showModalBottomSheet<TimeOfDay>(
@@ -33,7 +33,8 @@ Future<TimeOfDay?> showScheduleTimePicker(BuildContext context, {required TimeOf
             Row(
               children: [
                 TextButton(onPressed: () => Navigator.of(sheet).pop(), child: const Text('Cancel')),
-                Expanded(
+                if (!allowKeyboardInput) const Spacer(),
+                if (allowKeyboardInput) Expanded(
                   child: TextButton.icon(
                     icon: const Icon(Icons.keyboard_outlined, size: 20),
                     label: const Text('Keyboard input'),
